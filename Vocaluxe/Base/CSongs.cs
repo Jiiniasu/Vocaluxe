@@ -24,6 +24,8 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Text;
+using System.Drawing;
+using System.Drawing.Imaging;
 using Newtonsoft.Json;
 using VocaluxeLib;
 using VocaluxeLib.Log;
@@ -62,6 +64,7 @@ namespace Vocaluxe.Base
             public int DataBaseSongId { get; set; }
             public int NumPlayed { get; set; }
             public System.DateTime DateAdded { get; set; }
+            public int NewToCloud { get; set; }
         }
 
         public static List<CSong> Songs
@@ -410,6 +413,23 @@ namespace Vocaluxe.Base
                             _Songs[i].DataBaseSongID = CloudSongs[i].DataBaseSongId;
                             _Songs[i].NumPlayed = CloudSongs[i].NumPlayed;
                             _Songs[i].DateAdded = CloudSongs[i].DateAdded;
+
+                            if (CloudSongs[i].NewToCloud == 1)
+                            {
+                                Image image = Image.FromFile(_Songs[i].Folder + "\\" + _Songs[i].CoverFileName);
+                                MemoryStream ms = new MemoryStream();
+                                image.Save(ms, image.RawFormat);
+                                var imgguid = image.RawFormat.Guid;
+                                string Format = "image/unknown";
+                                foreach (ImageCodecInfo codec in ImageCodecInfo.GetImageDecoders())
+                                {
+                                    if (codec.FormatID == imgguid)
+                                        Format = codec.MimeType;
+                                }                                
+                                json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, _Songs[i].DataBaseSongID, Data = Convert.ToBase64String(ms.ToArray()), Format});
+                                content = new StringContent(json, Encoding.UTF8, "application/json");
+                                response = _Client.PostAsync(CConfig.CloudServerURL + "/api/putCover", content).Result.Content;
+                            }
                         }
                     }
                 }
