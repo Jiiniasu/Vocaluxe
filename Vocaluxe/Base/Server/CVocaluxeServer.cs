@@ -913,9 +913,14 @@ namespace Vocaluxe.Base.Server
         #endregion
 
         #region game control
-        public static bool StartSong(int songID)
+        public static bool StartSong(int dataBaseSongID)
         {
             if (GetCurrentSongId() != -1)
+                return false;
+
+            int songID = CSongs.GetSongIdFromDataBaseSongId(dataBaseSongID);
+
+            if (songID == -1)
                 return false;
 
             EGameMode gm = CSongs.GetSong(songID).IsDuet ? EGameMode.TR_GAMEMODE_DUET : EGameMode.TR_GAMEMODE_NORMAL;

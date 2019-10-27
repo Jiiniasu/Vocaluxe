@@ -175,6 +175,15 @@ namespace Vocaluxe.Base
             return _IsCatIndexValid(_CatIndex) ? Categories[_CatIndex].Name : "";
         }
 
+        public static int GetSongIdFromDataBaseSongId(int dataBaseSongId)
+        {
+            try {
+                return _Songs.FirstOrDefault(song => song.DataBaseSongID == dataBaseSongId).ID;
+            } catch {
+                return -1;
+            }
+        }
+
         public static CSong GetSong(int songID)
         {
             return _Songs.FirstOrDefault(song => song.ID == songID);
