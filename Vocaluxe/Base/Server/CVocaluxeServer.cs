@@ -940,6 +940,23 @@ namespace Vocaluxe.Base.Server
 
         }
 
+        public static bool PreviewSong(int dataBaseSongID)
+        {
+            if (GetCurrentSongId() != -1)
+                return false;
+
+            int songID = CSongs.GetSongIdFromDataBaseSongId(dataBaseSongID);
+
+            if (songID == -1)
+                return false;
+
+            CSong song = CSongs.GetSong(songID);
+
+            CBase.BackgroundMusic.LoadPreview(song, song.Preview.StartTime);
+            return true;
+
+        }
+
         public static bool SetPlayer(int player, Guid playerGUID)
         {
             if (player > CGame.NumPlayers || !CProfiles.IsProfileIDValid(playerGUID))

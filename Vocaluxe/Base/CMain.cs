@@ -410,6 +410,10 @@ namespace Vocaluxe.Base
         {
             return CBackgroundMusic.GetVideoTexture();
         }
+        public int GetSongID()
+        {
+            return CBackgroundMusic.GetSongID();
+        }
     }
 
     class CBdraw : IDrawing
@@ -772,6 +776,11 @@ namespace Vocaluxe.Base
         public CSong GetSongByID(int songID)
         {
             return CSongs.GetSong(songID);
+        }
+
+        public int GetVisibleSongNumber(int songID)
+        {
+            return CSongs.GetVisibleSongNumber(songID);
         }
 
         public ReadOnlyCollection<CSong> GetSongs()

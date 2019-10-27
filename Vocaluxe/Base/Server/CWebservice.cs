@@ -561,6 +561,10 @@ namespace Vocaluxe.Base.Server
         {
             return CVocaluxeServer.DoTask(CVocaluxeServer.StartSong, songID);
         }
+        public bool PreviewSong(int songID)
+        {
+            return CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, songID);
+        }
 
         public bool SetPlayer(int player, Guid playerGUID)
         {

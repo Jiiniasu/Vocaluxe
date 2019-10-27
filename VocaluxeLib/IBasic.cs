@@ -131,6 +131,8 @@ namespace VocaluxeLib
 
         CTextureRef GetVideoTexture();
 
+        int GetSongID();
+
         void LoadPreview(CSong song, float start = -1f);
         void StopPreview();
         void SetPlayingPreview(bool playPreview);
@@ -248,6 +250,8 @@ namespace VocaluxeLib
         ReadOnlyCollection<CSong> GetSongs();
         ReadOnlyCollection<CSong> GetVisibleSongs();
         CCategory GetCategory(int index);
+
+        int GetVisibleSongNumber(int SongID);
 
         void AddPartySongSung(int songID);
         void ResetSongSung(int catIndex = -1);

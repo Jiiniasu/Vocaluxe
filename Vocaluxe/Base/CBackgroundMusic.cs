@@ -282,6 +282,11 @@ namespace Vocaluxe.Base
             return _CurPlayer.GetVideoTexture();
         }
 
+        public static int GetSongID()
+        {
+            return _CurPlayer.SongID;
+        }
+
         public static void SetMusicSource(EBackgroundMusicSource source)
         {
             if (_MusicSource == source)

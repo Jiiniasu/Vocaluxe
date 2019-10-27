@@ -215,6 +215,11 @@ namespace Vocaluxe.Base.Server
 
         [OperationContract, WebInvoke(Method = "GET",
             ResponseFormat = WebMessageFormat.Json,
+            UriTemplate = "/previewSong?songId={songId}")]
+        bool PreviewSong(int songId);
+
+        [OperationContract, WebInvoke(Method = "GET",
+            ResponseFormat = WebMessageFormat.Json,
             UriTemplate = "/setPlayer?player={player}&playerGuid={playerGuid}")]
         bool SetPlayer(int player, Guid playerGuid);
     }
