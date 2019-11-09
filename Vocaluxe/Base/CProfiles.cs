@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Drawing;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -681,8 +682,36 @@ namespace Vocaluxe.Base
                 if (Path.GetFileName(_Avatars[id].FileName) == name)
                     return _Avatars[id];
             }
+
+            if (CConfig.UseCloudServer)
+            {
+
+                string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, AvatarId = fileName });
+
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/getAvatar", content).Result.Content;
+                byte[] responseString = response.ReadAsByteArrayAsync().Result;
+
+                try
+                {
+                    Image imageData = Image.FromStream(new MemoryStream(responseString));
+
+                    imageData.Save(CHelper.GetUniqueFileName(CConfig.ProfileFolders[0], fileName));
+
+                    int id = NewAvatar(CConfig.ProfileFolders[0] + "\\" + fileName);
+
+                    return _Avatars[id];
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
             return null;
         }
+
         #endregion private methods
     }
+
 }
