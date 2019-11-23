@@ -34,6 +34,8 @@ namespace Vocaluxe.Base
         private static ISongQueue _SongQueue;
         private static int _NumPlayers = CConfig.Config.Game.NumPlayers;
 
+        public static List<int> NewEntryIDs = new List<int>();
+
         /// <summary>
         ///     Last beat that has been evaluated
         /// </summary>

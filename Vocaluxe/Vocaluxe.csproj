@@ -178,6 +178,7 @@
   <ItemGroup>
     <Compile Include="Base\CBackgroundMusic.cs" />
     <Compile Include="Base\CCoverGenerator.cs" />
+    <Compile Include="Base\CCloud.cs" />
     <Compile Include="Base\CPlaylistElement.cs" />
     <Compile Include="Base\CRecord.cs" />
     <Compile Include="Base\Server\CWebservice.cs" />

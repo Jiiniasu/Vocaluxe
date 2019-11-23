@@ -317,8 +317,7 @@ namespace Vocaluxe.Base
         {
             if (screen == null)
                 throw new ArgumentNullException("screen");
-            Debug.Assert(NextScreen == null || NextScreen != screen, "Don't fade to currently fading screen!");
-            if (screen == NextScreen)
+            if (screen == CurrentScreen || screen == NextScreen)
                 return;
             // Make sure the last screen change is done
             _FinishScreenFading();

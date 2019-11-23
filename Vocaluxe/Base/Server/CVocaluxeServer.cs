@@ -953,8 +953,9 @@ namespace Vocaluxe.Base.Server
             CSong song = CSongs.GetSong(songID);
 
             CBase.BackgroundMusic.LoadPreview(song, song.Preview.StartTime);
-            return true;
 
+            CGraphics.FadeTo(EScreen.Song);
+            return true;
         }
 
         public static bool SetPlayer(int player, Guid playerGUID)

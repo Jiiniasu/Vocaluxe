@@ -90,8 +90,6 @@ namespace Vocaluxe.Base
             for (int i = 0; i < 1000; i++)
                 _AvatarIDs.Enqueue(i);
 
-            _Profiles = new Dictionary<Guid, CProfile>();
-
             LoadProfiles();
         }
 
@@ -529,21 +527,9 @@ namespace Vocaluxe.Base
         #region private methods
         private async static void _LoadProfiles()
         {
-            _LoadAvatars();
+            _Profiles = new Dictionary<Guid, CProfile>();
 
-            var knownFiles = new List<string>();
-            if (_Profiles.Count > 0)
-            {
-                var ids = new Guid[_Profiles.Keys.Count];
-                _Profiles.Keys.CopyTo(ids, 0);
-                foreach (Guid id in ids)
-                {
-                    if (_Profiles[id].LoadProfile())
-                        knownFiles.Add(Path.GetFileName(_Profiles[id].FilePath));
-                    else
-                        _Profiles.Remove(id);
-                }
-            }
+            _LoadAvatars();
 
             if (CConfig.UseCloudServer)
             {
@@ -560,7 +546,6 @@ namespace Vocaluxe.Base
             }
             else
             {
-
                 var files = new List<string>();
                
                 foreach (string path in CConfig.ProfileFolders)
@@ -568,9 +553,6 @@ namespace Vocaluxe.Base
 
                 foreach (string file in files)
                 {
-                    if (knownFiles.Contains(Path.GetFileName(file)))
-                        continue;
-
                     var profile = new CProfile();
 
                     if (profile.LoadProfile(file))

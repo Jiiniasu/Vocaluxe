@@ -30,6 +30,8 @@ using Vocaluxe.Base.Server;
 using Vocaluxe.Base.ThemeSystem;
 using Vocaluxe.Reporting;
 using VocaluxeLib.Log;
+using System.Net;
+using Newtonsoft.Json;
 
 [assembly: InternalsVisibleTo("VocaluxeTests")]
 
@@ -43,6 +45,9 @@ namespace Vocaluxe
 
     static class CMainProgram
     {
+        public static bool PauseSong;
+        public static bool StopSong;
+
         private static CSplashScreen _SplashScreen;
 
         [STAThread, HandleProcessCorruptedStateExceptions]
@@ -296,6 +301,55 @@ namespace Vocaluxe
             if (_SplashScreen != null)
                 _SplashScreen.Close();
 
+            if (CConfig.UseCloudServer)
+            {
+                using (WebClient wc = new WebClient())
+                {
+                    Uri uri = new Uri(CConfig.CloudServerURL + "/eventstream/?Key=" + CConfig.CloudServerKey);
+                    wc.OpenReadCompleted += (object sender, OpenReadCompletedEventArgs e) =>
+                    {
+                        var sr = new StreamReader(e.Result);
+
+                        while (!sr.EndOfStream)
+                        {
+                            String data = sr.ReadLine();
+                            Console.WriteLine(data);
+                            EventMessage message = JsonConvert.DeserializeObject<EventMessage>(data);
+                            if (message != null)
+                            {
+                                switch (message.function)
+                                {
+                                    case "ping":
+                                        // Do nothing for now, maybe complain and restart connection if we havn't received one in 10 seconds?
+                                        break;
+                                    case "previewSong":
+                                        CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, message.songID);
+                                        break;
+                                    case "startSong":
+                                        StopSong = false;
+                                        CCloud.AssignPlayersFromCloud();
+                                        CVocaluxeServer.DoTask(CVocaluxeServer.StartSong, message.songID);
+                                        break;
+                                    case "togglePause":
+                                        PauseSong = !PauseSong;
+                                        break;
+                                    case "stopSong":
+                                        StopSong = true;
+                                        // Do stuff
+                                        break;
+                                    default:
+                                        break;
+
+                                }
+                            }
+                        }
+                        sr.Close();
+                        wc.OpenReadAsync(uri);
+                    };
+                    wc.OpenReadAsync(uri);
+                }
+            }
+
             CDraw.MainLoop();
         }
 
@@ -502,5 +556,17 @@ namespace Vocaluxe
             }
             return true;
         }
+    }
+    
+    class EventMessage
+    {
+        [JsonProperty("function")]
+        public string function { get; set; }
+
+        [JsonProperty("data")]
+        public string data { get; set; }
+
+        [JsonProperty("songId")]
+        public int songID { get; set; }
     }
 }

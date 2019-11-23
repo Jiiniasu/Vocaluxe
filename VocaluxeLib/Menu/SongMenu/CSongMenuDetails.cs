@@ -343,6 +343,14 @@ namespace VocaluxeLib.Menu.SongMenu
 
         public override void OnShow()
         {
+            int song = CBase.BackgroundMusic.GetSongID();
+            if (song != -1)
+            {
+                _EnterCategory(0);
+                _SelectionNr = CBase.Songs.GetVisibleSongNumber(song);
+                _PreviewNr = _SelectionNr;
+            }
+
             _LastKnownElements = -1; //Force refresh of list
             if (!CBase.Songs.IsInCategory())
             {
@@ -634,7 +642,6 @@ namespace VocaluxeLib.Menu.SongMenu
         {
             base._EnterCategory(categoryNr);
 
-            SetSelectedSong(0);
             _UpdateListIfRequired();
         }
 

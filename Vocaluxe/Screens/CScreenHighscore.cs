@@ -50,7 +50,6 @@ namespace Vocaluxe.Screens
         private string[] _ParticleEffectNew;
 
         private List<SDBScoreEntry>[] _Scores;
-        private List<int> _NewEntryIDs;
         private int _Round;
         private int _Pos;
         private bool _IsDuet;
@@ -100,8 +99,6 @@ namespace Vocaluxe.Screens
 
             _ThemeTexts = texts.ToArray();
             _ThemeParticleEffects = _ParticleEffectNew;
-
-            _NewEntryIDs = new List<int>();
         }
 
         public override bool HandleInput(SKeyEvent keyEvent)
@@ -204,8 +201,6 @@ namespace Vocaluxe.Screens
             base.OnShow();
             _Round = 0;
             _Pos = 0;
-            _NewEntryIDs.Clear();
-            _AddScoresToDB();
             _LoadScores();
             _UpdateRound();
 
@@ -214,41 +209,9 @@ namespace Vocaluxe.Screens
 
         private bool _IsNewEntry(int id)
         {
-            return _NewEntryIDs.Any(t => t == id);
+            return CGame.NewEntryIDs.Any(t => t == id);
         }
 
-        private void _AddScoresToDB()
-        {
-            CPoints points = CGame.GetPoints();
-            if (points == null)
-                return;
-
-            for (int round = 0; round < points.NumRounds; round++)
-            {
-                SPlayer[] players = points.GetPlayer(round, CGame.NumPlayers);
-
-                for (int p = 0; p < players.Length; p++)
-                {
-                    if (players[p].Points > CSettings.MinScoreForDB && players[p].SongFinished && !CProfiles.IsGuestProfile(players[p].ProfileID))
-                    {
-                        if (CConfig.UseCloudServer)
-                        {
-                            players[p].NoteDiff = (int)CProfiles.GetDifficulty(players[p].ProfileID);
-                            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(players[p].SongID).DataBaseSongID, Data = players[p] });
-
-                            var content = new StringContent(json, Encoding.UTF8, "application/json");
-                            var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/putScore", content).Result.Content;
-                            string responseString = response.ReadAsStringAsync().Result;
-                            _NewEntryIDs.Add(JsonConvert.DeserializeObject<SDBScoreEntry>(responseString).ID);
-                        }
-                        else
-                        {
-                            _NewEntryIDs.Add(CDataBase.AddScore(players[p]));
-                        }
-                    }
-                }
-            }
-        }
 
         private void _LoadScores()
         {

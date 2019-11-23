@@ -133,7 +133,7 @@ namespace Vocaluxe.Screens
         private Stopwatch _TimerDuetText1;
         private Stopwatch _TimerDuetText2;
 
-        private bool _Pause;
+        private bool _PreviousPause;
         private bool _Webcam;
 
         private CBackground _SlideShow;
@@ -224,13 +224,13 @@ namespace Vocaluxe.Screens
                 {
                     case Keys.Escape:
                         _TogglePause();
-                        if (_Pause)
+                        if ( CMainProgram.PauseSong)
                             _SelectElement(_Buttons[_ButtonCancel]);
                         break;
 
                     case Keys.P:
                         _TogglePause();
-                        if (_Pause)
+                        if ( CMainProgram.PauseSong)
                             _SelectElement(_Buttons[_ButtonContinue]);
                         break;
 
@@ -273,7 +273,7 @@ namespace Vocaluxe.Screens
                         }
                         break;
                     case Keys.Enter:
-                        if (_Pause)
+                        if ( CMainProgram.PauseSong)
                         {
                             if (_Buttons[_ButtonContinue].Selected)
                                 _SetPause(false);
@@ -316,14 +316,14 @@ namespace Vocaluxe.Screens
             if (mouseEvent.RB)
             {
                 _TogglePause();
-                if (_Pause)
+                if ( CMainProgram.PauseSong)
                     _SelectElement(_Buttons[_ButtonContinue]);
             }
 
-            if (mouseEvent.LB && !_Pause)
+            if (mouseEvent.LB && ! CMainProgram.PauseSong)
                 _TogglePause();
 
-            if (mouseEvent.LB && _IsMouseOverCurSelection(mouseEvent) && _Pause)
+            if (mouseEvent.LB && _IsMouseOverCurSelection(mouseEvent) &&  CMainProgram.PauseSong)
             {
                 if (_Buttons[_ButtonContinue].Selected)
                     _SetPause(false);
@@ -420,6 +420,16 @@ namespace Vocaluxe.Screens
 
         public override bool UpdateGame()
         {
+            if (CMainProgram.StopSong)
+            {
+                CMainProgram.StopSong = false;
+                _Stop();
+            }
+            if ( CMainProgram.PauseSong != _PreviousPause)
+            {
+                _SetPause( CMainProgram.PauseSong);
+            }
+
             bool finish = false;
             if (CSound.IsPlaying(_CurrentStream) || CSound.IsPaused(_CurrentStream))
             {
@@ -1066,28 +1076,30 @@ namespace Vocaluxe.Screens
 
             _StartSong();
         }
-        private void _TogglePause()
+        public void _TogglePause()
         {
-            _SetPause(!_Pause);
+            _SetPause(!CMainProgram.PauseSong);
         }
 
         private void _SetPause(bool paused)
         {
-            _Pause = paused;
+             CMainProgram.PauseSong = paused;
+
+            _PreviousPause = paused;
 
             foreach (String s in _StaticsPause)
-                _Statics[s].Visible = _Pause;
+                _Statics[s].Visible =  CMainProgram.PauseSong;
 
             foreach (String s in _TextsPause)
-                _Texts[s].Visible = _Pause;
+                _Texts[s].Visible =  CMainProgram.PauseSong;
 
-            _Buttons[_ButtonCancel].Visible = _Pause;
-            _Buttons[_ButtonContinue].Visible = _Pause;
-            _Buttons[_ButtonSkip].Visible = _Pause && CGame.NumRounds > CGame.RoundNr && CGame.NumRounds > 1;
-            _Buttons[_ButtonRestartGame].Visible = _Pause;
-            _Buttons[_ButtonRestartRound].Visible = _Pause && CGame.NumRounds > 1;
+            _Buttons[_ButtonCancel].Visible =  CMainProgram.PauseSong;
+            _Buttons[_ButtonContinue].Visible =  CMainProgram.PauseSong;
+            _Buttons[_ButtonSkip].Visible =  CMainProgram.PauseSong && CGame.NumRounds > CGame.RoundNr && CGame.NumRounds > 1;
+            _Buttons[_ButtonRestartGame].Visible =  CMainProgram.PauseSong;
+            _Buttons[_ButtonRestartRound].Visible =  CMainProgram.PauseSong && CGame.NumRounds > 1;
 
-            if (_Pause)
+            if ( CMainProgram.PauseSong)
                 CSound.Pause(_CurrentStream);
             else
                 CSound.Play(_CurrentStream);

@@ -25,11 +25,17 @@ using VocaluxeLib;
 using VocaluxeLib.Game;
 using VocaluxeLib.Menu;
 using VocaluxeLib.Songs;
+using Newtonsoft.Json;
+using System.Net.Http;
+using System.Text;
+
 
 namespace Vocaluxe.Screens
 {
     public class CScreenScore : CMenu
     {
+        private static readonly HttpClient _Client = new HttpClient();
+
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {
@@ -153,6 +159,8 @@ namespace Vocaluxe.Screens
             //-1 --> Show average
             _Round = CGame.NumRounds > 1 ? -1 : 0;
             _Points = CGame.GetPoints();
+
+            _AddScoresToDB();
 
             _SavePlayedSongs();
 
@@ -625,5 +633,39 @@ namespace Vocaluxe.Screens
         {
             CParty.LeavingScore();
         }
+        private void _AddScoresToDB()
+        {
+            if (_Points == null)
+                return;
+
+            CGame.NewEntryIDs.Clear();
+
+            for (int round = 0; round < _Points.NumRounds; round++)
+            {
+                SPlayer[] players = _Points.GetPlayer(round, CGame.NumPlayers);
+
+                for (int p = 0; p < players.Length; p++)
+                {
+                    if (players[p].Points > CSettings.MinScoreForDB && players[p].SongFinished && !CProfiles.IsGuestProfile(players[p].ProfileID))
+                    {
+                        if (CConfig.UseCloudServer)
+                        {
+                            players[p].NoteDiff = (int)CProfiles.GetDifficulty(players[p].ProfileID);
+                            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(players[p].SongID).DataBaseSongID, Data = players[p] });
+
+                            var content = new StringContent(json, Encoding.UTF8, "application/json");
+                            var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/putScore", content).Result.Content;
+                            string responseString = response.ReadAsStringAsync().Result;
+                            CGame.NewEntryIDs.Add(JsonConvert.DeserializeObject<SDBScoreEntry>(responseString).ID);
+                        }
+                        else
+                        {
+                            CGame.NewEntryIDs.Add(CDataBase.AddScore(players[p]));
+                        }
+                    }
+                }
+            }
+        }
+
     }
 }
