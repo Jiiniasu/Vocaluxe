@@ -47,6 +47,7 @@ namespace Vocaluxe
     {
         public static bool PauseSong;
         public static bool StopSong;
+        public static bool RestartSong;
 
         private static CSplashScreen _SplashScreen;
 
@@ -335,7 +336,9 @@ namespace Vocaluxe
                                         break;
                                     case "stopSong":
                                         StopSong = true;
-                                        // Do stuff
+                                        break;
+                                    case "restartSong":
+                                        RestartSong = true;
                                         break;
                                     default:
                                         break;

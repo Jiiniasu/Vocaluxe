@@ -420,6 +420,7 @@ namespace Vocaluxe.Screens
 
         public override bool UpdateGame()
         {
+
             if (CMainProgram.StopSong)
             {
                 CMainProgram.StopSong = false;
@@ -427,7 +428,14 @@ namespace Vocaluxe.Screens
             }
             if ( CMainProgram.PauseSong != _PreviousPause)
             {
-                _SetPause( CMainProgram.PauseSong);
+                _SetPause(CMainProgram.PauseSong);
+            }
+
+            if (CMainProgram.RestartSong)
+            {
+                _SetPause(false);
+                CMainProgram.RestartSong = false;
+                _RestartRound();
             }
 
             bool finish = false;
