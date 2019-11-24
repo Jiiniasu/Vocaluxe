@@ -25,6 +25,9 @@ namespace VocaluxeLib.Menu.SongMenu
         {
             switch (CBase.Config.GetSongMenuType())
             {
+                case ESongMenu.TR_CONFIG_REMOTE:
+                    return new CSongMenuRemote(theme, partyModeID);
+
                 case ESongMenu.TR_CONFIG_DETAILS:
                     return new CSongMenuDetails(theme, partyModeID);
 

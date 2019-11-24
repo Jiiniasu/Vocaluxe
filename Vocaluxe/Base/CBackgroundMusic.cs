@@ -108,6 +108,16 @@ namespace Vocaluxe.Base
             get { return _CurPlayer.IsPlaying; }
         }
 
+        public static bool IsFinished
+        {
+            get {
+                if (_CurPlayer.Position >= _CurPlayer.Length)
+                    return true;
+                else
+                    return false;
+            }
+        }
+
         public static bool IsPlayingPreview
         {
             get { return _CurPlayer == _PreviewPlayer; }

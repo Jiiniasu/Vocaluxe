@@ -96,8 +96,8 @@
       <Z>-11</Z>
       <H>50</H>
       <MaxW>900</MaxW>
-      <Color Name="TextColor" />
-      <SelColor Name="SelTextColor" />
+      <Color Name="Invisible" />
+      <SelColor Name="Invisible" />
       <Align>Left</Align>
       <ResizeAlign>Center</ResizeAlign>
       <Style>Bold</Style>
@@ -506,8 +506,8 @@
         <H>50</H>
         <Z>-2.11</Z>
       </Rect>
-      <Color Name="Visible" />
-      <SelColor Name="Visible" />
+      <Color Name="Invisible" />
+      <SelColor Name="Invisible" />
       <Text Name="Text">
         <X>180</X>
         <Y>7</Y>
@@ -1222,6 +1222,83 @@
           </Rect>
         </StaticMedleyTagIcon>
       </SongMenuDetails>
+      <SongMenuRemote>
+        <TextArtist Name="TextArtist">
+          <X>300</X>
+          <Y>638</Y>
+          <Z>-2</Z>
+          <H>42</H>
+          <MaxW>930</MaxW>
+          <Color Name="StaticColor" />
+          <SelColor Name="TextSelColor" />
+          <Align>Left</Align>
+          <ResizeAlign>Bottom</ResizeAlign>
+          <Style>Normal</Style>
+          <Font>Outline</Font>
+          <Text />
+        </TextArtist>
+        <TextTitle Name="TextTitle">
+          <X>300</X>
+          <Y>580</Y>
+          <Z>-2</Z>
+          <H>50</H>
+          <MaxW>930</MaxW>
+          <Color Name="StaticColor" />
+          <SelColor Name="TextSelColor" />
+          <Align>Left</Align>
+          <ResizeAlign>Bottom</ResizeAlign>
+          <Style>Bold</Style>
+          <Font>Outline</Font>
+          <Text />
+        </TextTitle>
+        <TextSongLength Name="TextSongLength">
+          <X>1230</X>
+          <Y>638</Y>
+          <Z>-2</Z>
+          <H>42</H>
+          <MaxW>340</MaxW>
+          <Color Name="StaticColor" />
+          <SelColor Name="TextSelColor" />
+          <Align>Right</Align>
+          <ResizeAlign>Bottom</ResizeAlign>
+          <Style>Bold</Style>
+          <Font>Outline</Font>
+          <Text />
+        </TextSongLength>
+        <StaticBigCover Name="StaticBigCover">
+          <Skin>CoverBackground</Skin>
+          <Color Name="Visible" />
+          <Rect>
+            <X>50</X>
+            <Y>470</Y>
+            <W>200</W>
+            <H>200</H>
+            <Z>-2</Z>
+          </Rect>
+        </StaticBigCover>
+        <StaticVideoBG Name="StaticVideoBG">
+          <Skin>CoverTextBackground</Skin>
+          <Color Name="Visible" />
+          <Rect>
+            <X>0</X>
+            <Y>0</Y>
+            <W>1280</W>
+            <H>720</H>
+            <Z>1</Z>
+          </Rect>
+        </StaticVideoBG>
+        <StaticTextBG Name="StaticTextBG">
+          <Skin />
+          <Color Name="BackgroundColorAlpha" />
+          <Rect>
+            <X>0</X>
+            <Y>540</Y>
+            <W>1280</W>
+            <H>250</H>
+            <Z>-1</Z>
+          </Rect>
+        </StaticTextBG>
+      </SongMenuRemote>
     </SongMenu>
   </SongMenus>
   <Lyrics />

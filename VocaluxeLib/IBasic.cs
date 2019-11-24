@@ -117,6 +117,7 @@ namespace VocaluxeLib
     {
         bool IsDisabled();
         bool IsPlaying();
+        bool IsFinished();
         bool IsPlayingPreview();
         bool SongHasVideo();
         bool VideoEnabled();

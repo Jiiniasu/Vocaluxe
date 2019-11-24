@@ -38,11 +38,22 @@ namespace VocaluxeLib.Menu.SongMenu
 
         //public SThemeSongMenuBook songMenuBook;
         //public SThemeSongMenuDreidel songMenuDreidel;
+        public SThemeSongMenuRemote SongMenuRemote;
         public SThemeSongMenuDetails SongMenuDetails;
         public SThemeSongMenuList SongMenuList;
         public SThemeSongMenuTileBoard SongMenuTileBoard;
     }
 
+    public struct SThemeSongMenuRemote
+    {
+        public SThemeText TextArtist;
+        public SThemeText TextTitle;
+        public SThemeText TextSongLength;
+
+        public SThemeStatic StaticBigCover;
+        public SThemeStatic StaticVideoBG;
+        public SThemeStatic StaticTextBG;
+    }
 
     public struct SThemeSongMenuDetails
     {

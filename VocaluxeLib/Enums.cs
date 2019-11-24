@@ -200,6 +200,7 @@ namespace VocaluxeLib
     public enum ESongMenu
     {
         // ReSharper disable InconsistentNaming
+        TR_CONFIG_REMOTE,
         TR_CONFIG_DETAILS,
         TR_CONFIG_LIST,       // list of covers and artist - title
         //TR_CONFIG_DREIDEL,  //as in ultrastar deluxe

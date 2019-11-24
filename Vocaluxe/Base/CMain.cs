@@ -341,6 +341,11 @@ namespace Vocaluxe.Base
             return CBackgroundMusic.IsPlaying;
         }
 
+        public bool IsFinished()
+        {
+            return CBackgroundMusic.IsFinished;
+        }
+
         public bool SongHasVideo()
         {
             return CBackgroundMusic.SongHasVideo;
