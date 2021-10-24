@@ -4,6 +4,7 @@ Thumbs.db
 .transifexrc
 .vs
 tx.exe
+Output
 *.mp4
 *.pdb
 *.csproj.user
