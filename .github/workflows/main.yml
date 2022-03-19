@@ -27,6 +27,8 @@ jobs:
       
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
+        with:
+          msbuild-architecture: x64
         
       - name: Setup NuGet.exe for use with actions
         uses: NuGet/setup-nuget@v1.0.5
@@ -35,7 +37,7 @@ jobs:
         run: nuget restore Vocaluxe.sln
         
       - name: Build
-        run: msbuild Vocaluxe.sln /p:Configuration=ReleaseWin
+        run: msbuild Vocaluxe.sln /p:Configuration=ReleaseWin /p:Platform="x64"
         
       - name: Download theme videos
         run: |
@@ -44,10 +46,10 @@ jobs:
           Remove-Item './vocaluxe.themes.genius.video.zip'
       
       - name: Pack output into archive
-        run: 7z a "Vocaluxe_$GITHUB_REF_NAME_.zip" Output/*
+        run: 7z a "Vocaluxe_${{ GITHUB_REF_NAME }}.zip" Output/*
         
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: build
-          path: Vocaluxe_$GITHUB_REF_NAME.zip
+          path: Vocaluxe_${{ GITHUB_REF_NAME }}.zip
