@@ -25,6 +25,9 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
       
+      - name: Set version variable
+        run: $env:GIT_VERSION_TAG = git-describe --long
+      
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
@@ -46,7 +49,9 @@ jobs:
           Remove-Item './vocaluxe.themes.genius.video.zip'
       
       - name: Pack output into archive
-        run: 7z a "Vocaluxe_${{ github.sha }}.zip" Output/*
+        run: |
+          cd Output
+          7z a "Vocaluxe_${{ github.sha }}.zip" * -x!*.pdb -x!serilog.* -x!Newtonsoft.Json.xml -x!*.dll.config
         
       - name: Upload artifact
         uses: actions/upload-artifact@v3
