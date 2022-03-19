@@ -1,0 +1,52 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Build
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the SSIS-Remote branch
+  push:
+    branches: [ SSIS-Remote ]
+  pull_request:
+    branches: [ SSIS-Remote ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: windows-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Setup .NET 4.7.1
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '4.7.1'
+
+      - name: Install dependencies
+        run: dotnet restore
+        
+      - name: Build
+        run: dotnet build
+        
+      - name: Download theme videos
+        run: |
+          Start-FileDownload 'https://github.com/lukeIam/VocaluxeDependencies/blob/master/zips/themes/vocaluxe.themes.genius.video.zip?raw=true'
+          7z x '-aoa' '-oOutput/' './vocaluxe.themes.genius.video.zip'
+          Remove-Item './vocaluxe.themes.genius.video.zip'
+      
+      - name: Pack output into archive
+        run: 7z a "Vocaluxe_${GITHUB_REF_NAME}_.zip" Output/*
+        
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: Vocaluxe_${GITHUB_REF_NAME}_.zip
