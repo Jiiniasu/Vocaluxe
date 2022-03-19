@@ -48,7 +48,11 @@ jobs:
       - name: Pack output into archive
         run: |
           cd Output
-          7z a "Vocaluxe_${{ github.sha }}.zip" * '-x!*.pdb' '-x!serilog.*' '-x!Newtonsoft.Json.xml' '-x!*.dll.config'
+          Remove-Item * -Include *.pdb
+          Remove-Item * -Include *.dll.config
+          Remove-Item * -Include serilog*
+          Remove-Item * -Include Newtonsoft.Json.xml
+          7z a '../Vocaluxe_${{ github.sha }}.zip' *
         
       - name: Upload artifact
         uses: actions/upload-artifact@v3
