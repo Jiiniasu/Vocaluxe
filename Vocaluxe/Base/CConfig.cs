@@ -169,7 +169,6 @@ namespace Vocaluxe.Base
             // ReSharper restore MemberHidesStaticFromOuterClass
             [DefaultValue(ESongSorting.TR_CONFIG_ARTIST)] public ESongSorting SongSorting;
             [DefaultValue(EOffOn.TR_CONFIG_ON)] public EOffOn IgnoreArticles;
-            [DefaultValue(ETimerMode.TR_CONFIG_TIMERMODE_REMAINING)] public ETimerMode TimerMode;
             [XmlAltName("NumPlayer"), DefaultValue(2)] public int NumPlayers;
             [XmlAltName("JudgmentDistance"), DefaultValue(100)] public int JudgementDistance;
             [DefaultValue(EOffOn.TR_CONFIG_OFF)] public EOffOn Tabs;
@@ -529,8 +528,6 @@ namespace Vocaluxe.Base
                     return "SongSorting: " + CHelper.ListStrings(Enum.GetNames(typeof(ESongSorting)));
                 case "IgnoreArticles":
                     return "Ignore articles on song-sorting: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
-                case "TimerMode":
-                    return "TimerMode: " + CHelper.ListStrings(Enum.GetNames(typeof(ETimerMode)));
                 case "NumPlayers":
                     return "NumPlayers: 1 - "+CSettings.MaxNumPlayer+" (Limited by " + CSettings.MaxScreenPlayer + " * NumScreens)";
                 case "JudgementDistance":

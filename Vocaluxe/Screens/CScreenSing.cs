@@ -50,7 +50,8 @@ namespace Vocaluxe.Screens
         }
 
         private const string _TextSongName = "TextSongName";
-        private const string _TextTime = "TextTime";
+        private const string _TextTimeCurrent = "TextTimeCurrent";
+        private const string _TextTimeTotal = "TextTimeTotal";
         private const string _TextDuetName1 = "TextDuetName1";
         private const string _TextDuetName2 = "TextDuetName2";
         private const string _TextMedleyCountdown = "TextMedleyCountdown";
@@ -147,7 +148,7 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            var texts = new List<string> { _TextSongName, _TextTime, _TextDuetName1, _TextDuetName2, _TextMedleyCountdown };
+            var texts = new List<string> { _TextSongName, _TextTimeCurrent, _TextTimeTotal, _TextDuetName1, _TextDuetName2, _TextMedleyCountdown };
             _BuildTextStrings(texts);
             _ThemeTexts = texts.ToArray();
 
@@ -234,18 +235,8 @@ namespace Vocaluxe.Screens
                             _SelectElement(_Buttons[_ButtonContinue]);
                         break;
 
-                    case Keys.T:
-                        var mode = (int)CConfig.Config.Game.TimerMode;
-
-                        mode++;
-                        if (mode > Enum.GetNames(typeof(ETimerMode)).Length - 1)
-                            mode = 0;
-                        CConfig.Config.Game.TimerMode = (ETimerMode)mode;
-                        CConfig.SaveConfig();
-                        break;
-
                     case Keys.I:
-                        mode = (int)CConfig.Config.Theme.PlayerInfo;
+                        var mode = (int)CConfig.Config.Theme.PlayerInfo;
 
                         mode++;
                         if (mode > Enum.GetNames(typeof(EPlayerInfo)).Length - 1)
@@ -796,26 +787,13 @@ namespace Vocaluxe.Screens
             if (totalTime <= 0f)
                 return;
 
-            switch (CConfig.Config.Game.TimerMode)
-            {
-                case ETimerMode.TR_CONFIG_TIMERMODE_CURRENT:
-                    var min = (int)Math.Floor(currentTime / 60f);
-                    var sec = (int)(currentTime - min * 60f);
-                    _Texts[_TextTime].Text = min.ToString("00") + ":" + sec.ToString("00");
-                    break;
+            var min = (int)Math.Floor(currentTime / 60f);
+            var sec = (int)(currentTime - min * 60f);
+            _Texts[_TextTimeCurrent].Text = min.ToString("00") + ":" + sec.ToString("00");
 
-                case ETimerMode.TR_CONFIG_TIMERMODE_REMAINING:
-                    min = (int)Math.Floor(remainingTime / 60f);
-                    sec = (int)(remainingTime - min * 60f);
-                    _Texts[_TextTime].Text = "-" + min.ToString("00") + ":" + sec.ToString("00");
-                    break;
-
-                case ETimerMode.TR_CONFIG_TIMERMODE_TOTAL:
-                    min = (int)Math.Floor(totalTime / 60f);
-                    sec = (int)(totalTime - min * 60f);
-                    _Texts[_TextTime].Text = "#" + min.ToString("00") + ":" + sec.ToString("00");
-                    break;
-            }
+            min = (int)Math.Floor(totalTime / 60f);
+            sec = (int)(totalTime - min * 60f);
+            _Texts[_TextTimeTotal].Text = min.ToString("00") + ":" + sec.ToString("00");
 
 
             switch (CConfig.Config.Theme.TimerLook)

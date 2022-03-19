@@ -78,9 +78,9 @@
         <A>0.2</A>
       </Color>
       <Rect>
-        <X>11</X>
+        <X>71</X>
         <Y>707</Y>
-        <W>1198</W>
+        <W>1078</W>
         <H>6</H>
         <Z>-1</Z>
       </Rect>
@@ -640,8 +640,22 @@
       <Font>Normal</Font>
       <Text />
     </Text>
-    <Text Name="TextTime">
+    <Text Name="TextTimeTotal">
       <X>1245</X>
+      <Y>700</Y>
+      <Z>-1</Z>
+      <H>20</H>
+      <MaxW>0</MaxW>
+      <Color Name="White" />
+      <SelColor Name="White" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Normal</Font>
+      <Text />
+    </Text>
+    <Text Name="TextTimeCurrent">
+      <X>35</X>
       <Y>700</Y>
       <Z>-1</Z>
       <H>20</H>

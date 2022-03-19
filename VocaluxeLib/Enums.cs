@@ -262,15 +262,6 @@ namespace VocaluxeLib
         // ReSharper restore InconsistentNaming
     }
 
-    public enum ETimerMode
-    {
-        // ReSharper disable InconsistentNaming
-        TR_CONFIG_TIMERMODE_CURRENT,
-        TR_CONFIG_TIMERMODE_REMAINING,
-        TR_CONFIG_TIMERMODE_TOTAL
-        // ReSharper restore InconsistentNaming
-    }
-
     public enum ETimerLook
     {
         // ReSharper disable InconsistentNaming

@@ -65,7 +65,6 @@
     <SongMenu>TR_CONFIG_TILE_BOARD</SongMenu>
     <SongSorting>TR_CONFIG_ARTIST</SongSorting>
     <IgnoreArticles>TR_CONFIG_ON</IgnoreArticles>
-    <TimerMode>TR_CONFIG_TIMERMODE_REMAINING</TimerMode>
     <NumPlayers>2</NumPlayers>
     <Tabs>TR_CONFIG_OFF</Tabs>
     <AutoplayPreviews>TR_CONFIG_OFF</AutoplayPreviews>
