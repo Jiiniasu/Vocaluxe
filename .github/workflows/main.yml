@@ -46,10 +46,10 @@ jobs:
           Remove-Item './vocaluxe.themes.genius.video.zip'
       
       - name: Pack output into archive
-        run: 7z a "Vocaluxe_${{ GITHUB_REF_NAME }}.zip" Output/*
+        run: 7z a "Vocaluxe_${{ github.sha }}.zip" Output/*
         
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: build
-          path: Vocaluxe_${{ GITHUB_REF_NAME }}.zip
+          path: Vocaluxe_${{ github.sha }}.zip
