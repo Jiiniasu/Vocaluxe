@@ -13,9 +13,6 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-env:
-  ARTIFACT_NAME: Vocaluxe_Windows_x64
-
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -55,13 +52,13 @@ jobs:
           Remove-Item * -Include *.dll.config
           Remove-Item * -Include serilog*
           Remove-Item * -Include Newtonsoft.Json.xml
-          7z a '../${{ env.ARTIFACT_NAME }}.zip' *
+          7z a '../Vocaluxe_Windows_x64.zip' *
         
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: build
-          path: ${{ env.ARTIFACT_NAME }}.zip
+          path: Vocaluxe_Windows_x64.zip
   publish:
     needs: build
     if: startsWith(github.event.ref, 'refs/tags/v')
@@ -73,4 +70,4 @@ jobs:
         with:
           name: Latest build
           allowUpdates: true
-          artifacts: ${{ ARTIFACT_NAME }}.zip
+          artifacts: Vocaluxe_Windows_x64.zip
