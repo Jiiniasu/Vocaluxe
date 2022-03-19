@@ -24,17 +24,18 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
+      
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+        
+      - name: Setup NuGet.exe for use with actions
+        uses: NuGet/setup-nuget@v1.0.5
 
-      - name: Setup .NET 4.7.1
-        uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '4.7.1'
-
-      - name: Install dependencies
-        run: dotnet restore
+      - name: Restore NuGet Packages
+        run: nuget restore Vocaluxe.sln
         
       - name: Build
-        run: dotnet build
+        run: msbuild Vocaluxe.sln /p:Configuration=ReleaseWin
         
       - name: Download theme videos
         run: |
