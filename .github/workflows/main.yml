@@ -39,7 +39,7 @@ jobs:
         
       - name: Download theme videos
         run: |
-          Start-FileDownload 'https://github.com/lukeIam/VocaluxeDependencies/blob/master/zips/themes/vocaluxe.themes.genius.video.zip?raw=true'
+          Invoke-WebRequest -Uri 'https://github.com/lukeIam/VocaluxeDependencies/blob/master/zips/themes/vocaluxe.themes.genius.video.zip?raw=true' -OutFile 'vocaluxe.themes.genius.video.zip'
           7z x '-aoa' '-oOutput/' './vocaluxe.themes.genius.video.zip'
           Remove-Item './vocaluxe.themes.genius.video.zip'
       
