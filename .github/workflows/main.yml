@@ -55,13 +55,13 @@ jobs:
           Remove-Item * -Include *.dll.config
           Remove-Item * -Include serilog*
           Remove-Item * -Include Newtonsoft.Json.xml
-          7z a '../${{ ARTIFACT_NAME }}.zip' *
+          7z a '../${{ env.ARTIFACT_NAME }}.zip' *
         
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: build
-          path: ${{ ARTIFACT_NAME }}.zip
+          path: ${{ env.ARTIFACT_NAME }}.zip
   publish:
     needs: build
     if: startsWith(github.event.ref, 'refs/tags/v')
