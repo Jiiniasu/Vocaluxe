@@ -9,6 +9,7 @@ on:
     branches: [ SSIS-Remote ]
   pull_request:
     branches: [ SSIS-Remote ]
+  release:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -36,7 +37,7 @@ jobs:
       - name: Restore NuGet Packages
         run: nuget restore Vocaluxe.sln
         
-      - name: Build
+      - name: Build solution
         run: msbuild Vocaluxe.sln /p:Configuration=ReleaseWin /p:Platform="x64"
         
       - name: Download theme videos
@@ -44,31 +45,27 @@ jobs:
           Invoke-WebRequest -Uri 'https://github.com/lukeIam/VocaluxeDependencies/blob/master/zips/themes/vocaluxe.themes.genius.video.zip?raw=true' -OutFile 'vocaluxe.themes.genius.video.zip'
           7z x '-aoa' '-oOutput/' './vocaluxe.themes.genius.video.zip'
           Remove-Item './vocaluxe.themes.genius.video.zip'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Vocaluxe_Windows_x64
+          path: Output
       
       - name: Pack output into archive
+        if: ${{ github.event_name == 'release'}}
         run: |
           cd Output
           Remove-Item * -Include *.pdb
           Remove-Item * -Include *.dll.config
           Remove-Item * -Include serilog*
           Remove-Item * -Include Newtonsoft.Json.xml
-          7z a '../Vocaluxe_Windows_x64.zip' *
-        
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: build
-          path: Vocaluxe_Windows_x64.zip
-  publish:
-    runs-on: windows-latest
-    needs: build
-    if: startsWith(github.event.ref, 'refs/tags/v')
-    steps:
+          7z a '../Vocaluxe_Windows_x64_${{ github.ref_name }}.zip' *
+
       - name: Create Release
-        # You may pin to the exact commit or the version.
-        # uses: ncipollo/release-action@40bb172bd05f266cf9ba4ff965cb61e9ee5f6d01
+        if: ${{ github.event_name == 'release'}}
         uses: ncipollo/release-action@v1.9.0
         with:
-          name: Latest build
+          name: ${{ github.ref_name }}
           allowUpdates: true
-          artifacts: Vocaluxe_Windows_x64.zip
+          artifacts: Vocaluxe_Windows_x64_${{ github.ref_name }}.zip
