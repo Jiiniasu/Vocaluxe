@@ -60,6 +60,7 @@ jobs:
           name: build
           path: Vocaluxe_Windows_x64.zip
   publish:
+    runs-on: windows-latest
     needs: build
     if: startsWith(github.event.ref, 'refs/tags/v')
     steps:
