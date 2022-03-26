@@ -1,31 +1,25 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Build
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the SSIS-Remote branch
   push:
     branches: [ SSIS-Remote ]
   pull_request:
     branches: [ SSIS-Remote ]
-  release:
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: windows-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
-      
+        with:
+          fetch-depth: 0
+        run: |
+          echo 'GIT_VERSION_TAG<<EOF' >> $GITHUB_ENV
+          git describe --tags --abbrev=0 >> $GITHUB_ENV
+          echo 'EOF' >> GITHUB_ENV
+
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
         with:
@@ -49,23 +43,25 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Vocaluxe_Windows_x64
+          name: Vocaluxe_Windows_x64_${{ env.GIT_VERSION_TAG }}
           path: Output
-      
+
       - name: Pack output into archive
-        if: ${{ github.event_name == 'release'}}
+        if: ${{ (github.event_name == 'push') || (github.event_name == 'workflow_dispatch') }}
         run: |
           cd Output
           Remove-Item * -Include *.pdb
           Remove-Item * -Include *.dll.config
           Remove-Item * -Include serilog*
           Remove-Item * -Include Newtonsoft.Json.xml
-          7z a '../Vocaluxe_Windows_x64_${{ github.ref_name }}.zip' *
+          7z a '../Vocaluxe_Windows_x64_SSIS-remote_Latest.zip' *
 
       - name: Create Release
-        if: ${{ github.event_name == 'release'}}
+        if: ${{ github.event_name == 'push'}}
         uses: ncipollo/release-action@v1.9.0
         with:
-          name: ${{ github.ref_name }}
+          name: Latest build
+          tag: Latest
+          prerelease: true
           allowUpdates: true
-          artifacts: Vocaluxe_Windows_x64_${{ github.ref_name }}.zip
+          artifacts: Vocaluxe_Windows_x64_SSIS-remote_Latest.zip
