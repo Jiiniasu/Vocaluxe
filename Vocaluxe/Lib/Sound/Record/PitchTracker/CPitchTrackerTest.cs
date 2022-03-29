@@ -115,7 +115,7 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
                 msg += " Errors=" + (_TestCount - _PassedCount[i]);
                 msg += " Passed=" + _PassedCount[i];
                 msg += " Total=" + _TestCount;
-                msg += " Speed=" + _SamplesPerSec[i] / 1000 + "kSamples/s (=" + (_SamplesPerSec[i] / 44100) + "rec.s/s)";
+                msg += " Speed=" + _SamplesPerSec[i] / 1000 + "kSamples/s (=" + (_SamplesPerSec[i] / 48000) + "rec.s/s)";
                 CLog.Debug(msg);
             }
         }
@@ -127,7 +127,7 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
             byte[] data2 = new byte[samplesPerBuffer * 2];
             double angle = 0;
             const int repeats = 100;
-            _GetSineWave(_BaseToneFreq * Math.Pow(_HalftoneBase, 5), 44100, samplesPerBuffer * repeats, ref angle, out data);
+            _GetSineWave(_BaseToneFreq * Math.Pow(_HalftoneBase, 5), 48000, samplesPerBuffer * repeats, ref angle, out data);
             for (int i = 0; i < _Analyzers.Count; i++)
             {
                 CPitchTracker analyzer = _Analyzers[i];
@@ -183,7 +183,7 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
                 _Process(data);
                 for (int tone = toneFrom; tone <= toneTo; tone++)
                 {
-                    _GetSineWave(_BaseToneFreq * Math.Pow(_HalftoneBase, tone), 44100, sampleCt, ref angle, out data);
+                    _GetSineWave(_BaseToneFreq * Math.Pow(_HalftoneBase, tone), 48000, sampleCt, ref angle, out data);
                     if (tone == 46 && distort == 4)
                         data = new byte[data.Length];
                     _Distort(data, tone, distort);
@@ -257,7 +257,7 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
                 }
                 byte[] data2;
                 double angle = 0;
-                _GetSineWave(_BaseToneFreq * Math.Pow(_HalftoneBase, tone + newTone), 44100, sampleCt, ref angle, out data2);
+                _GetSineWave(_BaseToneFreq * Math.Pow(_HalftoneBase, tone + newTone), 48000, sampleCt, ref angle, out data2);
                 Buffer.BlockCopy(data2, 0, sdata, 0, sampleCt * 2);
             }
             else
@@ -343,7 +343,7 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
 
         private static bool _IsNoteValid(int note, int time, IList<STimedNote> tones)
         {
-            const int lastNoteMaxTimeDiff = 1536 * 1000 / 44100; // old note is valid for 1536 more samples
+            const int lastNoteMaxTimeDiff = 1536 * 1000 / 48000; // old note is valid for 1536 more samples
             for (int i = 0; i < tones.Count; i++)
             {
                 if (tones[i].Time > time)

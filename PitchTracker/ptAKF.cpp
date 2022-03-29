@@ -47,9 +47,9 @@ PtAKF::PtAKF(unsigned step){
 		//Init Array to avoid costly calculations
 		for (int toneIndex = 0; toneIndex <= _MaxHalfTone + _HalfTonesAdd; toneIndex++)
 		{
-			_SamplesPerPeriodPerTone[toneIndex] = static_cast<float>(44100.0 / GetFrequencyFromTone(toneIndex)); // samples in one period
-			_SamplesPerPeriodPerToneFine[2 * toneIndex] = static_cast<float>(44100.0 / GetFrequencyFromTone(toneIndex - 1./3.)); // samples for a bit below exact frequency
-			_SamplesPerPeriodPerToneFine[2 * toneIndex + 1] = static_cast<float>(44100.0 / GetFrequencyFromTone(toneIndex + 1./3.)); // samples for a bit above exact frequency
+			_SamplesPerPeriodPerTone[toneIndex] = static_cast<float>(48000.0 / GetFrequencyFromTone(toneIndex)); // samples in one period
+			_SamplesPerPeriodPerToneFine[2 * toneIndex] = static_cast<float>(48000.0 / GetFrequencyFromTone(toneIndex - 1./3.)); // samples for a bit below exact frequency
+			_SamplesPerPeriodPerToneFine[2 * toneIndex + 1] = static_cast<float>(48000.0 / GetFrequencyFromTone(toneIndex + 1./3.)); // samples for a bit above exact frequency
 		}
 		_Window = new float[_SampleCt];
 		double cosMult = 2. * M_PI / (2 * _SampleCt - 1.); //To simplify and speed up; 2 * _SampleCt because we extend the data by a factor of 2

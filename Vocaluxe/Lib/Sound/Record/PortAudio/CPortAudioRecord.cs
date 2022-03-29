@@ -120,7 +120,7 @@ namespace Vocaluxe.Lib.Sound.Record.PortAudio
                     if (!_PaHandle.OpenInputStream(
                         out _RecHandle[dev],
                         ref inputParams,
-                        44100,
+                        48000,
                         PortAudioSharp.PortAudio.paFramesPerBufferUnspecified,
                         PortAudioSharp.PortAudio.PaStreamFlags.paNoFlag,
                         _MyRecProc,

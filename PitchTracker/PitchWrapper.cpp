@@ -3,7 +3,7 @@
 
 
 Analyzer* Analyzer_Create(unsigned step){
-    return new Analyzer(44100, "", step);
+    return new Analyzer(48000, "", step);
 }
 
 void Analyzer_Free(Analyzer* analyzer){

@@ -93,7 +93,7 @@ int _2power(int i) {
 //******************************
 
 int dywapitch_neededsamplecount(int minFreq) {
-	int nbSam = 3*44100/minFreq; // 1017. for 130 Hz
+	int nbSam = 3*48000/minFreq; // 1017. for 130 Hz
 	nbSam = _ceil_power2(nbSam); // 1024
 	return nbSam;
 }
@@ -161,7 +161,7 @@ double _dywapitch_computeWaveletPitch(double * samples, int startsample, int sam
 	while(1) {
 		
 		// delta
-		delta = static_cast<int>(44100./(_2power(curLevel)*maxF));
+		delta = static_cast<int>(48000./(_2power(curLevel)*maxF));
 		//("dywapitch doing level=%ld delta=%ld\n", curLevel, delta);
 		
 		if (curSamNb < 2) goto cleanup;
@@ -303,7 +303,7 @@ double _dywapitch_computeWaveletPitch(double * samples, int startsample, int sam
 				//if DEBUGG then put "similarity="&similarity&&"delta="&delta&&"ok"
  				//asLog("dywapitch similarity=%f OK !\n", similarity);
 				// two consecutive similar mode distances : ok !
-				pitchF = 44100./(_2power(curLevel-1)*curModeDistance);
+				pitchF = 48000./(_2power(curLevel-1)*curModeDistance);
 				goto cleanup;
 			}
 			//if DEBUGG then put "similarity="&similarity&&"delta="&delta&&"not"
