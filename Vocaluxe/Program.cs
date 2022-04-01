@@ -328,10 +328,15 @@ namespace Vocaluxe
                                         break;
                                     case "startSong":
                                         StopSong = false;
-                                        CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, message.songID);
+                                        if (CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, message.songID))
+                                        {
+                                            System.Threading.Thread.Sleep(5000);
+                                        }
                                         CCloud.AssignPlayersFromCloud();
-                                        CVocaluxeServer.DoTask(CVocaluxeServer.StartSong, message.songID);
-                                        System.Threading.Thread.Sleep(1000);
+                                        if (CVocaluxeServer.DoTask(CVocaluxeServer.StartSong, message.songID))
+                                        {
+                                            System.Threading.Thread.Sleep(1000);
+                                        }
                                         break;
                                     case "togglePause":
                                         PauseSong = !PauseSong;

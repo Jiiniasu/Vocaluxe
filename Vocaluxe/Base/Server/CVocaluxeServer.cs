@@ -950,6 +950,9 @@ namespace Vocaluxe.Base.Server
             if (songID == -1)
                 return false;
 
+            if (songID == CBase.BackgroundMusic.GetSongID())
+                return false;
+
             CSong song = CSongs.GetSong(songID);
 
             CBase.BackgroundMusic.LoadPreview(song, song.Preview.StartTime);
