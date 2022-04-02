@@ -327,14 +327,16 @@ namespace Vocaluxe
                                         CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, message.songID);
                                         break;
                                     case "startSong":
-                                        StopSong = false;
-                                        if (CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, message.songID))
+                                        if (CGraphics.CurrentScreen.GetType() != typeof(Screens.CScreenSing))
                                         {
-                                            System.Threading.Thread.Sleep(5000);
-                                        }
-                                        CCloud.AssignPlayersFromCloud();
-                                        if (CVocaluxeServer.DoTask(CVocaluxeServer.StartSong, message.songID))
-                                        {
+                                            StopSong = false;
+                                            System.Threading.Thread.Sleep(1000);
+                                            if (CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, message.songID))
+                                            {
+                                                System.Threading.Thread.Sleep(5000);
+                                            }
+                                            CCloud.AssignPlayersFromCloud();
+                                            CVocaluxeServer.DoTask(CVocaluxeServer.StartSong, message.songID);
                                             System.Threading.Thread.Sleep(1000);
                                         }
                                         break;
