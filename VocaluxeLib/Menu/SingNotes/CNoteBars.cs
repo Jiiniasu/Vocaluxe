@@ -117,6 +117,9 @@ namespace VocaluxeLib.Menu.SingNotes
                 }
             }
 
+            max += 2;
+            min -= 2;
+
             range = max - min;
 
             if (range > _SemiToneRange)
