@@ -57,6 +57,7 @@ namespace VocaluxeLib.Menu.SingNotes
         private readonly int _NumNoteLines;
         private int _SemiToneRange;
 
+        private readonly List<int> _AccidentalNotes = new List<int> { 1, 3, 6, 8, 10 };
 
         private int _CurrentLine = -1;
 
@@ -151,8 +152,8 @@ namespace VocaluxeLib.Menu.SingNotes
 
             if (CBase.Config.GetDrawNoteLines() == EOffOn.TR_CONFIG_ON)
             {
-                _DrawNoteLines(new SColorF(_NoteLinesColor, _NoteLinesColor.A * Alpha));
-                _DrawOctaveLines(new SColorF(0, 0, 0, 0.5f * Alpha));
+                _DrawOctaveLines(new SColorF(0, 0, 0, 0.1f * Alpha));
+                _DrawScaleLines(new SColorF(0, 0, 0, 0.6f * Alpha));
             }
 
             _DrawLineSeparators(new SColorF(_NoteLinesColor, _NoteLinesColor.A));
@@ -253,17 +254,6 @@ namespace VocaluxeLib.Menu.SingNotes
             return noteRect;
         }
 
-        private void _DrawNoteLines(SColorF color)
-        {
-            SRectF lineRect = Rect;
-            lineRect.H = 1f;
-            for (int i = 0; i < _NumNoteLines; i++)
-            {
-                lineRect.Y = Rect.Y + (_ToneHeight * (i + 1)) - (lineRect.H / 2) - (_ToneHeight / 2);
-                CBase.Drawing.DrawRect(color, lineRect, false);
-            }
-        }
-
         private void _DrawJudgeLine(SColorF color)
         {
             SRectF judgeRect = Rect;
@@ -290,20 +280,51 @@ namespace VocaluxeLib.Menu.SingNotes
         {
             int shift = 12 - (_SongBaseLine % 12);
 
-            if (shift >= 12)
-                shift -= 12;
-
             SRectF octaveRect = Rect;
             octaveRect.H = _SemiToneHeight * 12;
-            octaveRect.Y = Rect.Y + Rect.H - octaveRect.H - (_SemiToneHeight * shift);
+            octaveRect.Y = Rect.Y + Rect.H - octaveRect.H - (_SemiToneHeight * shift) + (_SemiToneHeight/2);
             
             do
             {
-                CTextureRef noteTexture = CBase.Themes.GetSkinTexture(_Theme.SkinFreeStyle, _PartyModeID);
-                CBase.Drawing.DrawTexture(noteTexture, octaveRect, octaveColor, Rect, false, false);
+                if (octaveRect.Y < Rect.Y)
+                {
+                    octaveRect.H -= Rect.Y - octaveRect.Y;
+                    octaveRect.Y = Rect.Y;
+                }
+                CBase.Drawing.DrawRect(octaveColor, octaveRect, false);
                 octaveRect.Y = octaveRect.Y - 2 * octaveRect.H;
             }
             while (octaveRect.Y + octaveRect.H > Rect.Y);
+        }
+
+        private void _DrawScaleLines(SColorF accidentalsColor)
+        {
+            int note = _SongBaseLine;
+            while (note < 0)
+            {
+                note += 12;
+            }
+            note = note % 12;
+
+            SRectF accidentalsRect = Rect;
+            accidentalsRect.H = _SemiToneHeight;
+            accidentalsRect.Y = Rect.Y + Rect.H - (.5f * accidentalsRect.H);
+
+            do
+            {
+                if (_AccidentalNotes.IndexOf(note) != -1)
+                {
+                    CTextureRef noteTexture = CBase.Themes.GetSkinTexture(_Theme.SkinFreeStyle, _PartyModeID);
+                    CBase.Drawing.DrawTexture(noteTexture, accidentalsRect, accidentalsColor, Rect, false, false);
+                }
+                accidentalsRect.Y -= accidentalsRect.H;
+                note++;
+                if (note >= 12)
+                {
+                    note = 0;
+                }
+            }
+            while (accidentalsRect.Y + accidentalsRect.H > Rect.Y);
         }
 
         private void _DrawToneHelper(CSongLine line)
