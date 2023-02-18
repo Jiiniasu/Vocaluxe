@@ -188,6 +188,7 @@ namespace VocaluxeLib
     {
 #if WIN
         DirectSound,
+        PortAudioASIO,
 #endif
         PortAudio
     }
