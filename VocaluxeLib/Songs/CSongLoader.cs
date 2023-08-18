@@ -567,6 +567,7 @@ namespace VocaluxeLib.Songs
                             case ':':
                             case '*':
                             case 'F':
+                            case 'R':
                                 string[] noteData = line.Split(splitChars, 4);
                                 if (noteData.Length < 4)
                                 {
@@ -616,6 +617,8 @@ namespace VocaluxeLib.Songs
                                         noteType = ENoteType.Golden;
                                     else if (tag.Equals('F'))
                                         noteType = ENoteType.Freestyle;
+                                    else if (tag.Equals('R'))
+                                        noteType = ENoteType.Freestyle; //Treat rap notes as Freestyle for now.
                                     else
                                         noteType = ENoteType.Normal;
 
