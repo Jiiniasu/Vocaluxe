@@ -32,6 +32,7 @@ namespace VocaluxeLib.Game
                 for (int player = 0; player < players.Length; player++)
                 {
                     _Rounds[round, player].ProfileID = players[player].ProfileID;
+                    _Rounds[round, player].Difficulty = players[player].Difficulty;
                     _Rounds[round, player].Points = 0f;
                     _Rounds[round, player].PointsGoldenNotes = 0f;
                     _Rounds[round, player].PointsLineBonus = 0f;
@@ -48,6 +49,7 @@ namespace VocaluxeLib.Game
             {
                 _Rounds[round, player].SongID = songID;
                 _Rounds[round, player].VoiceNr = players[player].VoiceNr;
+                _Rounds[round, player].Difficulty = players[player].Difficulty;
                 _Rounds[round, player].Points = players[player].Points;
                 _Rounds[round, player].PointsGoldenNotes = players[player].PointsGoldenNotes;
                 _Rounds[round, player].PointsLineBonus = players[player].PointsLineBonus;
@@ -83,6 +85,7 @@ namespace VocaluxeLib.Game
                 players[p].PointsLineBonus = _Rounds[round, p].PointsLineBonus;
                 players[p].SongID = _Rounds[round, p].SongID;
                 players[p].VoiceNr = _Rounds[round, p].VoiceNr;
+                players[p].Difficulty = _Rounds[round, p].Difficulty;
                 players[p].GameMode = _Rounds[round, p].GameMode;
                 players[p].DateTicks = _Rounds[round, p].DateTicks;
                 players[p].SongFinished = _Rounds[round, p].SongFinished;

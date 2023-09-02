@@ -342,6 +342,7 @@ namespace VocaluxeLib
     public struct SPlayer
     {
         public Guid ProfileID;
+        public EGameDifficulty Difficulty;
         public double Points;
         public double PointsLineBonus;
         public double PointsGoldenNotes;

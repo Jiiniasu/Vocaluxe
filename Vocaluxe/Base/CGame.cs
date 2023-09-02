@@ -305,7 +305,7 @@ namespace Vocaluxe.Base
 #endif
 
                         Players[p].NoteDiff = Math.Abs(tone - tonePlayer);
-                        bool hit = Players[p].NoteDiff <= (2 - (int)CProfiles.GetDifficulty(Players[p].ProfileID));
+                        bool hit = Players[p].NoteDiff <= (2 - (int)Players[p].Difficulty);
 
                         if (hit)
                         {

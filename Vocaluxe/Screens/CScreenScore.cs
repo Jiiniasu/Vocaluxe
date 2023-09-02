@@ -466,10 +466,10 @@ namespace Vocaluxe.Screens
                 if (CGame.NumPlayers < (int)_ScreenSettings[_ScreenSettingShortDifficulty].GetValue())
                 {
                     _Texts[_PlayerTextDifficulty[p]].Text = CLanguage.Translate("TR_SCREENSCORE_GAMEDIFFICULTY") + ": " +
-                                                                            CLanguage.Translate(CProfiles.GetDifficulty(players[p].ProfileID).ToString());
+                                                                            CLanguage.Translate(players[p].Difficulty.ToString());
                 }
                 else
-                    _Texts[_PlayerTextDifficulty[p]].Text = CLanguage.Translate(CProfiles.GetDifficulty(players[p].ProfileID).ToString());
+                    _Texts[_PlayerTextDifficulty[p]].Text = CLanguage.Translate(players[p].Difficulty.ToString());
                 if (CGame.NumPlayers < (int)_ScreenSettings[_ScreenSettingShortRating].GetValue())
                 {
                     _Texts[_PlayerTextRating[p]].Text = CLanguage.Translate("TR_SCREENSCORE_RATING") + ": " +
@@ -650,7 +650,6 @@ namespace Vocaluxe.Screens
                     {
                         if (CConfig.UseCloudServer)
                         {
-                            players[p].NoteDiff = (int)CProfiles.GetDifficulty(players[p].ProfileID);
                             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(players[p].SongID).DataBaseSongID, Data = players[p] });
 
                             var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -663,6 +662,13 @@ namespace Vocaluxe.Screens
                             CGame.NewEntryIDs.Add(CDataBase.AddScore(players[p]));
                         }
                     }
+                }
+
+                if (CConfig.UseCloudServer)
+                {
+                    string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(players[0].SongID).DataBaseSongID, Scores = JsonConvert.SerializeObject(players) });
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    _Client.PostAsync(CConfig.CloudServerURL + "/api/putRound", content);
                 }
             }
         }

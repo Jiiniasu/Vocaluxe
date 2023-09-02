@@ -198,7 +198,7 @@ namespace Vocaluxe.Lib.Database
                 {
                     int dataBaseSongID = CSongs.GetSong(player.SongID).DataBaseSongID;
                     return _AddScore(CProfiles.GetPlayerName(player.ProfileID), (int)Math.Round(player.Points), player.VoiceNr, player.DateTicks, medley,
-                                     duet, shortSong, (int)CProfiles.GetDifficulty(player.ProfileID), dataBaseSongID, command);
+                                     duet, shortSong, (int)player.Difficulty, dataBaseSongID, command);
                 }
             }
         }
