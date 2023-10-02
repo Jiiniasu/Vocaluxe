@@ -26,6 +26,7 @@ using VocaluxeLib.Game;
 using VocaluxeLib.Menu;
 using VocaluxeLib.Songs;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using System.Text;
 
@@ -644,34 +645,32 @@ namespace Vocaluxe.Screens
             {
                 SPlayer[] players = _Points.GetPlayer(round, CGame.NumPlayers);
 
-                for (int p = 0; p < players.Length; p++)
-                {
-                    if (players[p].Points > CSettings.MinScoreForDB && players[p].SongFinished && !CProfiles.IsGuestProfile(players[p].ProfileID))
-                    {
-                        if (CConfig.UseCloudServer)
-                        {
-                            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(players[p].SongID).DataBaseSongID, Data = players[p] });
-
-                            var content = new StringContent(json, Encoding.UTF8, "application/json");
-                            var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/putScore", content).Result.Content;
-                            string responseString = response.ReadAsStringAsync().Result;
-                            CGame.NewEntryIDs.Add(JsonConvert.DeserializeObject<SDBScoreEntry>(responseString).ID);
-                        }
-                        else
-                        {
-                            CGame.NewEntryIDs.Add(CDataBase.AddScore(players[p]));
-                        }
-                    }
-                }
+                string roundId = "-1";
 
                 if (CConfig.UseCloudServer)
                 {
-                    string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(players[0].SongID).DataBaseSongID, Scores = JsonConvert.SerializeObject(players) });
+                    string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(players[0].SongID).DataBaseSongID, SongFinished = players[0].SongFinished, Scores = JsonConvert.SerializeObject(players) });
                     var content = new StringContent(json, Encoding.UTF8, "application/json");
-                    _Client.PostAsync(CConfig.CloudServerURL + "/api/putRound", content);
+                    var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/putRound", content).Result.Content;
+                    roundId = JObject.Parse(response.ReadAsStringAsync().Result)["id"].ToString();
+                }
+
+                for (int p = 0; p < players.Length; p++)
+                {
+                    if (CConfig.UseCloudServer)
+                    {
+                        string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(players[p].SongID).DataBaseSongID, RoundID = roundId, Data = players[p] });
+
+                        var content = new StringContent(json, Encoding.UTF8, "application/json");
+                        var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/putScore", content).Result.Content;
+                        CGame.NewEntryIDs.Add(JsonConvert.DeserializeObject<SDBScoreEntry>(response.ReadAsStringAsync().Result).ID);
+                    }
+                    else
+                    {
+                        CGame.NewEntryIDs.Add(CDataBase.AddScore(players[p]));
+                    }
                 }
             }
         }
-
     }
 }
