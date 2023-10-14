@@ -61,7 +61,7 @@ namespace Vocaluxe.Base
             public List<string> Genres { get; set; }
             public string Album { get; set; }
             public string Year { get; set; }
-            public int DataBaseSongId { get; set; }
+            public int DataBaseSongID { get; set; }
             public int NumPlayed { get; set; }
             public System.DateTime DateAdded { get; set; }
             public int NewToCloud { get; set; }
@@ -410,7 +410,7 @@ namespace Vocaluxe.Base
                         CloudSong[] CloudSongs = JsonConvert.DeserializeObject<CloudSong[]>(responseString);
                         for (int i = 0; i < CloudSongs.Length; i++)
                         {
-                            _Songs[i].DataBaseSongID = CloudSongs[i].DataBaseSongId;
+                            _Songs[i].DataBaseSongID = CloudSongs[i].DataBaseSongID;
                             _Songs[i].NumPlayed = CloudSongs[i].NumPlayed;
                             _Songs[i].DateAdded = CloudSongs[i].DateAdded;
 
