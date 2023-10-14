@@ -516,16 +516,4 @@ namespace Vocaluxe
             return true;
         }
     }
-    
-    class EventMessage
-    {
-        [JsonProperty("function")]
-        public string function { get; set; }
-
-        [JsonProperty("data")]
-        public string data { get; set; }
-
-        [JsonProperty("songId")]
-        public int songID { get; set; }
-    }
 }

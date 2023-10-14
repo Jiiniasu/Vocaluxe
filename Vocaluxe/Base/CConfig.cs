@@ -178,6 +178,7 @@ namespace Vocaluxe.Base
             [DefaultValue(0.1f)] public float MinLineBreakTime; //Minimum time to show the text before it is (to be) sung (if possible)
             [DefaultValue(EOffOn.TR_CONFIG_OFF)] public EOffOn UseCloudServer;
             public string CloudServerURL;
+            public string CloudServerWebsocketURI;
             public string CloudServerKey;
             [XmlArrayItem("Player"), XmlArray] public string[] Players;
             [DefaultValue(EHighscoreStyle.TR_CONFIG_HIGHSCORE_LIST_BEST)] public EHighscoreStyle HighscoreStyle;
@@ -360,6 +361,11 @@ namespace Vocaluxe.Base
         public static string CloudServerURL
         {
             get { return Config.Game.CloudServerURL; }
+        }
+
+        public static string CloudServerWebsocketURI
+        {
+            get { return Config.Game.CloudServerWebsocketURI; }
         }
         public static string CloudServerKey
         {
@@ -546,6 +552,8 @@ namespace Vocaluxe.Base
                     return "Use cloud server for player and high score data: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
                 case "CloudServerURL":
                     return "URL for cloud server";
+                case "CloudServerWebsocketURI":
+                    return "Websocket URI for cloud server";
                 case "CloudServerKey":
                     return "API key for cloud server";
                 case "Players":
