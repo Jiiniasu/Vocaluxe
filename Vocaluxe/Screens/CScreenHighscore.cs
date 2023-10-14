@@ -19,9 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Windows.Forms;
-using Newtonsoft.Json;
 using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Game;
@@ -225,14 +223,8 @@ namespace Vocaluxe.Screens
                 EHighscoreStyle style = CBase.Config.GetHighscoreStyle();
                 if (CConfig.UseCloudServer)
                 {
-                    string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(CGame.GetSong(round).ID).DataBaseSongID, GameMode = gameMode, Style = style });
-
-                    var content = new StringContent(json, Encoding.UTF8, "application/json");
-                    var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/getHighScores", content).Result.Content;
-                    string responseString = response.ReadAsStringAsync().Result;
                     _Scores[round] = new List<SDBScoreEntry>();
-                    SDBScoreEntry[] cloudScores = JsonConvert.DeserializeObject<SDBScoreEntry[]>(responseString);
-                    foreach (SDBScoreEntry scoreEntry in cloudScores)
+                    foreach (SDBScoreEntry scoreEntry in CCloud.getHighScores(CSongs.GetSong(CGame.GetSong(round).ID).DataBaseSongID, gameMode, style))
                     {
                         _Scores[round].Add(scoreEntry);
                     }

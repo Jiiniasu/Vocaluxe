@@ -30,7 +30,6 @@ using Vocaluxe.Base.Server;
 using Vocaluxe.Base.ThemeSystem;
 using Vocaluxe.Reporting;
 using VocaluxeLib.Log;
-using System.Net;
 using Newtonsoft.Json;
 
 [assembly: InternalsVisibleTo("VocaluxeTests")]
@@ -45,9 +44,7 @@ namespace Vocaluxe
 
     static class CMainProgram
     {
-        public static bool PauseSong;
-        public static bool StopSong;
-        public static bool RestartSong;
+        
 
         private static CSplashScreen _SplashScreen;
 
@@ -283,6 +280,16 @@ namespace Vocaluxe
                     }
 
                     Application.DoEvents();
+
+                    // Init Cloud Communication
+                    if (CConfig.UseCloudServer)
+                    {
+                        using (CBenchmark.Time("Init Cloud Communication"))
+                        {
+                            CCloud.Init();
+                        }
+                    }
+
                     //Only reasonable point to call GC.Collect() because initialization may cause lots of garbage
                     //Rely on GC doing its job afterwards and call Dispose methods where appropriate
                     GC.Collect();
@@ -301,66 +308,6 @@ namespace Vocaluxe
             // Start Main Loop
             if (_SplashScreen != null)
                 _SplashScreen.Close();
-
-            if (CConfig.UseCloudServer)
-            {
-                using (WebClient wc = new WebClient())
-                {
-                    Uri uri = new Uri(CConfig.CloudServerURL + "/eventstream/?Key=" + CConfig.CloudServerKey);
-                    wc.OpenReadCompleted += (object sender, OpenReadCompletedEventArgs e) =>
-                    {
-                        var sr = new StreamReader(e.Result);
-
-                        while (!sr.EndOfStream)
-                        {
-                            String data = sr.ReadLine();
-                            Console.WriteLine(data);
-                            EventMessage message = JsonConvert.DeserializeObject<EventMessage>(data);
-                            if (message != null)
-                            {
-                                switch (message.function)
-                                {
-                                    case "ping":
-                                        // Do nothing for now, maybe complain and restart connection if we havn't received one in 10 seconds?
-                                        break;
-                                    case "previewSong":
-                                        CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, message.songID);
-                                        break;
-                                    case "startSong":
-                                        if (CGraphics.CurrentScreen.GetType() != typeof(Screens.CScreenSing))
-                                        {
-                                            StopSong = false;
-                                            System.Threading.Thread.Sleep(1000);
-                                            if (CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, message.songID))
-                                            {
-                                                System.Threading.Thread.Sleep(5000);
-                                            }
-                                            CCloud.AssignPlayersFromCloud();
-                                            CVocaluxeServer.DoTask(CVocaluxeServer.StartSong, message.songID);
-                                            System.Threading.Thread.Sleep(1000);
-                                        }
-                                        break;
-                                    case "togglePause":
-                                        PauseSong = !PauseSong;
-                                        break;
-                                    case "stopSong":
-                                        StopSong = true;
-                                        break;
-                                    case "restartSong":
-                                        RestartSong = true;
-                                        break;
-                                    default:
-                                        break;
-
-                                }
-                            }
-                        }
-                        sr.Close();
-                        wc.OpenReadAsync(uri);
-                    };
-                    wc.OpenReadAsync(uri);
-                }
-            }
 
             CDraw.MainLoop();
         }

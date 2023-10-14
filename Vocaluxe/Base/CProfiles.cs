@@ -21,11 +21,9 @@ using System.Linq;
 using System.Drawing;
 using System.IO;
 using System.Net.Http;
-using System.Text;
 using System.Text.RegularExpressions;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
-using Newtonsoft.Json;
 using VocaluxeLib.Log;
 using VocaluxeLib.Profile;
 
@@ -525,7 +523,7 @@ namespace Vocaluxe.Base
         #endregion avatar texture
 
         #region private methods
-        private async static void _LoadProfiles()
+        private static void _LoadProfiles()
         {
             _Profiles = new Dictionary<Guid, CProfile>();
 
@@ -533,13 +531,7 @@ namespace Vocaluxe.Base
 
             if (CConfig.UseCloudServer)
             {
-                string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey });
-
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/getProfiles", content).Result.Content;
-                string responseString = response.ReadAsStringAsync().Result;
-                CProfile[] CloudProfiles = JsonConvert.DeserializeObject<CProfile[]>(responseString);
-                foreach (CProfile profile in CloudProfiles)
+                foreach (CProfile profile in CCloud.getProfiles())
                 {
                      _Profiles.Add(profile.ID, profile);
                 }
@@ -667,16 +659,9 @@ namespace Vocaluxe.Base
 
             if (CConfig.UseCloudServer)
             {
-
-                string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, AvatarId = fileName });
-
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/getAvatar", content).Result.Content;
-                byte[] responseString = response.ReadAsByteArrayAsync().Result;
-
                 try
                 {
-                    Image imageData = Image.FromStream(new MemoryStream(responseString));
+                    Image imageData = CCloud.getAvatar(fileName);
 
                     imageData.Save(CHelper.GetUniqueFileName(CConfig.ProfileFolders[0], fileName));
 

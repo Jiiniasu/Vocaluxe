@@ -225,13 +225,13 @@ namespace Vocaluxe.Screens
                 {
                     case Keys.Escape:
                         _TogglePause();
-                        if ( CMainProgram.PauseSong)
+                        if ( CCloud.PauseSong)
                             _SelectElement(_Buttons[_ButtonCancel]);
                         break;
 
                     case Keys.P:
                         _TogglePause();
-                        if ( CMainProgram.PauseSong)
+                        if ( CCloud.PauseSong)
                             _SelectElement(_Buttons[_ButtonContinue]);
                         break;
 
@@ -264,7 +264,7 @@ namespace Vocaluxe.Screens
                         }
                         break;
                     case Keys.Enter:
-                        if ( CMainProgram.PauseSong)
+                        if ( CCloud.PauseSong)
                         {
                             if (_Buttons[_ButtonContinue].Selected)
                                 _SetPause(false);
@@ -307,14 +307,14 @@ namespace Vocaluxe.Screens
             if (mouseEvent.RB)
             {
                 _TogglePause();
-                if ( CMainProgram.PauseSong)
+                if ( CCloud.PauseSong)
                     _SelectElement(_Buttons[_ButtonContinue]);
             }
 
-            if (mouseEvent.LB && ! CMainProgram.PauseSong)
+            if (mouseEvent.LB && ! CCloud.PauseSong)
                 _TogglePause();
 
-            if (mouseEvent.LB && _IsMouseOverCurSelection(mouseEvent) &&  CMainProgram.PauseSong)
+            if (mouseEvent.LB && _IsMouseOverCurSelection(mouseEvent) &&  CCloud.PauseSong)
             {
                 if (_Buttons[_ButtonContinue].Selected)
                     _SetPause(false);
@@ -412,20 +412,20 @@ namespace Vocaluxe.Screens
         public override bool UpdateGame()
         {
 
-            if (CMainProgram.StopSong)
+            if (CCloud.StopSong)
             {
-                CMainProgram.StopSong = false;
+                CCloud.StopSong = false;
                 _Stop();
             }
-            if ( CMainProgram.PauseSong != _PreviousPause)
+            if ( CCloud.PauseSong != _PreviousPause)
             {
-                _SetPause(CMainProgram.PauseSong);
+                _SetPause(CCloud.PauseSong);
             }
 
-            if (CMainProgram.RestartSong)
+            if (CCloud.RestartSong)
             {
                 _SetPause(false);
-                CMainProgram.RestartSong = false;
+                CCloud.RestartSong = false;
                 _RestartRound();
             }
 
@@ -1068,28 +1068,28 @@ namespace Vocaluxe.Screens
         }
         public void _TogglePause()
         {
-            _SetPause(!CMainProgram.PauseSong);
+            _SetPause(!CCloud.PauseSong);
         }
 
         private void _SetPause(bool paused)
         {
-             CMainProgram.PauseSong = paused;
+             CCloud.PauseSong = paused;
 
             _PreviousPause = paused;
 
             foreach (String s in _StaticsPause)
-                _Statics[s].Visible =  CMainProgram.PauseSong;
+                _Statics[s].Visible =  CCloud.PauseSong;
 
             foreach (String s in _TextsPause)
-                _Texts[s].Visible =  CMainProgram.PauseSong;
+                _Texts[s].Visible =  CCloud.PauseSong;
 
-            _Buttons[_ButtonCancel].Visible =  CMainProgram.PauseSong;
-            _Buttons[_ButtonContinue].Visible =  CMainProgram.PauseSong;
-            _Buttons[_ButtonSkip].Visible =  CMainProgram.PauseSong && CGame.NumRounds > CGame.RoundNr && CGame.NumRounds > 1;
-            _Buttons[_ButtonRestartGame].Visible =  CMainProgram.PauseSong;
-            _Buttons[_ButtonRestartRound].Visible =  CMainProgram.PauseSong && CGame.NumRounds > 1;
+            _Buttons[_ButtonCancel].Visible =  CCloud.PauseSong;
+            _Buttons[_ButtonContinue].Visible =  CCloud.PauseSong;
+            _Buttons[_ButtonSkip].Visible =  CCloud.PauseSong && CGame.NumRounds > CGame.RoundNr && CGame.NumRounds > 1;
+            _Buttons[_ButtonRestartGame].Visible =  CCloud.PauseSong;
+            _Buttons[_ButtonRestartRound].Visible =  CCloud.PauseSong && CGame.NumRounds > 1;
 
-            if ( CMainProgram.PauseSong)
+            if ( CCloud.PauseSong)
                 CSound.Pause(_CurrentStream);
             else
                 CSound.Play(_CurrentStream);

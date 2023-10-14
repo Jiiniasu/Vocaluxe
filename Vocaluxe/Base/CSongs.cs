@@ -23,10 +23,8 @@ using System.Threading;
 using System.IO;
 using System.Threading.Tasks;
 using System.Net.Http;
-using System.Text;
 using System.Drawing;
 using System.Drawing.Imaging;
-using Newtonsoft.Json;
 using VocaluxeLib;
 using VocaluxeLib.Log;
 using VocaluxeLib.Songs;
@@ -52,20 +50,6 @@ namespace Vocaluxe.Base
         public static event CategoryChangedHandler OnCategoryChanged;
 
         private static readonly HttpClient _Client = new HttpClient();
-
-        private class CloudSong
-        {
-            public string Artist { get; set; }
-            public string Title { get; set; }
-            public List<string> Editions { get; set; }
-            public List<string> Genres { get; set; }
-            public string Album { get; set; }
-            public string Year { get; set; }
-            public int DataBaseSongID { get; set; }
-            public int NumPlayed { get; set; }
-            public System.DateTime DateAdded { get; set; }
-            public int NewToCloud { get; set; }
-        }
 
         public static List<CSong> Songs
         {
@@ -402,12 +386,7 @@ namespace Vocaluxe.Base
                         {
                             songs.Add(new CloudSong { Artist = song.Artist, Title = song.Title, Editions = song.Editions, Genres = song.Genres, Album = song.Album, Year = song.Year });
                         }
-                        string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, Data = songs });
-
-                        var content = new StringContent(json, Encoding.UTF8, "application/json");
-                        var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/loadSongs", content).Result.Content;
-                        string responseString = response.ReadAsStringAsync().Result;
-                        CloudSong[] CloudSongs = JsonConvert.DeserializeObject<CloudSong[]>(responseString);
+                        CloudSong[] CloudSongs = CCloud.loadSongs(songs);
                         for (int i = 0; i < CloudSongs.Length; i++)
                         {
                             _Songs[i].DataBaseSongID = CloudSongs[i].DataBaseSongID;
@@ -420,15 +399,13 @@ namespace Vocaluxe.Base
                                 MemoryStream ms = new MemoryStream();
                                 image.Save(ms, image.RawFormat);
                                 var imgguid = image.RawFormat.Guid;
-                                string Format = "image/unknown";
+                                string format = "image/unknown";
                                 foreach (ImageCodecInfo codec in ImageCodecInfo.GetImageDecoders())
                                 {
                                     if (codec.FormatID == imgguid)
-                                        Format = codec.MimeType;
+                                        format = codec.MimeType;
                                 }                                
-                                json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, _Songs[i].DataBaseSongID, Data = Convert.ToBase64String(ms.ToArray()), Format});
-                                content = new StringContent(json, Encoding.UTF8, "application/json");
-                                response = _Client.PostAsync(CConfig.CloudServerURL + "/api/putCover", content).Result.Content;
+                                CCloud.putCover(_Songs[i].DataBaseSongID, Convert.ToBase64String(ms.ToArray()), format);
                             }
                         }
                     }
