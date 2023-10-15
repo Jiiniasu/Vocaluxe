@@ -1183,5 +1183,490 @@ namespace VocaluxeLib.Log
     
             #endregion
         }
+
+        [SuppressMessage("ReSharper", "MemberHidesStaticFromOuterClass")]
+        public static class CCloudLog
+        {
+
+            #region Verbose functions
+
+            /// <summary>
+            /// Write an event with the Verbose level to the Verbose log.
+            /// </summary>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Verbose(string messageTemplate, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    _CloudLog.Verbose(messageTemplate);
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Verbose level with additional propertyValues to the Verbose log.
+            /// </summary>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="propertyValues">Data inserted into the message template.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Verbose(string messageTemplate, object[] propertyValues, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    int usedPropertiesCount = _PropertiesRegex.Matches(messageTemplate).Cast<Match>().Select(m => m.Value).Distinct().Count();
+
+                    if (propertyValues.Length > usedPropertiesCount)
+                    {
+                        using (LogContext.PushProperty("AdditionalData", propertyValues.Skip(usedPropertiesCount)))
+                        {
+                            _CloudLog.Verbose(messageTemplate, propertyValues);
+                        }
+                    }
+                    else
+                    {
+                        _CloudLog.Verbose(messageTemplate, propertyValues);
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Verbose level and associated exception to the Verbose log.
+            /// </summary>
+            /// <param name="exception">Exception of this event.</param>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Verbose(Exception exception, string messageTemplate, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    _CloudLog.Verbose(exception, messageTemplate);
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Verbose level with additional propertyValues and associated exception to the Verbose log.
+            /// </summary>
+            /// <param name="exception">Exception of this event.</param>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="propertyValues">Data inserted into the message template.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Verbose(Exception exception, string messageTemplate, object[] propertyValues, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    int usedPropertiesCount = _PropertiesRegex.Matches(messageTemplate).Cast<Match>().Select(m => m.Value).Distinct().Count();
+
+                    if (propertyValues.Length > usedPropertiesCount)
+                    {
+                        using (LogContext.PushProperty("AdditionalData", propertyValues.Skip(usedPropertiesCount)))
+                        {
+                            _CloudLog.Verbose(exception, messageTemplate, propertyValues);
+                        }
+                    }
+                    else
+                    {
+                        _CloudLog.Verbose(exception, messageTemplate, propertyValues);
+                    }
+                }
+            }
+
+            #endregion
+
+            #region Debug functions
+
+            /// <summary>
+            /// Write an event with the Debug level to the Debug log.
+            /// </summary>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Debug(string messageTemplate, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    _CloudLog.Debug(messageTemplate);
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Debug level with additional propertyValues to the Debug log.
+            /// </summary>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="propertyValues">Data inserted into the message template.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Debug(string messageTemplate, object[] propertyValues, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    int usedPropertiesCount = _PropertiesRegex.Matches(messageTemplate).Cast<Match>().Select(m => m.Value).Distinct().Count();
+
+                    if (propertyValues.Length > usedPropertiesCount)
+                    {
+                        using (LogContext.PushProperty("AdditionalData", propertyValues.Skip(usedPropertiesCount)))
+                        {
+                            _CloudLog.Debug(messageTemplate, propertyValues);
+                        }
+                    }
+                    else
+                    {
+                        _CloudLog.Debug(messageTemplate, propertyValues);
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Debug level and associated exception to the Debug log.
+            /// </summary>
+            /// <param name="exception">Exception of this event.</param>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Debug(Exception exception, string messageTemplate, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    _CloudLog.Debug(exception, messageTemplate);
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Debug level with additional propertyValues and associated exception to the Debug log.
+            /// </summary>
+            /// <param name="exception">Exception of this event.</param>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="propertyValues">Data inserted into the message template.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Debug(Exception exception, string messageTemplate, object[] propertyValues, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    int usedPropertiesCount = _PropertiesRegex.Matches(messageTemplate).Cast<Match>().Select(m => m.Value).Distinct().Count();
+
+                    if (propertyValues.Length > usedPropertiesCount)
+                    {
+                        using (LogContext.PushProperty("AdditionalData", propertyValues.Skip(usedPropertiesCount)))
+                        {
+                            _CloudLog.Debug(exception, messageTemplate, propertyValues);
+                        }
+                    }
+                    else
+                    {
+                        _CloudLog.Debug(exception, messageTemplate, propertyValues);
+                    }
+                }
+            }
+
+            #endregion
+
+            #region Information functions
+
+            /// <summary>
+            /// Write an event with the Information level to the Information log.
+            /// </summary>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Information(string messageTemplate, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    _CloudLog.Information(messageTemplate);
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Information level with additional propertyValues to the Information log.
+            /// </summary>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="propertyValues">Data inserted into the message template.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Information(string messageTemplate, object[] propertyValues, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    int usedPropertiesCount = _PropertiesRegex.Matches(messageTemplate).Cast<Match>().Select(m => m.Value).Distinct().Count();
+
+                    if (propertyValues.Length > usedPropertiesCount)
+                    {
+                        using (LogContext.PushProperty("AdditionalData", propertyValues.Skip(usedPropertiesCount)))
+                        {
+                            _CloudLog.Information(messageTemplate, propertyValues);
+                        }
+                    }
+                    else
+                    {
+                        _CloudLog.Information(messageTemplate, propertyValues);
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Information level and associated exception to the Information log.
+            /// </summary>
+            /// <param name="exception">Exception of this event.</param>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Information(Exception exception, string messageTemplate, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    _CloudLog.Information(exception, messageTemplate);
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Information level with additional propertyValues and associated exception to the Information log.
+            /// </summary>
+            /// <param name="exception">Exception of this event.</param>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="propertyValues">Data inserted into the message template.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Information(Exception exception, string messageTemplate, object[] propertyValues, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    int usedPropertiesCount = _PropertiesRegex.Matches(messageTemplate).Cast<Match>().Select(m => m.Value).Distinct().Count();
+
+                    if (propertyValues.Length > usedPropertiesCount)
+                    {
+                        using (LogContext.PushProperty("AdditionalData", propertyValues.Skip(usedPropertiesCount)))
+                        {
+                            _CloudLog.Information(exception, messageTemplate, propertyValues);
+                        }
+                    }
+                    else
+                    {
+                        _CloudLog.Information(exception, messageTemplate, propertyValues);
+                    }
+                }
+            }
+
+            #endregion
+
+            #region Warning functions
+
+            /// <summary>
+            /// Write an event with the Warning level to the Warning log.
+            /// </summary>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Warning(string messageTemplate, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    _CloudLog.Warning(messageTemplate);
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Warning level with additional propertyValues to the Warning log.
+            /// </summary>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="propertyValues">Data inserted into the message template.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Warning(string messageTemplate, object[] propertyValues, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    int usedPropertiesCount = _PropertiesRegex.Matches(messageTemplate).Cast<Match>().Select(m => m.Value).Distinct().Count();
+
+                    if (propertyValues.Length > usedPropertiesCount)
+                    {
+                        using (LogContext.PushProperty("AdditionalData", propertyValues.Skip(usedPropertiesCount)))
+                        {
+                            _CloudLog.Warning(messageTemplate, propertyValues);
+                        }
+                    }
+                    else
+                    {
+                        _CloudLog.Warning(messageTemplate, propertyValues);
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Warning level and associated exception to the Warning log.
+            /// </summary>
+            /// <param name="exception">Exception of this event.</param>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Warning(Exception exception, string messageTemplate, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    _CloudLog.Warning(exception, messageTemplate);
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Warning level with additional propertyValues and associated exception to the Warning log.
+            /// </summary>
+            /// <param name="exception">Exception of this event.</param>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="propertyValues">Data inserted into the message template.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Warning(Exception exception, string messageTemplate, object[] propertyValues, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    int usedPropertiesCount = _PropertiesRegex.Matches(messageTemplate).Cast<Match>().Select(m => m.Value).Distinct().Count();
+
+                    if (propertyValues.Length > usedPropertiesCount)
+                    {
+                        using (LogContext.PushProperty("AdditionalData", propertyValues.Skip(usedPropertiesCount)))
+                        {
+                            _CloudLog.Warning(exception, messageTemplate, propertyValues);
+                        }
+                    }
+                    else
+                    {
+                        _CloudLog.Warning(exception, messageTemplate, propertyValues);
+                    }
+                }
+            }
+
+            #endregion
+
+            #region Error functions
+
+            /// <summary>
+            /// Write an event with the Error level to the Error log.
+            /// </summary>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Error(string messageTemplate, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    _CloudLog.Error(messageTemplate);
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Error level with additional propertyValues to the Error log.
+            /// </summary>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="propertyValues">Data inserted into the message template.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Error(string messageTemplate, object[] propertyValues, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    int usedPropertiesCount = _PropertiesRegex.Matches(messageTemplate).Cast<Match>().Select(m => m.Value).Distinct().Count();
+
+                    if (propertyValues.Length > usedPropertiesCount)
+                    {
+                        using (LogContext.PushProperty("AdditionalData", propertyValues.Skip(usedPropertiesCount)))
+                        {
+                            _CloudLog.Error(messageTemplate, propertyValues);
+                        }
+                    }
+                    else
+                    {
+                        _CloudLog.Error(messageTemplate, propertyValues);
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Error level and associated exception to the Error log.
+            /// </summary>
+            /// <param name="exception">Exception of this event.</param>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Error(Exception exception, string messageTemplate, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    _CloudLog.Error(exception, messageTemplate);
+                }
+            }
+
+            /// <summary>
+            /// Write an event with the Error level with additional propertyValues and associated exception to the Error log.
+            /// </summary>
+            /// <param name="exception">Exception of this event.</param>
+            /// <param name="messageTemplate">Message template for this event.</param>
+            /// <param name="propertyValues">Data inserted into the message template.</param>
+            /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
+            /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+            [MessageTemplateFormatMethod("messageTemplate")]
+            public static void Error(Exception exception, string messageTemplate, object[] propertyValues, [CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+            {
+                using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer }))
+                {
+                    int usedPropertiesCount = _PropertiesRegex.Matches(messageTemplate).Cast<Match>().Select(m => m.Value).Distinct().Count();
+
+                    if (propertyValues.Length > usedPropertiesCount)
+                    {
+                        using (LogContext.PushProperty("AdditionalData", propertyValues.Skip(usedPropertiesCount)))
+                        {
+                            _CloudLog.Error(exception, messageTemplate, propertyValues);
+                        }
+                    }
+                    else
+                    {
+                        _CloudLog.Error(exception, messageTemplate, propertyValues);
+                    }
+                }
+            }
+
+            #endregion
+        }
     }
 }

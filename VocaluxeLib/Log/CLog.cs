@@ -33,6 +33,7 @@ namespace VocaluxeLib.Log
 
         private static ILogger _MainLog = new CSilentLogger();
         private static ILogger _SongLog = new CSilentLogger();
+        private static ILogger _CloudLog = new CSilentLogger();
         private static string _LogFolder;
         private static string _CrashMarkerFilePath;
         private static ShowReporterDelegate _ShowReporterFunc;
@@ -40,6 +41,7 @@ namespace VocaluxeLib.Log
 
         private const string _MainLogTemplate = "[{TimeStampFromStart}] [{Level}] {Message}{NewLine}{Properties}{NewLine}{Exception}";
         private const string _SongLogTemplate = "{Message}{NewLine}Additional info:{Properties}{NewLine}{Exception}";
+        private const string _CloudLogTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss}] {Message:l}{NewLine}";
 
         /// <summary>
         /// Initialize the logging framework.
@@ -51,7 +53,7 @@ namespace VocaluxeLib.Log
         /// <param name="currentVersion">The current version tag as it is displayed in the main menu.</param>
         /// <param name="showReporterFunc">Delegate to the function which should be called if the reporter have to been shown.</param>
         /// <param name="logLevel">The log level for log messages.</param>
-        public static void Init(string logFolder, string fileNameMainLog, string fileNameSongInfoLog, string fileNameCrashMarker, string currentVersion, ShowReporterDelegate showReporterFunc, ELogLevel logLevel)
+        public static void Init(string logFolder, string fileNameMainLog, string fileNameSongInfoLog, string fileNameCloudInfoLog, string fileNameCrashMarker, string currentVersion, ShowReporterDelegate showReporterFunc, ELogLevel logLevel)
         {
             _LogFolder = logFolder;
             _ShowReporterFunc = showReporterFunc;
@@ -65,6 +67,7 @@ namespace VocaluxeLib.Log
 
             var mainLogFilePath = Path.Combine(_LogFolder, fileNameMainLog);
             var songLogFilePath = Path.Combine(_LogFolder, fileNameSongInfoLog);
+            var cloudLogFilePath = Path.Combine(_LogFolder, fileNameCloudInfoLog);
 
             // Check if crash marker file
             if (File.Exists(_CrashMarkerFilePath))
@@ -97,6 +100,7 @@ namespace VocaluxeLib.Log
 
             CLogFileRoller.RollLogs(mainLogFilePath, 2);
             CLogFileRoller.RollLogs(songLogFilePath, 2);
+            CLogFileRoller.RollLogs(cloudLogFilePath, 2);
 
             _MainLog = new LoggerConfiguration()
                 .MinimumLevel.Is(logLevel.ToSerilogLogLevel())
@@ -121,6 +125,16 @@ namespace VocaluxeLib.Log
                     outputTemplate: _SongLogTemplate)
 #if DEBUG
                 .WriteTo.Console(outputTemplate: "[SongInfo] " + _SongLogTemplate)
+#endif
+                .CreateLogger();
+
+            _CloudLog = new LoggerConfiguration()
+                .MinimumLevel.Is(logLevel.ToSerilogLogLevel())
+                .WriteTo.File(cloudLogFilePath,
+                    flushToDiskInterval: TimeSpan.FromSeconds(60),
+                    outputTemplate: _CloudLogTemplate)
+#if DEBUG
+                .WriteTo.Console(outputTemplate: "[CloudInfo] " + _CloudLogTemplate)
 #endif
                 .CreateLogger();
 
@@ -149,6 +163,14 @@ namespace VocaluxeLib.Log
                 ILogger loggerToDispose = _SongLog;
 
                 _SongLog = new CSilentLogger();
+                (loggerToDispose as IDisposable)?.Dispose();
+            }
+
+            if (!(_CloudLog is CSilentLogger))
+            {
+                ILogger loggerToDispose = _CloudLog;
+
+                _CloudLog = new CSilentLogger();
                 (loggerToDispose as IDisposable)?.Dispose();
             }
 

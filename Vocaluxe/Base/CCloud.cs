@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Text;
 using Newtonsoft.Json;
-using System.Net;
 using System.Net.Http;
 using System.IO;
 using Vocaluxe.Base.Server;
 using VocaluxeLib;
+using VocaluxeLib.Log;
 using Newtonsoft.Json.Linq;
 using VocaluxeLib.Profile;
 using System.Drawing;
@@ -19,6 +19,7 @@ namespace Vocaluxe.Base
     static class CCloud
     {
         private static readonly HttpClient _Client = new HttpClient();
+        private static readonly ClientWebSocket _WebSocket = new ClientWebSocket();
         public static bool PauseSong;
         public static bool StopSong;
         public static bool RestartSong;
@@ -54,51 +55,47 @@ namespace Vocaluxe.Base
 
         public static async void Init()
         {
-            using (ClientWebSocket ws = new ClientWebSocket())
+            CLog.CCloudLog.Information("Connecting to websocket: {uri}", CLog.Params(CConfig.CloudServerWebsocketURI));
+            await _WebSocket.ConnectAsync(new Uri(CConfig.CloudServerWebsocketURI), CancellationToken.None);
+            CLog.CCloudLog.Information("Websocket status: {status}", CLog.Params(_WebSocket.State.ToString()));
+            await sendString(_WebSocket, "{\"event\":\"pusher:subscribe\",\"data\":{\"auth\":\"\",\"channel\":\"game-control\"}}", CancellationToken.None);
+            while (_WebSocket.State == WebSocketState.Open)
             {
-                Console.WriteLine("Connecting to websocket...");
-                await ws.ConnectAsync(new Uri(CConfig.CloudServerWebsocketURI), CancellationToken.None);
-                Console.WriteLine("Websocket status: " + ws.State.ToString());
-                await sendString(ws, "{\"event\":\"pusher:subscribe\",\"data\":{\"auth\":\"\",\"channel\":\"game-control\"}}", CancellationToken.None);
-                while (ws.State == WebSocketState.Open)
+                EventMessage message = JsonConvert.DeserializeObject<EventMessage>(await readString(_WebSocket));
+                CLog.CCloudLog.Information("Event \"{eventName}\" received with data: {data}", CLog.Params(message.eventName, message.data));
+                switch (message.eventName)
                 {
-                    EventMessage message = JsonConvert.DeserializeObject<EventMessage>(await readString(ws));
-                    Console.WriteLine("Received event: " + message.eventName);
-                    Console.WriteLine(message.data);
-                    switch (message.eventName)
-                    {
-                        case "previewSong":
-                            CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, JsonConvert.DeserializeObject<EventData>(message.data).id);
-                            break;
-                        case "startSong":
-                            if (CGraphics.CurrentScreen.GetType() != typeof(Screens.CScreenSing))
+                    case "previewSong":
+                        CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, JsonConvert.DeserializeObject<EventData>(message.data).id);
+                        break;
+                    case "startSong":
+                        if (CGraphics.CurrentScreen.GetType() != typeof(Screens.CScreenSing))
+                        {
+                            StopSong = false;
+                            System.Threading.Thread.Sleep(1000);
+                            if (CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, JsonConvert.DeserializeObject<EventData>(message.data).id))
                             {
-                                StopSong = false;
-                                System.Threading.Thread.Sleep(1000);
-                                if (CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, JsonConvert.DeserializeObject<EventData>(message.data).id))
-                                {
-                                    System.Threading.Thread.Sleep(5000);
-                                }
-                                CCloud.AssignPlayersFromCloud();
-                                CVocaluxeServer.DoTask(CVocaluxeServer.StartSong, JsonConvert.DeserializeObject<EventData>(message.data).id);
-                                System.Threading.Thread.Sleep(1000);
+                                System.Threading.Thread.Sleep(5000);
                             }
-                            break;
-                        case "togglePause":
-                            PauseSong = !PauseSong;
-                            break;
-                        case "stopSong":
-                            StopSong = true;
-                            break;
-                        case "restartSong":
-                            RestartSong = true;
-                            break;
-                        default:
-                            break;
-                    }
+                            CCloud.AssignPlayersFromCloud();
+                            CVocaluxeServer.DoTask(CVocaluxeServer.StartSong, JsonConvert.DeserializeObject<EventData>(message.data).id);
+                            System.Threading.Thread.Sleep(1000);
+                        }
+                        break;
+                    case "togglePause":
+                        PauseSong = !PauseSong;
+                        break;
+                    case "stopSong":
+                        StopSong = true;
+                        break;
+                    case "restartSong":
+                        RestartSong = true;
+                        break;
+                    default:
+                        break;
                 }
-                Console.WriteLine("Websocket disconnected");
             }
+            CLog.CCloudLog.Warning("Connection to websocket closed!");
         }
 
         public static CloudSong[] loadSongs(List<CloudSong> songs)

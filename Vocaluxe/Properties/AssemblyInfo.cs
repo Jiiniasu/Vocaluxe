@@ -23,7 +23,7 @@ using System.Runtime.InteropServices;
 // Attribute gesteuert. Ändern Sie diese Attributwerte, um die Informationen zu ändern,
 // die mit einer Assembly verknüpft sind.
 
-[assembly: AssemblyTitle("Vocaluxe 'Not Versioned' 0.0.0 (NA) (0.0.0-na-notversioned)")]
+[assembly: AssemblyTitle("Vocaluxe 2023 (x64) (2023-02-18-5-ge510776d)")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
@@ -32,9 +32,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-[assembly: AssemblyVersion("0.0.0")]
-[assembly: AssemblyFileVersion("0.0.0")]
-[assembly: AssemblyInformationalVersion("0.0.0-na-notversioned")]
+[assembly: AssemblyVersion("2023")]
+[assembly: AssemblyFileVersion("2023")]
+[assembly: AssemblyInformationalVersion("2023-02-18-5-ge510776d")]
 
 // Durch Festlegen von ComVisible auf "false" werden die Typen in dieser Assembly unsichtbar 
 // für COM-Komponenten. Wenn Sie auf einen Typ in dieser Assembly von 

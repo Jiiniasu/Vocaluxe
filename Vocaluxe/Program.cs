@@ -96,7 +96,8 @@ namespace Vocaluxe
                 // Init Log
                 CLog.Init(CSettings.FolderNameLogs,
                     CSettings.FileNameMainLog, 
-                    CSettings.FileNameSongLog, 
+                    CSettings.FileNameSongLog,
+                    CSettings.FileNameCloudLog,
                     CSettings.FileNameCrashMarker, 
                     CSettings.GetFullVersionText(), 
                     CReporter.ShowReporterFunc, 

@@ -51,11 +51,12 @@ namespace Tests.VocaluxeLib.Log
             const string testMessage = "BenchmarkTime Test";
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             const string versionTag = "Test Version (1.2.4)";
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) => { Assert.Fail("Benchmarks should not show the reporter."); },
                 ELogLevel.Verbose);
 
@@ -85,11 +86,12 @@ namespace Tests.VocaluxeLib.Log
             const string testMessage = "BenchmarkBegin Test";
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             const string versionTag = "Test Version (1.2.4)";
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) => { Assert.Fail("Benchmarks should not show the reporter."); },
                 ELogLevel.Verbose);
             
@@ -120,11 +122,12 @@ namespace Tests.VocaluxeLib.Log
             const string testMessage = "BenchmarkBegin Test";
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             const string versionTag = "Test Version (1.2.4)";
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) => { Assert.Fail("Benchmarks should not show the reporter."); },
                 ELogLevel.Verbose);
 

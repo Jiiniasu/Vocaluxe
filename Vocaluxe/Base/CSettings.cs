@@ -115,6 +115,7 @@ namespace Vocaluxe.Base
         
         public const string FileNameMainLog = "Vocaluxe.log";
         public const string FileNameSongLog = "Song.log";
+        public const string FileNameCloudLog = "Cloud.log";
         public const string FileNameCrashMarker = "Marker";
 
         public const string FileNameRequiredSkinElements = "RequiredSkinElements.xml";

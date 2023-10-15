@@ -58,12 +58,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -111,12 +112,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -163,12 +165,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -215,12 +218,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -269,12 +273,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -322,12 +327,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -374,12 +380,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -426,12 +433,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -480,12 +488,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -533,12 +542,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -585,12 +595,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -637,12 +648,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -691,12 +703,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -744,12 +757,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -796,12 +810,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -848,12 +863,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -902,12 +918,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -955,12 +972,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -1007,12 +1025,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -1059,12 +1078,13 @@ namespace Tests.VocaluxeLib.Log
         {
             string testFileName = Path.GetRandomFileName();
             string testFileSongName = Path.GetRandomFileName();
+            string testFileCloudName = Path.GetRandomFileName();
             string testFileMarkerName = Path.GetRandomFileName();
             string versionTag = "Test Version (1.2.4)";
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
