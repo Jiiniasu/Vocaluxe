@@ -144,22 +144,14 @@ namespace Vocaluxe.Base
             var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/putCover", content).Result.Content;
         }
 
-        public static string putRound(SPlayer[] players)
+        public static List<int> putRound(SPlayer[] players)
         {
-            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(players[0].SongID).DataBaseSongID, SongFinished = players[0].SongFinished, Scores = JsonConvert.SerializeObject(players) });
+            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(players[0].SongID).DataBaseSongID, SongFinished = players[0].SongFinished, Scores = players });
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/putRound", content).Result.Content;
-            return JObject.Parse(response.ReadAsStringAsync().Result)["id"].ToString();
-        }
-
-        public static int putScore(int databaseSongId, string roundId, SPlayer player)
-        {
-            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = databaseSongId, RoundID = roundId, Data = player });
-
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/putScore", content).Result.Content;
-            return JsonConvert.DeserializeObject<SDBScoreEntry>(response.ReadAsStringAsync().Result).ID;
-        }       
+            string responseString = response.ReadAsStringAsync().Result;
+            return JsonConvert.DeserializeObject<List<int>>(responseString);
+        }      
 
         public static void AssignPlayersFromCloud()
         {

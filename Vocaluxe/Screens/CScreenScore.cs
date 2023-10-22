@@ -638,23 +638,19 @@ namespace Vocaluxe.Screens
             {
                 SPlayer[] players = _Points.GetPlayer(round, CGame.NumPlayers);
 
-                string roundId = "-1";
-
                 if (CConfig.UseCloudServer)
                 {
-                    roundId = CCloud.putRound(players);
+                    List<int> cloudscores = CCloud.putRound(players);
+                    foreach (int score in cloudscores)
+                    {
+                        CGame.NewEntryIDs.Add(score);
+                    }
+                    continue;
                 }
 
                 for (int p = 0; p < players.Length; p++)
                 {
-                    if (CConfig.UseCloudServer)
-                    {
-                        CGame.NewEntryIDs.Add(CCloud.putScore(CSongs.GetSong(players[p].SongID).DataBaseSongID, roundId, players[p]));
-                    }
-                    else
-                    {
-                        CGame.NewEntryIDs.Add(CDataBase.AddScore(players[p]));
-                    }
+                    CGame.NewEntryIDs.Add(CDataBase.AddScore(players[p]));
                 }
             }
         }
