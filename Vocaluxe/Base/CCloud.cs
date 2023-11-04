@@ -6,23 +6,43 @@ using System.IO;
 using Vocaluxe.Base.Server;
 using VocaluxeLib;
 using VocaluxeLib.Log;
-using Newtonsoft.Json.Linq;
 using VocaluxeLib.Profile;
 using System.Drawing;
 using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Polly;
+using Polly.Retry;
 
 namespace Vocaluxe.Base
 {
     static class CCloud
     {
         private static readonly HttpClient _Client = new HttpClient();
+        private static readonly AsyncRetryPolicy _RetryPolicy = Policy.Handle<HttpRequestException>().WaitAndRetryAsync(6, retryAttempt =>
+        {
+            CLog.CCloudLog.Information("Retry attempt {attempt}...", CLog.Params(retryAttempt));
+            return TimeSpan.FromSeconds(Math.Pow(2, retryAttempt));
+        });
         private static readonly ClientWebSocket _WebSocket = new ClientWebSocket();
         public static bool PauseSong;
         public static bool StopSong;
         public static bool RestartSong;
+
+        private static async Task<HttpResponseMessage> SendToCloud(string url, string payload, string info = "")
+        {
+            HttpResponseMessage response;
+            CLog.CCloudLog.Information("POST to {uri}...", CLog.Params(url));
+            return await _RetryPolicy.ExecuteAsync(async () =>
+            {
+                var content = new StringContent(payload, Encoding.UTF8, "application/json");
+                response = await _Client.PostAsync(CConfig.CloudServerURL + url, content);
+                CLog.CCloudLog.Information("Status code: {code}", CLog.Params(response.StatusCode));
+                response.EnsureSuccessStatusCode();
+                return response;
+            });
+        }
 
         private static Task sendString(ClientWebSocket ws, String data, CancellationToken cancellation)
         {
@@ -101,9 +121,7 @@ namespace Vocaluxe.Base
         public static CloudSong[] loadSongs(List<CloudSong> songs)
         {
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, Data = songs });
-
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/loadSongs", content).Result.Content;
+            var response = SendToCloud("/api/loadSongs", json).Result.Content;
             string responseString = response.ReadAsStringAsync().Result;
             return JsonConvert.DeserializeObject<CloudSong[]>(responseString);
         }
@@ -111,8 +129,7 @@ namespace Vocaluxe.Base
         {
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey });
 
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/getProfiles", content).Result.Content;
+            var response = SendToCloud("/api/getProfiles", json).Result.Content;
             string responseString = response.ReadAsStringAsync().Result;
             return JsonConvert.DeserializeObject<CProfile[]>(responseString);
         }
@@ -121,8 +138,7 @@ namespace Vocaluxe.Base
         {
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, AvatarId = fileName });
 
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/getAvatar", content).Result.Content;
+            var response = SendToCloud("/api/getAvatar", json).Result.Content;
             byte[] responseString = response.ReadAsByteArrayAsync().Result;
 
             return Image.FromStream(new MemoryStream(responseString));
@@ -132,34 +148,32 @@ namespace Vocaluxe.Base
         {
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = databaseSongId, GameMode = gameMode, Style = highscoreStyle });
 
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/getHighScores", content).Result.Content;
+            var response = SendToCloud("/api/getHighScores", json).Result.Content;
             string responseString = response.ReadAsStringAsync().Result;
             return JsonConvert.DeserializeObject<SDBScoreEntry[]>(responseString);
         }
         public static void putCover(int databaseSongId, string data, string format)
         {
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = databaseSongId, Data = data, Format = format });
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/putCover", content).Result.Content;
+
+            var response = SendToCloud("/api/putCover", json).Result.Content;
         }
 
         public static List<int> putRound(SPlayer[] players)
         {
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(players[0].SongID).DataBaseSongID, SongFinished = players[0].SongFinished, Scores = players });
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/putRound", content).Result.Content;
+
+            var response = SendToCloud("/api/putRound", json).Result.Content;
             string responseString = response.ReadAsStringAsync().Result;
             return JsonConvert.DeserializeObject<List<int>>(responseString);
-        }      
+        }
 
         public static void AssignPlayersFromCloud()
         {
             CProfiles.LoadProfiles();
 
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey });
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = _Client.PostAsync(CConfig.CloudServerURL + "/api/getPlayers", content).Result.Content;
+            var response = SendToCloud("/api/getPlayers", json).Result.Content;
             string responseString = response.ReadAsStringAsync().Result;
 
             Guid[] cloudPlayers = JsonConvert.DeserializeObject<Guid[]>(responseString);
