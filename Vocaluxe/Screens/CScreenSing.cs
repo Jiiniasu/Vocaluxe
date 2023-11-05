@@ -1045,7 +1045,10 @@ namespace Vocaluxe.Screens
             CGame.NextRound();
             for (int i = 0; i < CGame.NumPlayers; i++)
             {
-                CGame.Players[i].Difficulty = CProfiles.GetDifficulty(CGame.Players[i].ProfileID);
+                if (!CConfig.UseCloudServer)
+                {
+                    CGame.Players[i].Difficulty = CProfiles.GetDifficulty(CGame.Players[i].ProfileID);
+                }
             }
             var voiceAssignments = new int[CGame.NumPlayers];
             if (CGame.GetSong() != null && CGame.GetSong().IsDuet)

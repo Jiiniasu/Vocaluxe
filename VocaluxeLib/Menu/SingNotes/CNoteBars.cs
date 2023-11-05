@@ -96,7 +96,7 @@ namespace VocaluxeLib.Menu.SingNotes
             _ToneHeight = Rect.H / _NumNoteLines;
             _SemiToneHeight = _ToneHeight / 2;
             _NoteWidth = _ToneHeight * 2f;
-            _AddNoteHeight = _ToneHeight / 2f * (2f - (int)CBase.Profiles.GetDifficulty(playerData.ProfileID));
+            _AddNoteHeight = _ToneHeight / 2f * (2f - (int)playerData.Difficulty);
         }
 
         private int SetSongBaseLine()

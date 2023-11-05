@@ -176,11 +176,12 @@ namespace Vocaluxe.Base
             var response = SendToCloud("/api/getPlayers", json).Result.Content;
             string responseString = response.ReadAsStringAsync().Result;
 
-            Guid[] cloudPlayers = JsonConvert.DeserializeObject<Guid[]>(responseString);
+            CloudPlayer[] cloudPlayers = JsonConvert.DeserializeObject<CloudPlayer[]>(responseString);
 
             for (int i = 0; i < CGame.NumPlayers; i++)
             {
-                CGame.Players[i].ProfileID = cloudPlayers[i];
+                CGame.Players[i].ProfileID = cloudPlayers[i].PlayerGuid;
+                CGame.Players[i].Difficulty = cloudPlayers[i].Difficulty;
             }
         }
 
@@ -212,5 +213,11 @@ namespace Vocaluxe.Base
     {
         [JsonProperty("id")]
         public int id { get; set; }
+    }
+
+    class CloudPlayer
+    {
+        public Guid PlayerGuid { get; set; }
+        public EGameDifficulty Difficulty { get; set; }
     }
 }
