@@ -315,6 +315,7 @@ namespace Vocaluxe
 
         private static void _CloseProgram()
         {
+            CCloud.setState("shutting_down");
             // Unloading in reverse order
             try
             {

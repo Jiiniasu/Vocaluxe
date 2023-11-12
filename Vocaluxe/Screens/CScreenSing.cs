@@ -975,6 +975,10 @@ namespace Vocaluxe.Screens
             CRecord.Start();
             if (_Webcam)
                 CWebcam.Start();
+            if(CGame.GetSong() != null)
+            {
+                CCloud.setState("playing_song", CGame.GetSong().DataBaseSongID);
+            }
         }
 
         /// <summary>

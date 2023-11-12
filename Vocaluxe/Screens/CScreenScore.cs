@@ -60,6 +60,9 @@ namespace Vocaluxe.Screens
         private string[] _PlayerProgressBarPoints;
         private string[] _PlayerStaticAvatar;
 
+        private DateTime showTime;
+        private int timeout;
+
         public override EMusicType CurrentMusicType
         {
             get { return EMusicType.BackgroundPreview; }
@@ -145,6 +148,8 @@ namespace Vocaluxe.Screens
         {
             base.OnShow();
 
+            CCloud.setState("showing_scores");
+
             _InitiatePlayerStatics();
             _InitiatePlayerStrings();
             _InitiateProgressBars();
@@ -164,10 +169,19 @@ namespace Vocaluxe.Screens
 
             for (int p = 0; p < CGame.NumPlayers; p++)
                 _Statics[_PlayerStaticAvatar[p]].Aspect = EAspect.Crop;
+
+            showTime = DateTime.Now;
+            timeout = 8;
         }
 
         public override bool UpdateGame()
         {
+            if ((DateTime.Now - showTime).TotalSeconds > timeout && timeout > 0)
+            {
+                timeout = 0;
+                _LeaveScreen();
+            }
+
             var players = new SPlayer[CGame.NumPlayers];
             if (_Round >= 0)
                 players = _Points.GetPlayer(_Round, CGame.NumPlayers);

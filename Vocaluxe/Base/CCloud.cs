@@ -48,6 +48,7 @@ namespace Vocaluxe.Base
         {
             var encoded = Encoding.UTF8.GetBytes(data);
             var buffer = new ArraySegment<Byte>(encoded, 0, encoded.Length);
+            CLog.CCloudLog.Information("Sending Websocket message: {data}", CLog.Params(data));
             return ws.SendAsync(buffer, WebSocketMessageType.Text, true, cancellation);
         }
 
@@ -79,6 +80,8 @@ namespace Vocaluxe.Base
             await _WebSocket.ConnectAsync(new Uri(CConfig.CloudServerWebsocketURI), CancellationToken.None);
             CLog.CCloudLog.Information("Websocket status: {status}", CLog.Params(_WebSocket.State.ToString()));
             await sendString(_WebSocket, "{\"event\":\"pusher:subscribe\",\"data\":{\"auth\":\"\",\"channel\":\"game-control\"}}", CancellationToken.None);
+            await sendString(_WebSocket, "{\"event\":\"pusher:subscribe\",\"data\":{\"auth\":\"\",\"channel\":\"game-state\"}}", CancellationToken.None);
+            setState("loading_game");
             while (_WebSocket.State == WebSocketState.Open)
             {
                 EventMessage message = JsonConvert.DeserializeObject<EventMessage>(await readString(_WebSocket));
@@ -91,6 +94,7 @@ namespace Vocaluxe.Base
                     case "startSong":
                         if (CGraphics.CurrentScreen.GetType() != typeof(Screens.CScreenSing))
                         {
+                            setState("starting_song");
                             StopSong = false;
                             System.Threading.Thread.Sleep(1000);
                             if (CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, JsonConvert.DeserializeObject<EventData>(message.data).id))
@@ -116,6 +120,18 @@ namespace Vocaluxe.Base
                 }
             }
             CLog.CCloudLog.Warning("Connection to websocket closed!");
+        }
+
+        public static void setState(string state)
+        {
+            string message = "{\"channel\":\"game-state\",\"event\":\"client-setState\",\"data\":\"{\\\"state\\\":\\\"" + state + "\\\"}\"}";
+            sendString(_WebSocket, message, CancellationToken.None);
+        }
+
+        public static void setState(string state, int songId)
+        {
+            string message = "{\"channel\":\"game-state\",\"event\":\"client-setState\",\"data\":\"{\\\"state\\\":\\\"" + state + "\\\", \\\"song_id\\\":" + songId + "}\"}";
+            sendString(_WebSocket, message, CancellationToken.None);
         }
 
         public static CloudSong[] loadSongs(List<CloudSong> songs)
@@ -185,6 +201,13 @@ namespace Vocaluxe.Base
             }
         }
 
+    }
+    public struct Data
+    {
+        public Data (string Key, string Value)
+        {
+
+        }
     }
     public class CloudSong
     {

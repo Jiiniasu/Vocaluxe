@@ -47,6 +47,9 @@ namespace Vocaluxe.Screens
         private string[] _TextDate;
         private string[] _ParticleEffectNew;
 
+        private DateTime showTime;
+        private int timeout;
+
         private List<SDBScoreEntry>[] _Scores;
         private int _Round;
         private int _Pos;
@@ -160,6 +163,12 @@ namespace Vocaluxe.Screens
 
         public override bool UpdateGame()
         {
+            if((DateTime.Now - showTime).TotalSeconds > timeout && timeout > 0)
+            {
+                timeout = 0;
+                _LeaveScreen();
+            }
+
             for (int p = 0; p < _NumEntrys; p++)
             {
                 if (_Pos + p < _Scores[_Round].Count)
@@ -197,12 +206,18 @@ namespace Vocaluxe.Screens
         public override void OnShow()
         {
             base.OnShow();
+
+            CCloud.setState("showing_highscores");
+
             _Round = 0;
             _Pos = 0;
             _LoadScores();
             _UpdateRound();
 
             UpdateGame();
+
+            showTime = DateTime.Now;
+            timeout = 8;
         }
 
         private bool _IsNewEntry(int id)
