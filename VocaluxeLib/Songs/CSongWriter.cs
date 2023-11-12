@@ -91,6 +91,7 @@ namespace VocaluxeLib.Songs
                 _WriteHeaderEntrys("LANGUAGE", _Song.Languages);
                 _WriteHeaderEntry("ALBUM", _Song.Album);
                 _WriteHeaderEntry("YEAR", _Song.Year);
+                _WriteHeaderEntry("GUID", _Song.Guid.ToString());
                 _WriteHeaderEntry("MP3", _Song.MP3FileName);
                 _WriteHeaderEntry("COVER", _Song.CoverFileName);
                 _WriteHeaderEntrys("BACKGROUND", _Song.BackgroundFileNames);

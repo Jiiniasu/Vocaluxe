@@ -188,6 +188,7 @@ namespace Vocaluxe.Base
     }
     public class CloudSong
     {
+        public Guid GUID { get; set; }
         public string Artist { get; set; }
         public string Title { get; set; }
         public List<string> Editions { get; set; }

@@ -88,6 +88,7 @@ namespace VocaluxeLib.Songs
                 _Song._CalculateMedley = true;
                 _Song.Preview.Source = EDataSource.None;
                 _Song.ShortEnd.Source = EDataSource.None;
+                _Song.Guid = Guid.NewGuid();
 
                 var headerFlags = new EHeaderFlags();
                 StreamReader sr = null;
@@ -172,6 +173,9 @@ namespace VocaluxeLib.Songs
                                 break;
                             case "LENGTH":
                                 _Song.Length = value;
+                                break;
+                            case "GUID":
+                                _Song.Guid = Guid.Parse(value);
                                 break;
                             case "MP3":
                                 if (File.Exists(Path.Combine(_Song.Folder, value)))

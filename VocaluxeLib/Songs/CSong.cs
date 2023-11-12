@@ -95,6 +95,7 @@ namespace VocaluxeLib.Songs
         public string FolderName = String.Empty;
         public string FileName = String.Empty;
         public bool Relative;
+        public Guid Guid;
 
         public string MP3FileName = String.Empty;
         public string CoverFileName = String.Empty;
@@ -226,6 +227,7 @@ namespace VocaluxeLib.Songs
             FolderName = song.FolderName;
             FileName = song.FileName;
             Relative = song.Relative;
+            Guid = song.Guid;
 
             MP3FileName = song.MP3FileName;
             CoverFileName = song.CoverFileName;

@@ -384,7 +384,7 @@ namespace Vocaluxe.Base
                         List<CloudSong> songs = new List<CloudSong>();
                         foreach (CSong song in _Songs)
                         {
-                            songs.Add(new CloudSong { Artist = song.Artist, Title = song.Title, Editions = song.Editions, Genres = song.Genres, Album = song.Album, Year = song.Year });
+                            songs.Add(new CloudSong { GUID = song.Guid, Artist = song.Artist, Title = song.Title, Editions = song.Editions, Genres = song.Genres, Album = song.Album, Year = song.Year });
                         }
                         CloudSong[] CloudSongs = CCloud.loadSongs(songs);
                         for (int i = 0; i < CloudSongs.Length; i++)
