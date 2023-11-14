@@ -52,6 +52,21 @@ namespace Vocaluxe.Base
             return ws.SendAsync(buffer, WebSocketMessageType.Text, true, cancellation);
         }
 
+        private static Task subscribeToChannel(string channel)
+        {
+            string message = JsonConvert.SerializeObject(new
+            {
+                @event = "pusher:subscribe",
+                data = new
+                {
+                    auth = "",
+                    channel = channel
+                }
+            });
+
+            return sendString(_WebSocket, message, CancellationToken.None);
+        }
+
         private static async Task<String> readString(ClientWebSocket ws)
         {
             ArraySegment<Byte> buffer = new ArraySegment<byte>(new Byte[8192]);
@@ -79,9 +94,9 @@ namespace Vocaluxe.Base
             CLog.CCloudLog.Information("Connecting to websocket: {uri}", CLog.Params(CConfig.CloudServerWebsocketURI));
             await _WebSocket.ConnectAsync(new Uri(CConfig.CloudServerWebsocketURI), CancellationToken.None);
             CLog.CCloudLog.Information("Websocket status: {status}", CLog.Params(_WebSocket.State.ToString()));
-            await sendString(_WebSocket, "{\"event\":\"pusher:subscribe\",\"data\":{\"auth\":\"\",\"channel\":\"game-control\"}}", CancellationToken.None);
-            await sendString(_WebSocket, "{\"event\":\"pusher:subscribe\",\"data\":{\"auth\":\"\",\"channel\":\"game-state\"}}", CancellationToken.None);
-            setState("loading_game");
+            await subscribeToChannel("game-control");
+            await subscribeToChannel("game-state");
+            await setState("loading_game");
             while (_WebSocket.State == WebSocketState.Open)
             {
                 EventMessage message = JsonConvert.DeserializeObject<EventMessage>(await readString(_WebSocket));
@@ -94,7 +109,7 @@ namespace Vocaluxe.Base
                     case "startSong":
                         if (CGraphics.CurrentScreen.GetType() != typeof(Screens.CScreenSing))
                         {
-                            setState("starting_song");
+                            await setState("starting_song");
                             StopSong = false;
                             System.Threading.Thread.Sleep(1000);
                             if (CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, JsonConvert.DeserializeObject<EventData>(message.data).id))
@@ -122,16 +137,34 @@ namespace Vocaluxe.Base
             CLog.CCloudLog.Warning("Connection to websocket closed!");
         }
 
-        public static void setState(string state)
+        public static Task setState(string state)
         {
-            string message = "{\"channel\":\"game-state\",\"event\":\"client-setState\",\"data\":\"{\\\"state\\\":\\\"" + state + "\\\"}\"}";
-            sendString(_WebSocket, message, CancellationToken.None);
+            string message = JsonConvert.SerializeObject(new
+            {
+                channel = "game-state",
+                @event = "client-setState",
+                data = JsonConvert.SerializeObject(new
+                {
+                    state = state,
+                })
+            });
+            return sendString(_WebSocket, message, CancellationToken.None);
         }
 
-        public static void setState(string state, int songId)
+        public static Task setState(string state, int songId)
         {
-            string message = "{\"channel\":\"game-state\",\"event\":\"client-setState\",\"data\":\"{\\\"state\\\":\\\"" + state + "\\\", \\\"song_id\\\":" + songId + "}\"}";
-            sendString(_WebSocket, message, CancellationToken.None);
+            string message = JsonConvert.SerializeObject(new
+            {
+                channel = "game-state",
+                @event = "client-setState",
+                data = JsonConvert.SerializeObject(new
+                {
+                    state = state,
+                    song_id = songId
+                })
+            });
+
+            return sendString(_WebSocket, message, CancellationToken.None);
         }
 
         public static CloudSong[] loadSongs(List<CloudSong> songs)
