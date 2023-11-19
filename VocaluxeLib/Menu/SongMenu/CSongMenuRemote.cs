@@ -18,12 +18,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Forms;
 using VocaluxeLib.Draw;
 using VocaluxeLib.PartyModes;
 using VocaluxeLib.Songs;
-using VocaluxeLib.Xml;
-using System.Diagnostics;
 
 namespace VocaluxeLib.Menu.SongMenu
 {
