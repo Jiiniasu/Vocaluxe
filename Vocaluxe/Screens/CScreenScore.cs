@@ -148,8 +148,10 @@ namespace Vocaluxe.Screens
         {
             base.OnShow();
 
-            CCloud.setState("showing_scores");
-
+            if (CConfig.UseCloudServer)
+            {
+                CCloud.setState("showing_scores");
+            }
             _InitiatePlayerStatics();
             _InitiatePlayerStrings();
             _InitiateProgressBars();

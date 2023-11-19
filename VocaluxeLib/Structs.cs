@@ -363,7 +363,7 @@ namespace VocaluxeLib
     {
         public string Name;
         public int Score;
-        public string Date;
+        public DateTime Date;
         public EGameDifficulty Difficulty;
         public int VoiceNr;
         public int ID;

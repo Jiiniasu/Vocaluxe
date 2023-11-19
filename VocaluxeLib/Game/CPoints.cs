@@ -44,7 +44,7 @@ namespace VocaluxeLib.Game
 
         public void SetPoints(int round, int songID, SPlayer[] players, EGameMode gameMode)
         {
-            long dateTicks = DateTime.Now.Ticks;
+            long dateTicks = DateTime.Now.ToUniversalTime().Ticks;
             for (int player = 0; player < players.Length; player++)
             {
                 _Rounds[round, player].SongID = songID;

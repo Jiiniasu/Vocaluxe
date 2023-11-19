@@ -187,7 +187,7 @@ namespace Vocaluxe.Screens
                     _Texts[_TextName[p]].Text = name;
 
                     _Texts[_TextScore[p]].Text = _Scores[_Round][_Pos + p].Score.ToString("D");
-                    _Texts[_TextDate[p]].Text = _Scores[_Round][_Pos + p].Date;
+                    _Texts[_TextDate[p]].Text = _Scores[_Round][_Pos + p].Date.ToLocalTime().ToString();
 
                     _ParticleEffects[_ParticleEffectNew[p]].Visible = _IsNewEntry(_Scores[_Round][_Pos + p].ID);
                 }
@@ -207,7 +207,10 @@ namespace Vocaluxe.Screens
         {
             base.OnShow();
 
-            CCloud.setState("showing_highscores");
+            if (CConfig.UseCloudServer)
+            {
+                CCloud.setState("showing_highscores");
+            }
 
             _Round = 0;
             _Pos = 0;

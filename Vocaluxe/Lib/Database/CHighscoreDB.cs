@@ -350,7 +350,7 @@ namespace Vocaluxe.Lib.Database
                                 {
                                     Name = reader.GetString(0),
                                     Score = reader.GetInt32(1),
-                                    Date = new DateTime(reader.GetInt64(2)).ToString("dd/MM/yyyy"),
+                                    Date = new DateTime(reader.GetInt64(2)),
                                     Difficulty = (EGameDifficulty)reader.GetInt32(3),
                                     VoiceNr = reader.GetInt32(4),
                                     ID = reader.GetInt32(5)
