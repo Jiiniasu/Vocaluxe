@@ -116,7 +116,7 @@ namespace Vocaluxe.Base
                             {
                                 System.Threading.Thread.Sleep(5000);
                             }
-                            CCloud.AssignPlayersFromCloud();
+                            AssignPlayersFromCloud();
                             CVocaluxeServer.DoTask(CVocaluxeServer.StartSong, JsonConvert.DeserializeObject<EventData>(message.data).id);
                             System.Threading.Thread.Sleep(1000);
                         }
@@ -185,7 +185,7 @@ namespace Vocaluxe.Base
 
         public static Image getAvatar(string fileName)
         {
-            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, AvatarId = fileName });
+            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, FileName = fileName });
 
             var response = SendToCloud("/api/getAvatar", json).Result.Content;
             byte[] responseString = response.ReadAsByteArrayAsync().Result;
