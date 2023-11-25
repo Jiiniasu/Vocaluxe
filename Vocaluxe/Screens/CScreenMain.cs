@@ -143,6 +143,16 @@ namespace Vocaluxe.Screens
             return true;
         }
 
+        public override void OnShow()
+        {
+            base.OnShow();
+
+            if (CConfig.UseCloudServer)
+            {
+                CCloud.setState("showing_main_menu");
+            }
+        }
+
         public override bool UpdateGame()
         {
             bool profileOK = CProfiles.NumProfiles > 0;
