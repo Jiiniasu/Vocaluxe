@@ -49,8 +49,8 @@ jobs:
           cd Output
           Remove-Item * -Include *.pdb
           Remove-Item * -Include *.dll.config
-          Remove-Item * -Include serilog*
-          Remove-Item * -Include Newtonsoft.Json.xml
+          Remove-Item * -Include *.exe.config
+          Remove-Item * -Include *.xml -exclude RequiredSkinElements.xml
           7z a '../Vocaluxe_Windows_x64_SSIS-remote_Latest.zip' *
 
       - name: Create Release
