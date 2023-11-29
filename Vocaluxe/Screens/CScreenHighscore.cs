@@ -163,9 +163,8 @@ namespace Vocaluxe.Screens
 
         public override bool UpdateGame()
         {
-            if((DateTime.Now - showTime).TotalSeconds > timeout && timeout > 0)
+            if ((DateTime.Now - showTime).TotalSeconds > timeout && timeout > 0)
             {
-                timeout = 0;
                 _LeaveScreen();
             }
 
@@ -314,6 +313,7 @@ namespace Vocaluxe.Screens
 
         private void _LeaveScreen()
         {
+            timeout = 0;
             CParty.LeavingHighscore();
         }
     }
