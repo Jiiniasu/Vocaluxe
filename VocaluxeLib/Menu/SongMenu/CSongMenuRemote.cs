@@ -117,7 +117,7 @@ namespace VocaluxeLib.Menu.SongMenu
                 _PreviewNr = _SelectionNr;
             }
             
-            if (CBase.BackgroundMusic.IsFinished())
+            if (CBase.BackgroundMusic.IsFinished() && !CBase.BackgroundMusic.IsLoading() && CBase.Graphics.GetNextScreenType() == EScreen.Unknown)
             {
                 Random rng = new Random();
                 int max = CBase.Songs.GetNumSongs() - 1;

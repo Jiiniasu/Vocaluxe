@@ -72,11 +72,9 @@ namespace Vocaluxe.Lib.Sound.Playback.GstreamerSharp
             get
             {
                 
-                if (_Element == null || (_Element.CurrentState == State.Paused && _Element.PendingState != State.VoidPending))
-                {
+                if (_Element == null || (_Element.CurrentState == State.Paused && _Element.PendingState != State.VoidPending) || _IsFinished)
                     return _Position;
-                }
-                    
+
                     
                 long position;
                 if (!_Element.QueryPosition(Format.Time, out position))

@@ -31,7 +31,7 @@ namespace Vocaluxe.Base
         private static bool _Initialized;
 
         private static readonly CSongPlayer _BGPlayer = new CSongPlayer();
-        private static readonly CSongPlayer _PreviewPlayer = new CSongPlayer(true);
+        private static readonly CSongPlayer _PreviewPlayer = new CSongPlayer();
         private static CSongPlayer _CurPlayer;
 
         private static bool _OwnSongsAvailable;
@@ -108,14 +108,14 @@ namespace Vocaluxe.Base
             get { return _CurPlayer.IsPlaying; }
         }
 
+        public static bool IsLoading
+        {
+            get { return _CurPlayer.IsLoading; }
+        }
+
         public static bool IsFinished
         {
-            get {
-                if (_CurPlayer.Position >= _CurPlayer.Length)
-                    return true;
-                else
-                    return false;
-            }
+            get { return _CurPlayer.IsFinished; }
         }
 
         public static bool IsPlayingPreview

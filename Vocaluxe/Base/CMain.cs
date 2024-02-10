@@ -340,6 +340,11 @@ namespace Vocaluxe.Base
         {
             return CBackgroundMusic.IsPlaying;
         }
+        
+        public bool IsLoading()
+        {
+            return CBackgroundMusic.IsLoading;
+        }
 
         public bool IsFinished()
         {

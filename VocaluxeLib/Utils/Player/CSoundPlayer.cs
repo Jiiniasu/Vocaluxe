@@ -48,6 +48,8 @@ namespace VocaluxeLib.Utils.Player
 
         public bool IsPlaying { get; private set; }
 
+        public bool IsLoading { get; private set; }
+
         public bool IsFinished
         {
             get { return !Loop && (CBase.Sound.IsFinished(_StreamID) || !IsPlaying); }
@@ -70,11 +72,15 @@ namespace VocaluxeLib.Utils.Player
 
         public void Load(string file, float position = -1f, bool autoplay = false)
         {
+            IsLoading = true;
             Close();
 
             _StreamID = CBase.Sound.Load(file, false, true);
             if (_StreamID < 0)
+            {
+                IsLoading = false;
                 return;
+            }
             FilePath = file;
             if (position > 0f)
                 Position = position;
@@ -95,6 +101,7 @@ namespace VocaluxeLib.Utils.Player
             CBase.Sound.Fade(_StreamID, 100, _FadeTime);
             CBase.Sound.Play(_StreamID);
             IsPlaying = true;
+            IsLoading = false;
             return true;
         }
 
