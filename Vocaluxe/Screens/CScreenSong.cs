@@ -644,11 +644,6 @@ namespace Vocaluxe.Screens
         {
             base.OnShow();
 
-            if (CConfig.UseCloudServer)
-            {
-                CCloud.setState("waiting_for_song");
-            }
-
             _SelectedSongID = -1;
             _SelectedCategoryIndex = -2;
 
@@ -696,6 +691,11 @@ namespace Vocaluxe.Screens
         {
             base.OnShowFinish();
             CSongs.OnCategoryChanged += _OnCategoryChanged;
+            
+            if (CConfig.UseCloudServer)
+            {
+                CCloud.setState("waiting_for_song");
+            }
         }
 
         private static void _OnCategoryChanged()

@@ -111,7 +111,7 @@ namespace VocaluxeLib.Menu.SongMenu
 
         public override void Update(SScreenSongOptions songOptions)
         {
-            if (CBase.BackgroundMusic.GetSongID() != -1 && _PreviewNr != CBase.Songs.GetVisibleSongNumber(CBase.BackgroundMusic.GetSongID()))
+            if (!CBase.BackgroundMusic.IsLoading() && CBase.BackgroundMusic.GetSongID() != -1 && _PreviewNr != CBase.Songs.GetVisibleSongNumber(CBase.BackgroundMusic.GetSongID()))
             {
                 _SelectionNr = CBase.Songs.GetVisibleSongNumber(CBase.BackgroundMusic.GetSongID());
                 _PreviewNr = _SelectionNr;
@@ -124,10 +124,11 @@ namespace VocaluxeLib.Menu.SongMenu
                 _SelectionNr = rng.Next(0, max);
                 _PreviewNr = _SelectionNr;
             }
+
             if (songOptions.Selection.RandomOnly)
                  _PreviewNr = _SelectionNr;
 
-             if (_Length < 0 && CBase.Songs.IsInCategory() && CBase.BackgroundMusic.GetLength() > 0)
+            if (_Length < 0 && CBase.Songs.IsInCategory() && CBase.BackgroundMusic.GetLength() > 0)
                  _UpdateLength(CBase.Songs.GetVisibleSong(_PreviewNr));
         }
 
