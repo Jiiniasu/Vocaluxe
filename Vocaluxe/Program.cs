@@ -30,7 +30,6 @@ using Vocaluxe.Base.Server;
 using Vocaluxe.Base.ThemeSystem;
 using Vocaluxe.Reporting;
 using VocaluxeLib.Log;
-using Newtonsoft.Json;
 
 [assembly: InternalsVisibleTo("VocaluxeTests")]
 
