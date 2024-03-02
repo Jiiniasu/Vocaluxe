@@ -235,13 +235,6 @@ namespace Vocaluxe.Base
         }
 
     }
-    public struct Data
-    {
-        public Data (string Key, string Value)
-        {
-
-        }
-    }
     public class CloudSong
     {
         public Guid GUID { get; set; }
