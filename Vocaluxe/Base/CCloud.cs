@@ -3,7 +3,6 @@ using System.Text;
 using Newtonsoft.Json;
 using System.Net.Http;
 using System.IO;
-using Vocaluxe.Base.Server;
 using VocaluxeLib;
 using VocaluxeLib.Log;
 using VocaluxeLib.Profile;
@@ -14,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Polly;
 using Polly.Retry;
+using VocaluxeLib.Songs;
 
 namespace Vocaluxe.Base
 {
@@ -104,21 +104,19 @@ namespace Vocaluxe.Base
                 switch (message.eventName)
                 {
                     case "previewSong":
-                        CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, JsonConvert.DeserializeObject<EventData>(message.data).id);
+                        PreviewSong(JsonConvert.DeserializeObject<EventData>(message.data).id);
                         break;
                     case "startSong":
                         if (CGraphics.CurrentScreen.GetType() != typeof(Screens.CScreenSing))
                         {
                             await setState("starting_song");
                             StopSong = false;
-                            System.Threading.Thread.Sleep(1000);
-                            if (CVocaluxeServer.DoTask(CVocaluxeServer.PreviewSong, JsonConvert.DeserializeObject<EventData>(message.data).id))
+                            if (PreviewSong(JsonConvert.DeserializeObject<EventData>(message.data).id))
                             {
                                 System.Threading.Thread.Sleep(5000);
                             }
                             AssignPlayersFromCloud();
-                            CVocaluxeServer.DoTask(CVocaluxeServer.StartSong, JsonConvert.DeserializeObject<EventData>(message.data).id);
-                            System.Threading.Thread.Sleep(1000);
+                            StartSong(JsonConvert.DeserializeObject<EventData>(message.data).id);
                         }
                         break;
                     case "togglePause":
@@ -232,6 +230,62 @@ namespace Vocaluxe.Base
                 CGame.Players[i].ProfileID = cloudPlayers[i].PlayerGuid;
                 CGame.Players[i].Difficulty = cloudPlayers[i].Difficulty;
             }
+        }
+
+        public static int GetCurrentSongId()
+        {
+            CSong song = CGame.GetSong();
+            if (song == null)
+                return -1;
+            return song.ID;
+        }
+
+        public static bool StartSong(int dataBaseSongID)
+        {
+            if (GetCurrentSongId() != -1)
+                return false;
+
+            int songID = CSongs.GetSongIdFromDataBaseSongId(dataBaseSongID);
+
+            if (songID == -1)
+                return false;
+
+            EGameMode gm = CSongs.GetSong(songID).IsDuet ? EGameMode.TR_GAMEMODE_DUET : EGameMode.TR_GAMEMODE_NORMAL;
+
+            CGame.Reset();
+            CGame.ClearSongs();
+
+            if (CGame.AddSong(songID, gm))
+            {
+                CGraphics.FadeTo(EScreen.Sing);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+
+        }
+
+        public static bool PreviewSong(int dataBaseSongID)
+        {
+            if (GetCurrentSongId() != -1)
+                return false;
+
+            int songID = CSongs.GetSongIdFromDataBaseSongId(dataBaseSongID);
+
+            if (songID == -1)
+                return false;
+
+            if (songID == CBase.BackgroundMusic.GetSongID())
+                return false;
+
+            CSong song = CSongs.GetSong(songID);
+
+            CBase.BackgroundMusic.LoadPreview(song, song.Preview.StartTime);
+
+            CGraphics.FadeTo(EScreen.Song);
+            return true;
         }
 
     }
