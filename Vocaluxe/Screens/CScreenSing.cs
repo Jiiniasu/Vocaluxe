@@ -39,7 +39,7 @@ namespace Vocaluxe.Screens
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {
-            get { return 9; }
+            get { return 10; }
         }
 
         private struct STimeRect
@@ -57,6 +57,7 @@ namespace Vocaluxe.Screens
         private const string _TextMedleyCountdown = "TextMedleyCountdown";
         private string[,,] _TextScores;
         private string[,,] _TextNames;
+        private string[,,] _TextCurrentTones;
         private List<string> _TextsPause;
 
         private const string _StaticDefaultAvatar = "StaticDefaultAvatar";
@@ -98,6 +99,7 @@ namespace Vocaluxe.Screens
 
         private string[] _PlayerTextScore;
         private string[] _PlayerTextName;
+        private string[] _PlayerTextCurrentTone;
         private string[] _PlayerProgressBarRating;
         private string[] _PlayerStaticScore;
         private string[] _PlayerStaticAvatar;
@@ -514,6 +516,11 @@ namespace Vocaluxe.Screens
             {
                 string fmtString = (CGame.Players[p].Points < 10000) ? "0000" : "00000";
                 _Texts[_PlayerTextScore[p]].Text = CGame.Players[p].Points.ToString(fmtString);
+                _Texts[_PlayerTextCurrentTone[p]].Visible = CRecord.ToneValid(p);
+                if (_Texts[_PlayerTextCurrentTone[p]].Visible)
+                {
+                    _Texts[_PlayerTextCurrentTone[p]].Text = CRecord.GetToneAbs(p).ToString();
+                }
             }
 
             if (_CurrentVideo != null && !_FadeOut && CConfig.Config.Video.VideosInSongs == EOffOn.TR_CONFIG_ON)
@@ -1347,6 +1354,8 @@ namespace Vocaluxe.Screens
                         _Texts[_TextScores[screen, player, numplayer]].Visible = false;
                         _Texts[_TextNames[screen, player, numplayer]].AllMonitors = false;
                         _Texts[_TextNames[screen, player, numplayer]].Visible = false;
+                        _Texts[_TextCurrentTones[screen, player, numplayer]].AllMonitors = false;
+                        _Texts[_TextCurrentTones[screen, player, numplayer]].Visible = false;
                         _Statics[_StaticScores[screen, player, numplayer]].AllMonitors = false;
                         _Statics[_StaticScores[screen, player, numplayer]].Visible = false;
                         _Statics[_StaticAvatars[screen, player, numplayer]].AllMonitors = false;
@@ -1366,6 +1375,11 @@ namespace Vocaluxe.Screens
                 _Texts[_PlayerTextScore[player]].Visible = true;
                 _Texts[_PlayerTextName[player]].Visible = (CConfig.Config.Theme.PlayerInfo == EPlayerInfo.TR_CONFIG_PLAYERINFO_BOTH ||
                                                            CConfig.Config.Theme.PlayerInfo == EPlayerInfo.TR_CONFIG_PLAYERINFO_NAME);
+
+                _Texts[_PlayerTextCurrentTone[player]].Visible = true;
+                _Texts[_PlayerTextCurrentTone[player]].Visible = (CConfig.Config.Theme.PlayerInfo == EPlayerInfo.TR_CONFIG_PLAYERINFO_BOTH ||
+                                                           CConfig.Config.Theme.PlayerInfo == EPlayerInfo.TR_CONFIG_PLAYERINFO_NAME);
+
                 _Statics[_PlayerStaticScore[player]].Visible = true;
                 _Statics[_PlayerStaticAvatar[player]].Visible = (CConfig.Config.Theme.PlayerInfo == EPlayerInfo.TR_CONFIG_PLAYERINFO_BOTH ||
                                                                 CConfig.Config.Theme.PlayerInfo == EPlayerInfo.TR_CONFIG_PLAYERINFO_AVATAR);
@@ -1503,6 +1517,7 @@ namespace Vocaluxe.Screens
         {
             _TextScores = new string[CSettings.MaxNumScreens, CSettings.MaxScreenPlayer, CSettings.MaxScreenPlayer];
             _TextNames = new string[CSettings.MaxNumScreens, CSettings.MaxScreenPlayer, CSettings.MaxScreenPlayer];
+            _TextCurrentTones = new string[CSettings.MaxNumScreens, CSettings.MaxScreenPlayer, CSettings.MaxScreenPlayer];
 
             for (int numplayer = 0; numplayer < CSettings.MaxScreenPlayer; numplayer++)
             {
@@ -1515,10 +1530,11 @@ namespace Vocaluxe.Screens
                         {
                             _TextScores[screen, player, numplayer] = "TextScoreS" + (screen + 1) + target;
                             _TextNames[screen, player, numplayer] = "TextNameS" + (screen + 1) + target;
+                            _TextCurrentTones[screen, player, numplayer] = "TextCurrentToneS" + (screen + 1) + target;
                         }
                         texts.Add("TextScore" + target);
                         texts.Add("TextName" + target);
-
+                        texts.Add("TextCurrentTone" + target);
                     }
                 }
             }
@@ -1537,6 +1553,7 @@ namespace Vocaluxe.Screens
                             string target = "P" + (player + 1) + "N" + (numplayer + 1);
                             _AddText(GetNewText(), "TextScoreS" + (screen + 1) + target);
                             _AddText(GetNewText(), "TextNameS" + (screen + 1) + target);
+                            _AddText(GetNewText(), "TextCurrentToneS" + (screen + 1) + target);
                         }
                     }
                 }
@@ -1561,6 +1578,10 @@ namespace Vocaluxe.Screens
                             _Texts["TextScore" + target].Visible = false;
                             _Texts["TextScoreS" + (screen + 1) + target] = GetNewText(_Texts["TextScore" + target]);
                             _Texts["TextScoreS" + (screen + 1) + target].X += screen * CSettings.RenderW;
+
+                            _Texts["TextCurrentTone" + target].Visible = false;
+                            _Texts["TextCurrentToneS" + (screen + 1) + target] = GetNewText(_Texts["TextCurrentTone" + target]);
+                            _Texts["TextCurrentToneS" + (screen + 1) + target].X += screen * CSettings.RenderW;
                         }
                     }
                 }
@@ -1919,6 +1940,7 @@ namespace Vocaluxe.Screens
         {
             _PlayerTextScore = new String[CGame.NumPlayers];
             _PlayerTextName = new String[CGame.NumPlayers];
+            _PlayerTextCurrentTone = new String[CGame.NumPlayers];
             _PlayerStaticAvatar = new String[CGame.NumPlayers];
             _PlayerStaticScore = new String[CGame.NumPlayers];
             _PlayerProgressBarRating = new String[CGame.NumPlayers];
@@ -1937,6 +1959,7 @@ namespace Vocaluxe.Screens
                     {
                         _PlayerTextScore[player] = _TextScores[s, p, screenPlayers];
                         _PlayerTextName[player] = _TextNames[s, p, screenPlayers];
+                        _PlayerTextCurrentTone[player] = _TextCurrentTones[s, p, screenPlayers];
                         _PlayerProgressBarRating[player] = _ProgressBarsRating[s, p, screenPlayers];
                         _PlayerStaticAvatar[player] = _StaticAvatars[s, p, screenPlayers];
                         _PlayerStaticScore[player] = _StaticScores[s, p, screenPlayers];
@@ -1946,6 +1969,7 @@ namespace Vocaluxe.Screens
                         {
                             _PlayerTextScore[player] = _TextScores[s, p + 1, screenPlayers];
                             _PlayerTextName[player] = _TextNames[s, p + 1, screenPlayers];
+                            _PlayerTextCurrentTone[player] = _TextCurrentTones[s, p + 1, screenPlayers];
                             _PlayerProgressBarRating[player] = _ProgressBarsRating[s, p + 1, screenPlayers];
                             _PlayerStaticAvatar[player] = _StaticAvatars[s, p + 1, screenPlayers];
                             _PlayerStaticScore[player] = _StaticScores[s, p + 1, screenPlayers];
@@ -1958,6 +1982,7 @@ namespace Vocaluxe.Screens
                     {
                         _PlayerTextScore[player] = _TextScores[s, p, screenPlayers - 1];
                         _PlayerTextName[player] = _TextNames[s, p, screenPlayers - 1];
+                        _PlayerTextCurrentTone[player] = _TextCurrentTones[s, p, screenPlayers - 1];
                         _PlayerProgressBarRating[player] = _ProgressBarsRating[s, p, screenPlayers - 1];
                         _PlayerStaticAvatar[player] = _StaticAvatars[s, p, screenPlayers - 1];
                         _PlayerStaticScore[player] = _StaticScores[s, p, screenPlayers - 1];
@@ -1971,6 +1996,7 @@ namespace Vocaluxe.Screens
                 {
                     _PlayerTextScore[player] = _TextScores[s, 0, 0];
                     _PlayerTextName[player] = _TextNames[s, 0, 0];
+                    _PlayerTextCurrentTone[player] = _TextCurrentTones[s, 0, 0];
                     _PlayerProgressBarRating[player] = _ProgressBarsRating[s, 0, 0];
                     _PlayerStaticAvatar[player] = _StaticAvatars[s, 0, 0];
                     _PlayerStaticScore[player] = _StaticScores[s, 0, 0];

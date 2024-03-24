@@ -2,7 +2,7 @@
 <Screen xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Informations>
     <ScreenName>ScreenSing</ScreenName>
-    <ScreenVersion>9</ScreenVersion>
+    <ScreenVersion>10</ScreenVersion>
   </Informations>
   <Backgrounds/>
   <Statics>
@@ -754,6 +754,22 @@
       <Font>Outline</Font>
       <Text />
     </Text>
+    <Text Name="TextCurrentToneP1N1">
+      <X>967</X>
+      <Y>418</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player1">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player1" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
     <Text Name="TextScoreP1N2">
       <X>1047</X>
       <Y>143</Y>
@@ -779,6 +795,22 @@
       <Color Name="TextNameColor" />
       <SelColor Name="Player1" />
       <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextCurrentToneP1N2">
+      <X>967</X>
+      <Y>151</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player1">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player1" />
+      <Align>Center</Align>
       <ResizeAlign>Center</ResizeAlign>
       <Style>Bold</Style>
       <Font>Outline</Font>
@@ -814,6 +846,22 @@
       <Font>Outline</Font>
       <Text />
     </Text>
+    <Text Name="TextCurrentToneP2N2">
+      <X>967</X>
+      <Y>418</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player2">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player2" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
     <Text Name="TextScoreP1N3">
       <X>1047</X>
       <Y>82</Y>
@@ -839,6 +887,22 @@
       <Color Name="TextNameColor" />
       <SelColor Name="Player1" />
       <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextCurrentToneP1N3">
+      <X>967</X>
+      <Y>89</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player1">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player1" />
+      <Align>Center</Align>
       <ResizeAlign>Center</ResizeAlign>
       <Style>Bold</Style>
       <Font>Outline</Font>
@@ -874,6 +938,22 @@
       <Font>Outline</Font>
       <Text />
     </Text>
+    <Text Name="TextCurrentToneP2N3">
+      <X>967</X>
+      <Y>285</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player2">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player2" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
     <Text Name="TextScoreP3N3">
       <X>1047</X>
       <Y>474</Y>
@@ -899,6 +979,22 @@
       <Color Name="TextNameColor" />
       <SelColor Name="Player3" />
       <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextCurrentToneP3N3">
+      <X>967</X>
+      <Y>481</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player3">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player3" />
+      <Align>Center</Align>
       <ResizeAlign>Center</ResizeAlign>
       <Style>Bold</Style>
       <Font>Outline</Font>
@@ -934,6 +1030,22 @@
       <Font>Outline</Font>
       <Text />
     </Text>
+    <Text Name="TextCurrentToneP1N4">
+      <X>499</X>
+      <Y>151</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player1">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player1" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
     <Text Name="TextScoreP2N4">
       <X>579</X>
       <Y>410</Y>
@@ -959,6 +1071,22 @@
       <Color Name="TextNameColor" />
       <SelColor Name="Player2" />
       <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextCurrentToneP2N4">
+      <X>499</X>
+      <Y>418</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player2">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player2" />
+      <Align>Center</Align>
       <ResizeAlign>Center</ResizeAlign>
       <Style>Bold</Style>
       <Font>Outline</Font>
@@ -994,6 +1122,22 @@
       <Font>Outline</Font>
       <Text />
     </Text>
+    <Text Name="TextCurrentToneP3N4">
+      <X>1085</X>
+      <Y>151</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player3">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player3" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
     <Text Name="TextScoreP4N4">
       <X>1165</X>
       <Y>410</Y>
@@ -1019,6 +1163,22 @@
       <Color Name="TextNameColor" />
       <SelColor Name="Player4" />
       <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextCurrentToneP4N4">
+      <X>1085</X>
+      <Y>418</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player4">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player4" />
+      <Align>Center</Align>
       <ResizeAlign>Center</ResizeAlign>
       <Style>Bold</Style>
       <Font>Outline</Font>
@@ -1054,6 +1214,22 @@
       <Font>Outline</Font>
       <Text />
     </Text>
+    <Text Name="TextCurrentToneP1N5">
+      <X>499</X>
+      <Y>89</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player1">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player1" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
     <Text Name="TextScoreP2N5">
       <X>579</X>
       <Y>278</Y>
@@ -1079,6 +1255,22 @@
       <Color Name="TextNameColor" />
       <SelColor Name="Player2" />
       <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextCurrentToneP2N5">
+      <X>499</X>
+      <Y>285</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player2">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player2" />
+      <Align>Center</Align>
       <ResizeAlign>Center</ResizeAlign>
       <Style>Bold</Style>
       <Font>Outline</Font>
@@ -1114,6 +1306,22 @@
       <Font>Outline</Font>
       <Text />
     </Text>
+    <Text Name="TextCurrentToneP3N5">
+      <X>499</X>
+      <Y>481</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player3">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player3" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
     <Text Name="TextScoreP4N5">
       <X>1165</X>
       <Y>143</Y>
@@ -1139,6 +1347,22 @@
       <Color Name="TextNameColor" />
       <SelColor Name="Player4" />
       <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextCurrentToneP4N5">
+      <X>1085</X>
+      <Y>151</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player4">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player4" />
+      <Align>Center</Align>
       <ResizeAlign>Center</ResizeAlign>
       <Style>Bold</Style>
       <Font>Outline</Font>
@@ -1174,6 +1398,22 @@
       <Font>Outline</Font>
       <Text />
     </Text>
+    <Text Name="TextCurrentToneP5N5">
+      <X>1085</X>
+      <Y>418</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player5">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player5" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
     <Text Name="TextScoreP1N6">
       <X>579</X>
       <Y>82</Y>
@@ -1199,6 +1439,22 @@
       <Color Name="TextNameColor" />
       <SelColor Name="Player1" />
       <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextCurrentToneP1N6">
+      <X>499</X>
+      <Y>89</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player1">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player1" />
+      <Align>Center</Align>
       <ResizeAlign>Center</ResizeAlign>
       <Style>Bold</Style>
       <Font>Outline</Font>
@@ -1234,6 +1490,22 @@
       <Font>Outline</Font>
       <Text />
     </Text>
+    <Text Name="TextCurrentToneP2N6">
+      <X>499</X>
+      <Y>285</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player2">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player2" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
     <Text Name="TextScoreP3N6">
       <X>579</X>
       <Y>474</Y>
@@ -1259,6 +1531,22 @@
       <Color Name="TextNameColor" />
       <SelColor Name="Player3" />
       <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextCurrentToneP3N6">
+      <X>499</X>
+      <Y>481</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player3">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player3" />
+      <Align>Center</Align>
       <ResizeAlign>Center</ResizeAlign>
       <Style>Bold</Style>
       <Font>Outline</Font>
@@ -1294,6 +1582,22 @@
       <Font>Outline</Font>
       <Text />
     </Text>
+    <Text Name="TextCurrentToneP4N6">
+      <X>1085</X>
+      <Y>89</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player4">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player4" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
     <Text Name="TextScoreP5N6">
       <X>1165</X>
       <Y>278</Y>
@@ -1324,6 +1628,22 @@
       <Font>Outline</Font>
       <Text />
     </Text>
+    <Text Name="TextCurrentToneP5N6">
+      <X>1085</X>
+      <Y>285</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player5">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player5" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
     <Text Name="TextScoreP6N6">
       <X>1165</X>
       <Y>474</Y>
@@ -1349,6 +1669,22 @@
       <Color Name="TextNameColor" />
       <SelColor Name="Player6" />
       <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextCurrentToneP6N6">
+      <X>1085</X>
+      <Y>481</Y>
+      <Z>-1</Z>
+      <H>18</H>
+      <MaxW>0</MaxW>
+      <Color Name="Player6">
+        <A>0.7</A>
+      </Color>
+      <SelColor Name="Player6" />
+      <Align>Center</Align>
       <ResizeAlign>Center</ResizeAlign>
       <Style>Bold</Style>
       <Font>Outline</Font>
