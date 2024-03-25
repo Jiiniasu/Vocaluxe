@@ -343,6 +343,7 @@ namespace VocaluxeLib
     {
         public Guid ProfileID;
         public EGameDifficulty Difficulty;
+        public EOffOn ToneHelperText;
         public double Points;
         public double PointsLineBonus;
         public double PointsGoldenNotes;

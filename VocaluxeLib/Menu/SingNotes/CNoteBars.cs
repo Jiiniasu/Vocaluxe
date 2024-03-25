@@ -37,6 +37,7 @@ namespace VocaluxeLib.Menu.SingNotes
         public float Alpha = 1;
         private float ToneHelperAlpha = 0;
         private readonly CSongLine[] _Lines;
+        private CText _CurrentToneText = new CText(0,0,0,14,50, EAlignment.Right, EStyle.Bold,"Outline",new SColorF(Color.White),String.Empty);
 
         /// <summary>
         ///     Height of one tone
@@ -70,6 +71,38 @@ namespace VocaluxeLib.Menu.SingNotes
         private readonly List<CParticleEffect> _PerfectNoteEffect = new List<CParticleEffect>();
         private readonly List<CParticleEffect> _PerfectLineTwinkle = new List<CParticleEffect>();
 
+        private bool _ShowToneHelperText = false;
+
+        private readonly List<string> _Tone = new List<string>()
+        {
+            "C",
+            "C♯",
+            "D",
+            "D♯",
+            "E",
+            "F",
+            "F♯",
+            "G",
+            "G♯",
+            "A",
+            "A♯",
+            "B"
+        };
+
+        private readonly List<string> _Octave = new List<string>()
+        {
+            "₀",
+            "₁",
+            "₂",
+            "₃",
+            "₄",
+            "₅",
+            "₆",
+            "₇",
+            "₈",
+            "₉"
+        };
+
         public CNoteBars(int partyModeID, int player, SRectF rect, SThemeSingBar theme)
         {
             _Player = player;
@@ -97,6 +130,13 @@ namespace VocaluxeLib.Menu.SingNotes
             _SemiToneHeight = _ToneHeight / 2;
             _NoteWidth = _ToneHeight * 2f;
             _AddNoteHeight = _ToneHeight / 2f * (2f - (int)playerData.Difficulty);
+
+            if (playerData.ToneHelperText == EOffOn.TR_CONFIG_ON)
+            {
+                _ShowToneHelperText = true;
+                _CurrentToneText.Z = Rect.Z;
+                _CurrentToneText.AllMonitors = false;
+            }
         }
 
         private int SetSongBaseLine()
@@ -333,7 +373,9 @@ namespace VocaluxeLib.Menu.SingNotes
         private void _DrawToneHelper(CSongLine line)
         {
             float fadetime = 200;
-            int tonePlayer = CBase.Record.GetToneAbs(_Player);
+            int absTonePlayer = CBase.Record.GetToneAbs(_Player) + 24;
+            int tonePlayer = absTonePlayer % 12;
+            int octavePlayer = absTonePlayer / 12;
 
             if (!CBase.Record.ToneValid(_Player))
             {
@@ -366,11 +408,11 @@ namespace VocaluxeLib.Menu.SingNotes
 
             int tone = line.Notes[note].Tone;
 
-            while ((tonePlayer - tone < -6 && tonePlayer < _SemiToneRange - 12) || tonePlayer < _SongBaseLine)
-                tonePlayer += 12;
+            while ((absTonePlayer - tone < -6 && absTonePlayer < _SemiToneRange - 12) || absTonePlayer < _SongBaseLine)
+                absTonePlayer += 12;
 
-            while ((tonePlayer - tone > 6 && tonePlayer > _SongBaseLine + 12) || tonePlayer > _SongBaseLine + _SemiToneRange)
-                tonePlayer -= 12;
+            while ((absTonePlayer - tone > 6 && absTonePlayer > _SongBaseLine + 12) || absTonePlayer > _SongBaseLine + _SemiToneRange)
+                absTonePlayer -= 12;
 
             float h = (Rect.H / CBase.Settings.GetNumNoteLines()) * 2;
 
@@ -380,7 +422,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
             var drawRect = new SRectF(
                 Rect.X + _JudgementLine - toneHelper.Rect.W,
-                Rect.Y + (_SemiToneHeight * (_SemiToneRange - (tonePlayer - _SongBaseLine) + 1)) - (toneHelper.Rect.H / 2),
+                Rect.Y + (_SemiToneHeight * (_SemiToneRange - (absTonePlayer - _SongBaseLine) + 1)) - (toneHelper.Rect.H / 2),
                 toneHelper.Rect.W,
                 toneHelper.Rect.H,
                 Rect.Z
@@ -389,6 +431,16 @@ namespace VocaluxeLib.Menu.SingNotes
             var color = new SColorF(1, 1, 1, ToneHelperAlpha);
 
             CBase.Drawing.DrawTexture(toneHelper, drawRect, color, false);
+
+            if (_ShowToneHelperText)
+            {
+                _CurrentToneText.X = drawRect.X - 3;
+                _CurrentToneText.Y = drawRect.Y;
+                _CurrentToneText.Color = color;
+                _CurrentToneText.Text = _Tone[tonePlayer] + _Octave[octavePlayer];
+
+                _CurrentToneText.Draw();
+            }
         }
 
         private void _DrawNote(SRectF rect, SColorF color, CTextureRef noteBegin, CTextureRef noteMiddle, CTextureRef noteEnd, float factor)

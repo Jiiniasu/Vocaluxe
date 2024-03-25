@@ -229,6 +229,7 @@ namespace Vocaluxe.Base
             {
                 CGame.Players[i].ProfileID = cloudPlayers[i].PlayerGuid;
                 CGame.Players[i].Difficulty = cloudPlayers[i].Difficulty;
+                CGame.Players[i].ToneHelperText = cloudPlayers[i].ToneHelperText;
             }
         }
 
@@ -323,5 +324,6 @@ namespace Vocaluxe.Base
     {
         public Guid PlayerGuid { get; set; }
         public EGameDifficulty Difficulty { get; set; }
+        public EOffOn ToneHelperText { get; set; }
     }
 }
