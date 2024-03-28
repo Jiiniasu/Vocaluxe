@@ -408,10 +408,10 @@ namespace VocaluxeLib.Menu.SingNotes
 
             int tone = line.Notes[note].Tone;
 
-            while ((absTonePlayer - tone < -6 && absTonePlayer < _SemiToneRange - 12) || absTonePlayer <= _SongBaseLine)
+            while (absTonePlayer - tone < -6)
                 absTonePlayer += 12;
 
-            while ((absTonePlayer - tone > 6 && absTonePlayer > _SongBaseLine + 12) || absTonePlayer >= _SongBaseLine + _SemiToneRange)
+            while (absTonePlayer - tone > 6)
                 absTonePlayer -= 12;
 
             float h = (Rect.H / CBase.Settings.GetNumNoteLines()) * 2;
