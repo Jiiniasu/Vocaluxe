@@ -37,7 +37,7 @@ namespace VocaluxeLib.Menu.SingNotes
         public float Alpha = 1;
         private float ToneHelperAlpha = 0;
         private readonly CSongLine[] _Lines;
-        private CText _CurrentToneText = new CText(0,0,0,14,50, EAlignment.Right, EStyle.Bold,"Outline",new SColorF(Color.White),String.Empty);
+        private CText _CurrentToneText = new CText(0, 0, 0, 14, 50, EAlignment.Right, EStyle.Bold, "Outline", new SColorF(Color.White), String.Empty);
 
         /// <summary>
         ///     Height of one tone
@@ -54,9 +54,10 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private readonly float _NoteWidth;
 
-        private readonly int _SongBaseLine;
         private readonly int _NumNoteLines;
-        private int _SemiToneRange;
+        private readonly int _RangeSemiToneCount = 18;
+        private readonly int _RangeSemiToneMax = CBase.Settings.GetToneMin();
+        private readonly int _RangeSemiToneMin = CBase.Settings.GetToneMax();
 
         private readonly List<int> _AccidentalNotes = new List<int> { 1, 3, 6, 8, 10 };
 
@@ -121,11 +122,34 @@ namespace VocaluxeLib.Menu.SingNotes
             SPlayer playerData = CBase.Game.GetPlayers()[player];
             _Lines = CBase.Game.GetSong().Notes.GetVoice(playerData.VoiceNr).Lines;
 
-            _SemiToneRange = ((CBase.Settings.GetNumNoteLines()) * 2) - 1;
+            for (int i = 0; i < _Lines.Count(); i++)
+            {
+                if (_Lines[i].Notes.Any())
+                {
+                    foreach (CSongNote note in _Lines[i].Notes.Where(note => note.Type != ENoteType.Freestyle))
+                    {
+                        _RangeSemiToneMin = (note.Tone < _RangeSemiToneMin) ? note.Tone : _RangeSemiToneMin;
+                        _RangeSemiToneMax = (note.Tone > _RangeSemiToneMax) ? note.Tone : _RangeSemiToneMax;
+                    }
+                }
+            }
 
-            _SongBaseLine = SetSongBaseLine();
+            _RangeSemiToneMin -= 2;
+            _RangeSemiToneMax += 2;
 
-            _NumNoteLines = (_SemiToneRange + 1) / 2;
+            int rangeToneCount = _RangeSemiToneMax - _RangeSemiToneMin;
+
+            if (rangeToneCount < _RangeSemiToneCount)
+            {
+                int extraRangeToneCount = (_RangeSemiToneCount - (rangeToneCount));
+                _RangeSemiToneMax += extraRangeToneCount / 2;
+                _RangeSemiToneMin -= extraRangeToneCount / 2;
+                rangeToneCount = _RangeSemiToneMax - _RangeSemiToneMin;
+            }
+
+            _RangeSemiToneCount = rangeToneCount;
+
+            _NumNoteLines = (_RangeSemiToneCount + 1) / 2;
             _ToneHeight = Rect.H / _NumNoteLines;
             _SemiToneHeight = _ToneHeight / 2;
             _NoteWidth = _ToneHeight * 2f;
@@ -137,38 +161,6 @@ namespace VocaluxeLib.Menu.SingNotes
                 _CurrentToneText.Z = Rect.Z;
                 _CurrentToneText.AllMonitors = false;
             }
-        }
-
-        private int SetSongBaseLine()
-        {
-            int min = CBase.Settings.GetToneMax();
-            int max = CBase.Settings.GetToneMin();
-            int range;
-
-            for (int i = 0; i < _Lines.Count(); i++)
-            {
-                if (_Lines[i].Notes.Any())
-                {
-                    foreach (CSongNote note in _Lines[i].Notes.Where(note => note.Type != ENoteType.Freestyle))
-                    {
-                        min = (note.Tone < min) ? note.Tone : min;
-                        max = (note.Tone > max) ? note.Tone : max;
-                    }
-                }
-            }
-
-            max += 2;
-            min -= 2;
-
-            range = max - min;
-
-            if (range > _SemiToneRange)
-            {
-                _SemiToneRange = range;
-                _SemiToneRange += (_SemiToneRange + 1) % 2;
-            }
-
-            return min - (int)Math.Floor((double)(_SemiToneRange - range) / 2);
         }
 
         public void SetLine(int line)
@@ -211,6 +203,15 @@ namespace VocaluxeLib.Menu.SingNotes
             {
                 foreach (CSungNote note in sungLines[i].Notes)
                 {
+                    while (note.Tone < _RangeSemiToneMin && note.Tone + 12 < _RangeSemiToneMin + _RangeSemiToneCount)
+                    {
+                        note.Tone += 12;
+                    }
+                    while (note.Tone > _RangeSemiToneMin + _RangeSemiToneCount && note.Tone - 12 > _RangeSemiToneMin)
+                    {
+                        note.Tone -= 12;
+                    }
+
                     SRectF rect = _GetNoteRect(note);
                     if ((rect.Right > Rect.X && rect.Right < Rect.Right))
                     {
@@ -289,7 +290,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
             var noteRect = new SRectF(
                 Rect.X + (note.StartBeat - CBase.Game.GetCurrentBeatF()) * _NoteWidth + _JudgementLine,
-                Rect.Y + (_SemiToneRange - (note.Tone - _SongBaseLine)) * _SemiToneHeight - (_AddNoteHeight / 2),
+                Rect.Y + (_RangeSemiToneCount - (note.Tone - _RangeSemiToneMin)) * _SemiToneHeight - (_AddNoteHeight / 2),
                 width,
                 _ToneHeight + _AddNoteHeight,
                 Rect.Z
@@ -321,12 +322,12 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _DrawOctaveLines(SColorF octaveColor)
         {
-            int shift = 12 - (_SongBaseLine % 12);
+            int shift = 12 - (_RangeSemiToneMin % 12);
 
             SRectF octaveRect = Rect;
             octaveRect.H = _SemiToneHeight * 12;
-            octaveRect.Y = Rect.Y + Rect.H - octaveRect.H - (_SemiToneHeight * shift) + (_SemiToneHeight/2);
-            
+            octaveRect.Y = Rect.Y + Rect.H - octaveRect.H - (_SemiToneHeight * shift) + (_SemiToneHeight / 2);
+
             do
             {
                 if (octaveRect.Y < Rect.Y)
@@ -342,7 +343,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _DrawScaleLines(SColorF accidentalsColor)
         {
-            int note = _SongBaseLine;
+            int note = _RangeSemiToneMin;
             while (note < 0)
             {
                 note += 12;
@@ -379,7 +380,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
             if (!CBase.Record.ToneValid(_Player))
             {
-                if(ToneHelperAlpha == 0)
+                if (ToneHelperAlpha == 0)
                     return;
 
                 if (!_ToneHelperTimer.IsRunning)
@@ -401,12 +402,18 @@ namespace VocaluxeLib.Menu.SingNotes
                 _ToneHelperTimer.Reset();
             }
 
+            float toneHeight = (Rect.H / CBase.Settings.GetNumNoteLines());
+
+            float toneHelperHeight = toneHeight * 2;
+
             int note = line.FindPreviousNote(CBase.Game.GetCurrentBeat());
 
-            if(note < 0)
+            if (note < 0)
                 note = 0;
 
             int tone = line.Notes[note].Tone;
+
+            // Bring player tone within an octave to the target note
 
             while (absTonePlayer - tone < -6)
                 absTonePlayer += 12;
@@ -414,15 +421,21 @@ namespace VocaluxeLib.Menu.SingNotes
             while (absTonePlayer - tone > 6)
                 absTonePlayer -= 12;
 
-            float h = (Rect.H / CBase.Settings.GetNumNoteLines()) * 2;
+            // Shift player tone an octave if out of range
+
+            if (absTonePlayer > _RangeSemiToneMax)
+                absTonePlayer -= 12;
+
+            if (absTonePlayer < _RangeSemiToneMin)
+                absTonePlayer += 12;
 
             CTextureRef toneHelper = CBase.Themes.GetSkinTexture(_Theme.SkinToneHelper, _PartyModeID);
-            toneHelper.Rect.W = toneHelper.Rect.W * ((h) / toneHelper.Rect.H);
-            toneHelper.Rect.H = h;
+            toneHelper.Rect.W = toneHelper.Rect.W * ((toneHelperHeight) / toneHelper.Rect.H);
+            toneHelper.Rect.H = toneHelperHeight;
 
             var drawRect = new SRectF(
                 Rect.X + _JudgementLine - toneHelper.Rect.W,
-                Rect.Y + (_SemiToneHeight * (_SemiToneRange - (absTonePlayer - _SongBaseLine) + 1)) - (toneHelper.Rect.H / 2),
+                Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (absTonePlayer - _RangeSemiToneMin) + 1)) - (toneHelper.Rect.H / 2),
                 toneHelper.Rect.W,
                 toneHelper.Rect.H,
                 Rect.Z
@@ -457,7 +470,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
             var noteRect = new SRectF(rect.X + dw, rect.Y + dh, rect.W - 2 * dw, rect.H - 2 * dh, rect.Z);
             var noteBoundary = noteRect;
-            if(noteBoundary.X < Rect.X)
+            if (noteBoundary.X < Rect.X)
             {
                 noteBoundary.X = Rect.X;
                 noteBoundary.W -= Rect.X - noteBoundary.X;
@@ -488,7 +501,8 @@ namespace VocaluxeLib.Menu.SingNotes
             if (lastMidRect.X + lastMidRect.W > Rect.X + Rect.W)
             {
                 lastMidRect.W -= (lastMidRect.X + lastMidRect.W) - (Rect.X + Rect.W);
-            } else if(lastMidRect.X < Rect.X)
+            }
+            else if (lastMidRect.X < Rect.X)
             {
                 lastMidRect.X = Rect.X;
                 lastMidRect.W -= Rect.X - lastMidRect.X;
