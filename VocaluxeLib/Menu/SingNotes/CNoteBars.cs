@@ -168,9 +168,6 @@ namespace VocaluxeLib.Menu.SingNotes
             if (_CurrentLine == line)
                 return;
             _CurrentLine = line;
-            _GoldenStars.Clear();
-            _Flares.Clear();
-            _PerfectNoteEffect.Clear();
 
         }
 
@@ -243,6 +240,7 @@ namespace VocaluxeLib.Menu.SingNotes
             _Flares.RemoveAll(el => !el.IsAlive);
             _PerfectNoteEffect.RemoveAll(el => !el.IsAlive);
             _PerfectLineTwinkle.RemoveAll(el => !el.IsAlive);
+            _GoldenStars.RemoveAll(el => !el.IsAlive);
 
             foreach (CParticleEffect perfline in _PerfectLineTwinkle)
                 perfline.Draw();
@@ -581,6 +579,7 @@ namespace VocaluxeLib.Menu.SingNotes
             SColorF whiteColor = new SColorF(1, 1, 1, color.A);
             _DrawNoteBG(rect, whiteColor);
             _DrawNoteBase(rect, new SColorF(goldColor, _NoteBaseColor.A * Alpha), 1f);
+            _AddGoldenNote(rect);
         }
 
         private SRectF _GetNoteBoundary(CSongNote note)
@@ -600,8 +599,8 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _AddGoldenNote(SRectF noteRect)
         {
-            var numstars = (int)(noteRect.W * 0.25f);
-            var stars = new CParticleEffect(_PartyModeID, numstars, new SColorF(Color.Yellow), noteRect, _Theme.SkinGoldenStar, 20, EParticleType.Star);
+            var numstars = 1;
+            var stars = new CParticleEffect(_PartyModeID, numstars, new SColorF(Color.Yellow), noteRect, Rect, _Theme.SkinGoldenStar, 12, EParticleType.Star);
             stars.AllMonitors = false;
             _GoldenStars.Add(stars);
         }
@@ -624,7 +623,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
             SRectF r = new SRectF(noteRect.Right - dx, noteRect.Y, dx * 0.5f, dx * 0.2f, noteRect.Z);
 
-            var stars = new CParticleEffect(_PartyModeID, CBase.Game.GetRandom(2) + 1, new SColorF(Color.White), r, _Theme.SkinPerfectNoteStart, 35,
+            var stars = new CParticleEffect(_PartyModeID, CBase.Game.GetRandom(2) + 1, new SColorF(Color.White), r, Rect, _Theme.SkinPerfectNoteStart, 35,
                                             EParticleType.PerfNoteStar);
             stars.AllMonitors = false;
             _PerfectNoteEffect.Add(stars);
@@ -632,7 +631,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _AddPerfectLine()
         {
-            var twinkle = new CParticleEffect(_PartyModeID, 200, _Color, Rect, _Theme.SkinGoldenStar, 25, EParticleType.Twinkle);
+            var twinkle = new CParticleEffect(_PartyModeID, 200, _Color, Rect, _Theme.SkinGoldenStar, 15, EParticleType.Twinkle);
             twinkle.AllMonitors = false;
             _PerfectLineTwinkle.Add(twinkle);
         }

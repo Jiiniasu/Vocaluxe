@@ -189,7 +189,7 @@ namespace VocaluxeLib.Menu
 
                     case EParticleType.Star:
                         size = CBase.Game.GetRandom((int)_Theme.Size / 2) + _Theme.Size / 2;
-                        lifetime = CBase.Game.GetRandom(1000) / 500f + 0.2f;
+                        lifetime = CBase.Game.GetRandom(500) / 2000f + 0.2f;
                         vx = -CBase.Game.GetRandom(1000) / 50f + 10f;
                         vy = -CBase.Game.GetRandom(1000) / 50f + 10f;
                         vr = -CBase.Game.GetRandom(500) / 100f + 2.5f;
@@ -242,20 +242,20 @@ namespace VocaluxeLib.Menu
                     star = new CParticle(_PartyModeID, _Theme.Skin, Color,
                                          CBase.Game.GetRandom(w) + Rect.X - size / 4f,
                                          CBase.Game.GetRandom(h) + Rect.Y - size / 4f,
-                                         size, lifetime, Rect.Z, vx, vy, vr, vsize, _Theme.Type);
+                                         size, lifetime, Rect.Z, vx, vy, vr, vsize, Bounds, _Theme.Type);
                 }
                 else
                 {
                     star = new CParticle(_PartyModeID, Texture, Color,
                                          CBase.Game.GetRandom(w) + Rect.X - size / 4f,
                                          CBase.Game.GetRandom(h) + Rect.Y - size / 4f,
-                                         size, lifetime, Rect.Z, vx, vy, vr, vsize, _Theme.Type);
+                                         size, lifetime, Rect.Z, vx, vy, vr, vsize, Bounds, _Theme.Type);
                 }
 
                 _Stars.Add(star);
             }
 
-            if (_Theme.Type == EParticleType.Flare || _Theme.Type == EParticleType.PerfNoteStar || _Theme.Type == EParticleType.Twinkle)
+            if (_Theme.Type == EParticleType.Flare || _Theme.Type == EParticleType.PerfNoteStar || _Theme.Type == EParticleType.Twinkle || _Theme.Type == EParticleType.Star)
                 _NextSpawnTime = -1f;
 
             int i = 0;
