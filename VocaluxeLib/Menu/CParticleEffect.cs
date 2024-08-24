@@ -55,6 +55,8 @@ namespace VocaluxeLib.Menu
         public CTextureRef Texture;
         public SColorF Color;
 
+        public SRectF Bounds = new SRectF(0, 0, 1280, 720, 1);
+
         private readonly List<CParticle> _Stars;
         private readonly Stopwatch _SpawnTimer;
         private float _NextSpawnTime;
@@ -91,6 +93,23 @@ namespace VocaluxeLib.Menu
             _Theme = new SThemeParticleEffect();
             _Stars = new List<CParticle>();
             MaxRect = rect;
+            Color = color;
+            _Theme.Skin = skin;
+            _Theme.MaxNumber = maxNumber;
+            _Theme.Size = size;
+            _Theme.Type = type;
+            _SpawnTimer = new Stopwatch();
+            _NextSpawnTime = 0f;
+            Visible = true;
+        }
+
+        public CParticleEffect(int partyModeID, int maxNumber, SColorF color, SRectF rect, SRectF bounds, string skin, float size, EParticleType type)
+        {
+            _PartyModeID = partyModeID;
+            _Theme = new SThemeParticleEffect();
+            _Stars = new List<CParticle>();
+            MaxRect = rect;
+            Bounds = bounds;
             Color = color;
             _Theme.Skin = skin;
             _Theme.MaxNumber = maxNumber;

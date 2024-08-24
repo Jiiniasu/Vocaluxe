@@ -17,6 +17,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime;
 using VocaluxeLib.Draw;
 
 namespace VocaluxeLib.Menu
@@ -28,6 +29,7 @@ namespace VocaluxeLib.Menu
         private readonly string _TextureName;
         private readonly CTextureRef _Texture;
         private SRectF _Rect;
+        private SRectF _Bounds;
         private float _Size;
         private SColorF _Color;
         private float _Alpha = 1;
@@ -84,6 +86,12 @@ namespace VocaluxeLib.Menu
             set { _Color = value; }
         }
 
+        public SRectF Bounds
+        {
+            get { return _Bounds; }
+            set { _Bounds = value; }
+        }
+
         public bool IsAlive
         {
             get { return _Age < _MaxAge || Math.Abs(_MaxAge) < float.Epsilon; }
@@ -91,13 +99,14 @@ namespace VocaluxeLib.Menu
         #endregion public vars
 
         #region Constructors
-        public CParticle(int partyModeID, string textureName, SColorF color, float x, float y, float size, float maxage, float z, float vx, float vy, float vr, float vsize,
+        public CParticle(int partyModeID, string textureName, SColorF color, float x, float y, float size, float maxage, float z, float vx, float vy, float vr, float vsize, SRectF bounds,
                          EParticleType type)
         {
             _PartyModeID = partyModeID;
             _TextureName = textureName;
             _Color = color;
             _Rect = new SRectF(x, y, size, size, z);
+            _Bounds = bounds;
             _Size = size;
             _Vx = vx;
             _Vy = vy;
@@ -109,7 +118,7 @@ namespace VocaluxeLib.Menu
             _Rotation = (float)(CBase.Game.GetRandomDouble() * 360.0);
         }
 
-        public CParticle(int partyModeID, CTextureRef texture, SColorF color, float x, float y, float size, float maxage, float z, float vx, float vy, float vr, float vsize,
+        public CParticle(int partyModeID, CTextureRef texture, SColorF color, float x, float y, float size, float maxage, float z, float vx, float vy, float vr, float vsize, SRectF bounds,
                          EParticleType type)
         {
             _PartyModeID = partyModeID;
@@ -117,6 +126,7 @@ namespace VocaluxeLib.Menu
             _Texture = texture;
             _Color = color;
             _Rect = new SRectF(x, y, size, size, z);
+            _Bounds = bounds; 
             _Size = size;
             _Vx = vx;
             _Vy = vy;
@@ -270,9 +280,9 @@ namespace VocaluxeLib.Menu
             // ReSharper disable ConvertIfStatementToConditionalTernaryExpression
             if (!String.IsNullOrEmpty(_TextureName))
                 // ReSharper restore ConvertIfStatementToConditionalTernaryExpression
-                CBase.Drawing.DrawTexture(CBase.Themes.GetSkinTexture(_TextureName, _PartyModeID), _Rect, new SColorF(_Color.R, _Color.G, _Color.B, _Color.A * Alpha2 * _Alpha), allMonitors);
+                CBase.Drawing.DrawTexture(CBase.Themes.GetSkinTexture(_TextureName, _PartyModeID), _Rect, new SColorF(_Color.R, _Color.G, _Color.B, _Color.A * Alpha2 * _Alpha), _Bounds, allMonitors);
             else
-                CBase.Drawing.DrawTexture(_Texture, _Rect, new SColorF(_Color.R, _Color.G, _Color.B, _Color.A * Alpha2 * _Alpha), allMonitors);
+                CBase.Drawing.DrawTexture(_Texture, _Rect, new SColorF(_Color.R, _Color.G, _Color.B, _Color.A * Alpha2 * _Alpha), _Bounds, allMonitors);
         }
     }
 }
