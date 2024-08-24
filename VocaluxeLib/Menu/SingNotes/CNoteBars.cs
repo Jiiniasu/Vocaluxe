@@ -262,9 +262,13 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _DrawNotes(SColorF color)
         {
-            for (int i = 0; i < _Lines.Count(); i++)
+            for (int i = _CurrentLine > 0 ? _CurrentLine-1 : 0; i < _Lines.Count(); i++)
             {
-                foreach (CSongNote note in _Lines[i].Notes)
+                if ((_Lines[i].EndBeat - CBase.Game.GetCurrentBeatF()) * _NoteWidth + _JudgementLine < 0)
+                    continue;
+                if ((_Lines[i].StartBeat - CBase.Game.GetCurrentBeatF()) * _NoteWidth > Rect.W)
+                    break;
+                    foreach (CSongNote note in _Lines[i].Notes)
                 {
                     switch (note.Type)
                     {
