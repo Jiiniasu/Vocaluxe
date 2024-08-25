@@ -31,7 +31,7 @@ namespace VocaluxeLib.Menu.SingNotes
         private readonly int _PartyModeID;
         private readonly int _Player;
         public readonly SRectF Rect;
-        private readonly SColorF _Color;
+        private readonly SColorF _PlayerColor;
         private readonly SColorF _NoteLinesColor;
         private readonly SColorF _NoteBaseColor;
         public float Alpha = 1;
@@ -111,7 +111,7 @@ namespace VocaluxeLib.Menu.SingNotes
             _PartyModeID = partyModeID;
             Rect = rect;
 
-            _Color = CBase.Themes.GetPlayerColor(player + 1);
+            _PlayerColor = CBase.Themes.GetPlayerColor(player + 1);
 
             if (!CBase.Themes.GetColor("NoteLinesColor", _PartyModeID, out _NoteLinesColor))
                 _NoteLinesColor = new SColorF(Color.Gray, 0.5f);
@@ -180,7 +180,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
             CSongLine line = _Lines[_CurrentLine];
 
-            var color = new SColorF(_Color, _Color.A * Alpha);
+            var color = new SColorF(_PlayerColor, _PlayerColor.A * Alpha);
 
             if (CBase.Config.GetDrawNoteLines() == EOffOn.TR_CONFIG_ON)
             {
@@ -631,7 +631,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _AddPerfectLine()
         {
-            var twinkle = new CParticleEffect(_PartyModeID, 200, _Color, Rect, _Theme.SkinGoldenStar, 15, EParticleType.Twinkle);
+            var twinkle = new CParticleEffect(_PartyModeID, 200, _PlayerColor, Rect, _Theme.SkinGoldenStar, 15, EParticleType.Twinkle);
             twinkle.AllMonitors = false;
             _PerfectLineTwinkle.Add(twinkle);
         }
