@@ -196,7 +196,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
             float beats = line.LastNoteBeat - line.FirstNoteBeat + 1;
 
-            for (int i = 0; i < sungLines.Count; i++)
+            for (int i = _CurrentLine > 0 ? _CurrentLine - 1 : 0; i < sungLines.Count; i++)
             {
                 foreach (CSungNote note in sungLines[i].Notes)
                 {
