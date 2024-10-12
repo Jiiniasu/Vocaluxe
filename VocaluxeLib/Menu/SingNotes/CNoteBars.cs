@@ -62,11 +62,14 @@ namespace VocaluxeLib.Menu.SingNotes
         private readonly List<int> _AccidentalNotes = new List<int> { 1, 3, 6, 8, 10 };
 
         private int _CurrentLine = -1;
+        private float _LastBeatF = 0;
 
         private readonly int _JudgementLine = CBase.Config.GetJudgementDistance();
 
         private readonly Stopwatch _Timer = new Stopwatch();
         private readonly Stopwatch _ToneHelperTimer = new Stopwatch();
+        private readonly Stopwatch _TrailSpawnTimer = new Stopwatch();
+        private readonly List<SRectF> _VoiceTrail = new List<SRectF>();
         private readonly List<CParticleEffect> _GoldenStars = new List<CParticleEffect>();
         private readonly List<CParticleEffect> _Flares = new List<CParticleEffect>();
         private readonly List<CParticleEffect> _PerfectNoteEffect = new List<CParticleEffect>();
@@ -229,7 +232,17 @@ namespace VocaluxeLib.Menu.SingNotes
             }
 
             if (CBase.Config.GetDrawToneHelper() == EOffOn.TR_CONFIG_ON)
+            {
+                for (int i = 0; i < _VoiceTrail.Count; i++)
+                {
+                    SRectF voice = _VoiceTrail[i];
+                    float currentBeatF = CBase.Game.GetCurrentBeatF();
+                    voice.X -= (currentBeatF - _LastBeatF) * _NoteWidth;
+                    _VoiceTrail[i] = voice;
+                    CBase.Drawing.DrawTexture(CBase.Themes.GetSkinTexture(_Theme.SkinGoldenStar, _PartyModeID), _VoiceTrail[i], new SColorF(Color.White, 0.6f + (CBase.Game.GetRandom(800) / 1000)), Rect, false, false);
+                }
                 _DrawToneHelper(line);
+            }
 
             if (sungLines.Count > 0 && sungLines[sungLines.Count - 1].PerfectLine)
             {
@@ -241,6 +254,7 @@ namespace VocaluxeLib.Menu.SingNotes
             _PerfectNoteEffect.RemoveAll(el => !el.IsAlive);
             _PerfectLineTwinkle.RemoveAll(el => !el.IsAlive);
             _GoldenStars.RemoveAll(el => !el.IsAlive);
+            _VoiceTrail.RemoveAll(el => el.Right < Rect.X);
 
             foreach (CParticleEffect perfline in _PerfectLineTwinkle)
                 perfline.Draw();
@@ -255,7 +269,12 @@ namespace VocaluxeLib.Menu.SingNotes
                 flare.Draw();
 
             foreach (CParticleEffect perfnote in _PerfectNoteEffect)
+            {
+                perfnote.X -= (CBase.Game.GetCurrentBeatF() - _LastBeatF) * _NoteWidth;
                 perfnote.Draw();
+            }
+
+            _LastBeatF = CBase.Game.GetCurrentBeatF();
         }
 
         private void _DrawNotes(SColorF color)
@@ -455,6 +474,23 @@ namespace VocaluxeLib.Menu.SingNotes
                 _CurrentToneText.Text = _Tone[tonePlayer] + _Octave[octavePlayer];
 
                 _CurrentToneText.Draw();
+            }
+
+            if (!_TrailSpawnTimer.IsRunning)
+                _TrailSpawnTimer.Start();
+
+            if (CBase.Record.ToneValid(_Player) && _TrailSpawnTimer.ElapsedMilliseconds > 10) 
+            {
+                var size = toneHeight -4 + (CBase.Game.GetRandom(800) / 100);
+                var heightvariance = toneHeight / 6;
+                var voiceTrailRect = new SRectF(
+                    Rect.X + _JudgementLine - toneHeight / 2,
+                    (Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (absTonePlayer - _RangeSemiToneMin) + 1)) - (size / 2)) + (-heightvariance + (CBase.Game.GetRandom((int)heightvariance*200) / 100)),
+                    size,
+                    size,
+                    Rect.Z);
+                _VoiceTrail.Add(voiceTrailRect);
+                _TrailSpawnTimer.Reset();
             }
         }
 
