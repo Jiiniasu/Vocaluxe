@@ -247,7 +247,7 @@ namespace Vocaluxe.Reporting
             string template = string.Format(_IssueTemplate, _VocaluxeVersionTag, gistUrl);
 
             // Build url for github issue template
-            string issueUrl = $"https://github.com/Vocaluxe/Vocaluxe/issues/new?title=Give%20me%20a%20meaningful%20title&body={ Uri.EscapeDataString(template) }";
+            string issueUrl = $"https://github.com/Jiiniasu/Vocaluxe/issues/new?title=Give%20me%20a%20meaningful%20title&body={ Uri.EscapeDataString(template) }";
 
             // Show the link
             _UploadFinished(issueUrl);
