@@ -343,7 +343,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _DrawOctaveLines(SColorF octaveColor)
         {
-            int shift = 12 - (_RangeSemiToneMin % 12);
+            int shift = 12 - ((_RangeSemiToneMin % 12 + 12) % 12);
 
             SRectF octaveRect = Rect;
             octaveRect.H = _SemiToneHeight * 12;
