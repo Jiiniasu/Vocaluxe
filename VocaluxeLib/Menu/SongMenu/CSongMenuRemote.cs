@@ -219,11 +219,10 @@ namespace VocaluxeLib.Menu.SongMenu
                 if ((CBase.Songs.GetTabs() == EOffOn.TR_CONFIG_OFF && CBase.Songs.GetNumCategories() > 0) || CBase.Songs.GetNumCategories() == 1)
                     _EnterCategory(0);
             }
-            if (CBase.Songs.IsInCategory())
-                SetSelectedSong(_SelectionNr < 0 ? 0 : _SelectionNr);
-            else
-                SetSelectedCategory(_SelectionNr < 0 ? 0 : _SelectionNr);
-            _PreviewNr = _SelectionNr;
+
+            Random rng = new Random();
+            
+            SetSelectedSong(_SelectionNr < 0 ? rng.Next(0, CBase.Songs.GetNumSongs()) : _SelectionNr);
         }
 
         public override bool HandleInput(ref SKeyEvent keyEvent, SScreenSongOptions options)

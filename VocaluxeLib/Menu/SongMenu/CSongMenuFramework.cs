@@ -216,7 +216,7 @@ namespace VocaluxeLib.Menu.SongMenu
         public virtual bool SmallView { get; set; }
         public abstract float SelectedTileZoomFactor { get; }
         // This is the nr of the current selection (song or category)
-        protected virtual int _SelectionNr { get; set; }
+        protected virtual int _SelectionNr { get; set; } = -1;
 
         protected CSongMenuFramework(int partyModeID)
         {
