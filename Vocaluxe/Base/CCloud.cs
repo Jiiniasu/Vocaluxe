@@ -20,12 +20,18 @@ namespace Vocaluxe.Base
     static class CCloud
     {
         private static readonly HttpClient _Client = new HttpClient();
-        private static readonly AsyncRetryPolicy _RetryPolicy = Policy.Handle<HttpRequestException>().WaitAndRetryAsync(6, retryAttempt =>
+        private static readonly AsyncRetryPolicy _HTTPRetryPolicy = Policy.Handle<HttpRequestException>().WaitAndRetryAsync(6, retryAttempt =>
         {
             CLog.CCloudLog.Information("Retry attempt {attempt}...", CLog.Params(retryAttempt));
             return TimeSpan.FromSeconds(Math.Pow(2, retryAttempt));
         });
-        private static readonly ClientWebSocket _WebSocket = new ClientWebSocket();
+        private static readonly AsyncRetryPolicy _WSRetryPolicy = Policy.Handle<WebSocketException>().WaitAndRetryAsync(6, retryAttempt =>
+        {
+            CLog.CCloudLog.Information("Retry attempt {attempt}...", CLog.Params(retryAttempt));
+            return TimeSpan.FromSeconds(Math.Pow(2, retryAttempt));
+        });
+        private static ClientWebSocket _WebSocket;
+        private static string _State = "loading_game";
         public static bool PauseSong;
         public static bool StopSong;
         public static bool RestartSong;
@@ -34,7 +40,7 @@ namespace Vocaluxe.Base
         {
             HttpResponseMessage response;
             CLog.CCloudLog.Information("POST to {uri}...", CLog.Params(url));
-            return await _RetryPolicy.ExecuteAsync(async () =>
+            return await _HTTPRetryPolicy.ExecuteAsync(async () =>
             {
                 var content = new StringContent(payload, Encoding.UTF8, "application/json");
                 response = await _Client.PostAsync(CConfig.CloudServerURL + url, content);
@@ -91,48 +97,64 @@ namespace Vocaluxe.Base
 
         public static async void Init()
         {
-            CLog.CCloudLog.Information("Connecting to websocket: {uri}", CLog.Params(CConfig.CloudServerWebsocketURI));
-            await _WebSocket.ConnectAsync(new Uri(CConfig.CloudServerWebsocketURI), CancellationToken.None);
-            CLog.CCloudLog.Information("Websocket status: {status}", CLog.Params(_WebSocket.State.ToString()));
-            await subscribeToChannel("game-control");
-            await subscribeToChannel("game-state");
-            await setState("loading_game");
-            while (_WebSocket.State == WebSocketState.Open)
+            while (true)
             {
-                EventMessage message = JsonConvert.DeserializeObject<EventMessage>(await readString(_WebSocket));
-                CLog.CCloudLog.Information("Event \"{eventName}\" received with data: {data}", CLog.Params(message.eventName, message.data));
-                switch (message.eventName)
+                CLog.CCloudLog.Information("Connecting to websocket: {uri}", CLog.Params(CConfig.CloudServerWebsocketURI));
+                await _WSRetryPolicy.ExecuteAsync(async () =>
                 {
-                    case "previewSong":
-                        PreviewSong(JsonConvert.DeserializeObject<EventData>(message.data).id);
+                    _WebSocket = new ClientWebSocket();
+                    await _WebSocket.ConnectAsync(new Uri(CConfig.CloudServerWebsocketURI), CancellationToken.None);
+                });
+                CLog.CCloudLog.Information("Websocket status: {status}", CLog.Params(_WebSocket.State.ToString()));
+                await subscribeToChannel("game-control");
+                await subscribeToChannel("game-state");
+                await setState(_State);
+                while (_WebSocket.State == WebSocketState.Open)
+                {
+                    EventMessage message;
+                    try
+                    {
+                        message = JsonConvert.DeserializeObject<EventMessage>(await readString(_WebSocket));
+                    }
+                    catch (Exception e)
+                    {
+                        CLog.CCloudLog.Error(e, "Websocket error: {ExceptionMessage}", CLog.Params(e.Message));
                         break;
-                    case "startSong":
-                        if (CGraphics.CurrentScreen.GetType() != typeof(Screens.CScreenSing))
-                        {
-                            await setState("starting_song");
-                            StopSong = false;
-                            if (PreviewSong(JsonConvert.DeserializeObject<EventData>(message.data).id))
+                    }
+                    CLog.CCloudLog.Information("Event \"{eventName}\" received with data: {data}", CLog.Params(message.eventName, message.data));
+                    switch (message.eventName)
+                    {
+                        case "previewSong":
+                            PreviewSong(JsonConvert.DeserializeObject<EventData>(message.data).id);
+                            break;
+                        case "startSong":
+                            if (CGraphics.CurrentScreen.GetType() != typeof(Screens.CScreenSing))
                             {
-                                System.Threading.Thread.Sleep(5000);
+                                await setState("starting_song");
+                                StopSong = false;
+                                if (PreviewSong(JsonConvert.DeserializeObject<EventData>(message.data).id))
+                                {
+                                    System.Threading.Thread.Sleep(5000);
+                                }
+                                AssignPlayersFromCloud();
+                                StartSong(JsonConvert.DeserializeObject<EventData>(message.data).id);
                             }
-                            AssignPlayersFromCloud();
-                            StartSong(JsonConvert.DeserializeObject<EventData>(message.data).id);
-                        }
-                        break;
-                    case "togglePause":
-                        PauseSong = !PauseSong;
-                        break;
-                    case "stopSong":
-                        StopSong = true;
-                        break;
-                    case "restartSong":
-                        RestartSong = true;
-                        break;
-                    default:
-                        break;
+                            break;
+                        case "togglePause":
+                            PauseSong = !PauseSong;
+                            break;
+                        case "stopSong":
+                            StopSong = true;
+                            break;
+                        case "restartSong":
+                            RestartSong = true;
+                            break;
+                        default:
+                            break;
+                    }
                 }
-            }
-            CLog.CCloudLog.Warning("Connection to websocket closed!");
+                CLog.CCloudLog.Warning("Connection to websocket closed!");
+            };
         }
 
         public static Task setState(string state)
@@ -146,6 +168,7 @@ namespace Vocaluxe.Base
                     state = state,
                 })
             });
+            _State = state;
             return sendString(_WebSocket, message, CancellationToken.None);
         }
 
