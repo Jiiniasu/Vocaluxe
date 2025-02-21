@@ -343,11 +343,11 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _DrawOctaveLines(SColorF octaveColor)
         {
-            int shift = 12 - ((_RangeSemiToneMin % 12 + 12) % 12);
+            int note = _RangeSemiToneMin - ((_RangeSemiToneMin % 12 + 12) % 12) - 1;
 
             SRectF octaveRect = Rect;
             octaveRect.H = _SemiToneHeight * 12;
-            octaveRect.Y = Rect.Y + Rect.H - octaveRect.H - (_SemiToneHeight * shift) + (_SemiToneHeight / 2);
+            octaveRect.Y = Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (note - _RangeSemiToneMin) + 1)) - (_SemiToneHeight / 2);
 
             do
             {
@@ -365,29 +365,20 @@ namespace VocaluxeLib.Menu.SingNotes
         private void _DrawScaleLines(SColorF accidentalsColor)
         {
             int note = _RangeSemiToneMin;
-            while (note < 0)
-            {
-                note += 12;
-            }
-            note = note % 12;
 
             SRectF accidentalsRect = Rect;
             accidentalsRect.H = _SemiToneHeight;
-            accidentalsRect.Y = Rect.Y + Rect.H - (.5f * accidentalsRect.H);
+            accidentalsRect.Y = Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (note - _RangeSemiToneMin) + 1)) - (accidentalsRect.H / 2);
 
             do
             {
-                if (_AccidentalNotes.IndexOf(note) != -1)
+                if (_AccidentalNotes.IndexOf((note % 12 + 12) % 12) != -1)
                 {
                     CTextureRef noteTexture = CBase.Themes.GetSkinTexture(_Theme.SkinFreeStyle, _PartyModeID);
                     CBase.Drawing.DrawTexture(noteTexture, accidentalsRect, accidentalsColor, Rect, false, false);
                 }
                 accidentalsRect.Y -= accidentalsRect.H;
                 note++;
-                if (note >= 12)
-                {
-                    note = 0;
-                }
             }
             while (accidentalsRect.Y + accidentalsRect.H > Rect.Y);
         }
