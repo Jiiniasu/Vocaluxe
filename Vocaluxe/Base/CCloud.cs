@@ -31,6 +31,7 @@ namespace Vocaluxe.Base
             return TimeSpan.FromSeconds(Math.Pow(2, retryAttempt));
         });
         private static ClientWebSocket _WebSocket;
+        private static readonly JsonSerializerSettings _JsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
         private static string _State = "loading_game";
         public static bool PauseSong;
         public static bool StopSong;
@@ -159,32 +160,15 @@ namespace Vocaluxe.Base
 
         public static Task setState(string state)
         {
-            string message = JsonConvert.SerializeObject(new
-            {
-                channel = "game-state",
-                @event = "client-setState",
-                data = JsonConvert.SerializeObject(new
-                {
-                    state = state,
-                })
-            });
+            string message = JsonConvert.SerializeObject(new GameStateMessage(new GameState(state)), _JsonSerializerSettings);
             _State = state;
             return sendString(_WebSocket, message, CancellationToken.None);
         }
 
         public static Task setState(string state, int songId)
         {
-            string message = JsonConvert.SerializeObject(new
-            {
-                channel = "game-state",
-                @event = "client-setState",
-                data = JsonConvert.SerializeObject(new
-                {
-                    state = state,
-                    song_id = songId
-                })
-            });
-
+            string message = JsonConvert.SerializeObject(new GameStateMessage(new GameState(state, songId)), _JsonSerializerSettings);
+            _State = state;
             return sendString(_WebSocket, message, CancellationToken.None);
         }
 
@@ -313,6 +297,41 @@ namespace Vocaluxe.Base
         }
 
     }
+    class GameState
+    {
+        [JsonProperty("state")]
+        public string State { get; set; }
+        [JsonProperty("song_id")]
+        public int? SongId { get; set; }
+
+        public GameState(string state)
+        {
+            State = state;
+        }
+
+        public GameState(string state, int songId)
+        {
+            State = state;
+            SongId = songId;
+        }
+    }
+
+    class GameStateMessage
+    {
+        [JsonProperty("channel")]
+        public string Channel { get; } = "game-state";
+        [JsonProperty("event")]
+        public string Event { get; } = "client-setState";
+        [JsonProperty("data")]
+        public GameState State { get; set; }
+
+        public GameStateMessage(GameState state)
+        {
+            State = state;
+        }
+
+    }
+
     public class CloudSong
     {
         public Guid GUID { get; set; }
