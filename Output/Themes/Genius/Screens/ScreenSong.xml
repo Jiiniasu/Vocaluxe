@@ -16,7 +16,7 @@
   <Statics>
     <Static Name="StaticTopOverlay">
       <Skin />
-      <Color Name="invisible" />
+      <Color Name="Invisible" />
       <Rect>
         <X>0</X>
         <Y>0</Y>
