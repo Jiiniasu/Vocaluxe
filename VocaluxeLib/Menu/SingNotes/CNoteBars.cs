@@ -343,23 +343,31 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _DrawOctaveLines(SColorF octaveColor)
         {
-            int note = _RangeSemiToneMin - ((_RangeSemiToneMin % 12 + 12) % 12) - 1;
+            int note = _RangeSemiToneMin;
+
+            note += 11 - (note % 12);
 
             SRectF octaveRect = Rect;
-            octaveRect.H = _SemiToneHeight * 12;
             octaveRect.Y = Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (note - _RangeSemiToneMin) + 1)) - (_SemiToneHeight / 2);
 
             do
             {
+                octaveRect.H = _SemiToneHeight * 12;
+                if (octaveRect.Bottom > Rect.Bottom)
+                {
+                    octaveRect.H -= octaveRect.Bottom - Rect.Bottom;
+                }
                 if (octaveRect.Y < Rect.Y)
                 {
                     octaveRect.H -= Rect.Y - octaveRect.Y;
                     octaveRect.Y = Rect.Y;
                 }
-                CBase.Drawing.DrawRect(octaveColor, octaveRect, false);
-                octaveRect.Y = octaveRect.Y - 2 * octaveRect.H;
+                if (octaveRect.Y < Rect.Bottom) {
+                    CBase.Drawing.DrawRect(octaveColor, octaveRect, false);
+                }
+                octaveRect.Y = octaveRect.Y - 2 * _SemiToneHeight * 12;
             }
-            while (octaveRect.Y + octaveRect.H > Rect.Y);
+            while (octaveRect.Bottom > Rect.Y);
         }
 
         private void _DrawScaleLines(SColorF accidentalsColor)
@@ -368,7 +376,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
             SRectF accidentalsRect = Rect;
             accidentalsRect.H = _SemiToneHeight;
-            accidentalsRect.Y = Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (note - _RangeSemiToneMin) + 1)) - (accidentalsRect.H / 2);
+            accidentalsRect.Y = Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (note - _RangeSemiToneMin) + 1)) - (_SemiToneHeight / 2);
 
             do
             {
