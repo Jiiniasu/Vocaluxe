@@ -706,6 +706,21 @@ namespace Vocaluxe.Base
         }
 
         /// <summary>
+        ///     Get assigned player on channel from mic-config for device
+        /// </summary>
+        public static int GetPlayerFromMicConfig(string device, string devicedriver, int channel)
+        {
+            for (int p = 0; p < CSettings.MaxNumPlayer; p++)
+            {
+                if (CConfig.Config.Record.MicConfig[p].DeviceName == device &&
+                    CConfig.Config.Record.MicConfig[p].DeviceDriver == devicedriver &&
+                    CConfig.Config.Record.MicConfig[p].Channel == channel)
+                    return p + 1;
+            }
+            return 0;
+        }
+
+        /// <summary>
         ///     Set song path if none is find in config and check if every path exists
         /// </summary>
         public static void NormalizeSongPaths()

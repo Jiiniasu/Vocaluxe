@@ -54,6 +54,11 @@ namespace Vocaluxe.Lib.Sound.Record.PortAudio
                     {
                         var dev = new CRecordDevice(i, info.name, info.name + i, info.maxInputChannels);
 
+                        for (int ch = 0; ch < dev.Channels; ++ch)
+                        {
+                            dev.PlayerChannel[ch] = CConfig.GetPlayerFromMicConfig(dev.Name, dev.Driver, ch + 1);
+                        }
+
                         _Devices.Add(dev);
                     }
                 }

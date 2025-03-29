@@ -127,24 +127,12 @@ namespace Vocaluxe.Base
                 foreach (CRecordDevice device in devices)
                 {
                     for(int ch = 0; ch < device.Channels; ++ch)
-                        device.PlayerChannel[ch] = _GetPlayerFromMicConfig(device.Name, device.Driver, ch+1);
+                        device.PlayerChannel[ch] = CConfig.GetPlayerFromMicConfig(device.Name, device.Driver, ch+1);
                 }
                 return devices;
             }
 
             return null;
-        }
-
-        private static int _GetPlayerFromMicConfig(string device, string devicedriver, int channel)
-        {
-            for (int p = 0; p < CSettings.MaxNumPlayer; p++)
-            {
-                if (CConfig.Config.Record.MicConfig[p].DeviceName == device &&
-                    CConfig.Config.Record.MicConfig[p].DeviceDriver == devicedriver &&
-                    CConfig.Config.Record.MicConfig[p].Channel == channel)
-                    return p + 1;
-            }
-            return 0;
         }
     }
 }
