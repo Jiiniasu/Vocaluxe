@@ -627,7 +627,7 @@ namespace VocaluxeLib.Menu.SingNotes
         private void _AddGoldenNote(SRectF noteRect)
         {
             var numstars = 1;
-            var stars = new CParticleEffect(_PartyModeID, numstars, new SColorF(Color.Yellow), noteRect, Rect, _Theme.SkinGoldenStar, 12, EParticleType.Star);
+            var stars = new CParticleEffect(_PartyModeID, numstars, new SColorF(Color.Yellow), noteRect, Rect, _Theme.SkinGoldenStar, 12, EParticleType.GoldenNoteStar);
             stars.AllMonitors = false;
             _GoldenStars.Add(stars);
         }

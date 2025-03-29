@@ -44,7 +44,8 @@ namespace VocaluxeLib.Menu
         Star,
         Snow,
         Flare,
-        PerfNoteStar
+        PerfNoteStar,
+        GoldenNoteStar
     }
 
     public sealed class CParticleEffect : CMenuElementBase, IMenuElement, IThemeable
@@ -189,6 +190,15 @@ namespace VocaluxeLib.Menu
 
                     case EParticleType.Star:
                         size = CBase.Game.GetRandom((int)_Theme.Size / 2) + _Theme.Size / 2;
+                        lifetime = CBase.Game.GetRandom(1000) / 500f + 0.2f;
+                        vx = -CBase.Game.GetRandom(1000) / 50f + 10f;
+                        vy = -CBase.Game.GetRandom(1000) / 50f + 10f;
+                        vr = -CBase.Game.GetRandom(500) / 100f + 2.5f;
+                        vsize = lifetime * 2f;
+                        break;
+
+                    case EParticleType.GoldenNoteStar:
+                        size = CBase.Game.GetRandom((int)_Theme.Size / 2) + _Theme.Size / 2;
                         lifetime = CBase.Game.GetRandom(500) / 2000f + 0.2f;
                         vx = -CBase.Game.GetRandom(1000) / 50f + 10f;
                         vy = -CBase.Game.GetRandom(1000) / 50f + 10f;
@@ -255,7 +265,7 @@ namespace VocaluxeLib.Menu
                 _Stars.Add(star);
             }
 
-            if (_Theme.Type == EParticleType.Flare || _Theme.Type == EParticleType.PerfNoteStar || _Theme.Type == EParticleType.Twinkle || _Theme.Type == EParticleType.Star)
+            if (_Theme.Type == EParticleType.Flare || _Theme.Type == EParticleType.PerfNoteStar || _Theme.Type == EParticleType.Twinkle || _Theme.Type == EParticleType.GoldenNoteStar)
                 _NextSpawnTime = -1f;
 
             int i = 0;
