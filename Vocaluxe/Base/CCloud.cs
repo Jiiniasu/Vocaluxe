@@ -345,6 +345,7 @@ namespace Vocaluxe.Base
         public int NumPlayed { get; set; }
         public System.DateTime DateAdded { get; set; }
         public int NewToCloud { get; set; }
+        public List<string> Voices { get; set; }
     }
 
     class EventMessage

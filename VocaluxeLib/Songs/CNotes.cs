@@ -38,7 +38,7 @@ namespace VocaluxeLib.Songs
                 {
                     if (IsSet(index))
                         return _Names[index];
-                    return "Part " + (index + 1);
+                    return "Voice " + (index + 1);
                 }
                 set
                 {
@@ -55,6 +55,13 @@ namespace VocaluxeLib.Songs
             public void Reset()
             {
                 _Names.Clear();
+            }
+
+            public List<string> All()
+            {
+                if(_Names.Count > 0)
+                    return _Names;
+                return new List<string> { "Voice 1" };
             }
         }
 
