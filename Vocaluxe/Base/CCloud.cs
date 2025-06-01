@@ -234,9 +234,10 @@ namespace Vocaluxe.Base
 
             for (int i = 0; i < CGame.NumPlayers; i++)
             {
-                CGame.Players[i].ProfileID = cloudPlayers[i].PlayerGuid;
+                CGame.Players[i].ProfileID = cloudPlayers[i].ProfileGuid;
                 CGame.Players[i].Difficulty = cloudPlayers[i].Difficulty;
                 CGame.Players[i].ToneHelperText = cloudPlayers[i].ToneHelperText;
+                CGame.Players[i].VoiceNr = cloudPlayers[i].Voice;
             }
         }
 
@@ -365,8 +366,15 @@ namespace Vocaluxe.Base
 
     class CloudPlayer
     {
-        public Guid PlayerGuid { get; set; }
+        [JsonProperty("id")]
+        public int Id { get; set; }
+        [JsonProperty("profile_guid")]
+        public Guid ProfileGuid { get; set; }
+        [JsonProperty("game_difficulty")]
         public EGameDifficulty Difficulty { get; set; }
+        [JsonProperty("voice")]
+        public int Voice { get; set; }
+        [JsonProperty("tone_helper_text")]
         public EOffOn ToneHelperText { get; set; }
     }
 }
