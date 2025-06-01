@@ -64,8 +64,6 @@ namespace Vocaluxe.Base
         private static readonly List<ProfileChangedCallback> _ProfileChangedCallbacks = new List<ProfileChangedCallback>();
         private static bool _ProfilesChanged;
         private static bool _AvatarsChanged;
-
-        private static readonly HttpClient _Client = new HttpClient();
         #endregion private vars
 
         #region properties
