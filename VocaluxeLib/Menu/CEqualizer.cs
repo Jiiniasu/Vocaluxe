@@ -42,6 +42,8 @@ namespace VocaluxeLib.Menu
         public SThemeColor Color;
         public SThemeColor MaxColor;
         public SReflection? Reflection;
+
+        public bool? AllMonitors;
     }
 
     public class CEqualizer : CMenuElementBase, IMenuElement, IThemeable
@@ -56,6 +58,8 @@ namespace VocaluxeLib.Menu
         public bool Reflection;
         public float ReflectionSpace;
         public float ReflectionHeight;
+
+        public bool AllMonitors = true;
 
         public string GetThemeName()
         {
@@ -114,6 +118,8 @@ namespace VocaluxeLib.Menu
             Reflection = equalizer.Reflection;
             ReflectionSpace = equalizer.ReflectionSpace;
             ReflectionHeight = equalizer.ReflectionHeight;
+
+            AllMonitors = equalizer.AllMonitors;
         }
 
         public CEqualizer(SThemeEqualizer theme, int partyModeID)
@@ -186,10 +192,10 @@ namespace VocaluxeLib.Menu
                 if (i == _MaxBar)
                     color = MaxColor;
 
-                CBase.Drawing.DrawRect(color, bar);
+                CBase.Drawing.DrawRect(color, bar, AllMonitors);
 
                 if (Reflection)
-                    CBase.Drawing.DrawRectReflection(color, bar, ReflectionSpace, ReflectionHeight);
+                    CBase.Drawing.DrawRectReflection(color, bar, ReflectionSpace, ReflectionHeight, AllMonitors);
             }
         }
 
