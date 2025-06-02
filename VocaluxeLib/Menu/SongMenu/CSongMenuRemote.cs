@@ -30,11 +30,6 @@ namespace VocaluxeLib.Menu.SongMenu
         private readonly CStatic _VideoBG;
         private readonly CStatic _TextBG;
 
-        private CTextureRef _VideoBGBGTexture;
-        private CTextureRef _BigCoverBGTexture;
-        private CTextureRef _CoverBGTexture;
-        private CTextureRef _TileBGTexture;
-
         private readonly CText _Artist;
         private readonly CText _Title;
         private readonly CText _SongLength;
@@ -135,8 +130,8 @@ namespace VocaluxeLib.Menu.SongMenu
         private void _UpdatePreview()
         {
             //First hide everything so we just have to set what we actually want
-            _VideoBG.Texture = _VideoBGBGTexture;
-            _BigCover.Texture = _BigCoverBGTexture;
+            _VideoBG.Texture = null;
+            _BigCover.Texture = null;
             _Artist.Text = String.Empty;
             _Title.Text = String.Empty;
             _SongLength.Text = String.Empty;
