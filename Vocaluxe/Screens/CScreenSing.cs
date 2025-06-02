@@ -1910,9 +1910,15 @@ namespace Vocaluxe.Screens
 
         private void _UpdateNames()
         {
+            CSong song = CGame.GetSong(0);
+            
             for (int i = 0; i < CGame.NumPlayers; i++)
             {
                 _Texts[_PlayerTextName[i]].Text = CProfiles.GetPlayerName(CGame.Players[i].ProfileID, i + 1);
+                if(song.IsDuet)
+                {
+                    _Texts[_PlayerTextName[i]].Text += " (" + song.Notes.VoiceNames[CGame.Players[i].VoiceNr] + ")";
+                }
             }
         }
         private void _AssignPlayerElements()
