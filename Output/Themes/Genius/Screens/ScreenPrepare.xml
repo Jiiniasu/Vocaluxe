@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Screen xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <Informations>
+    <ScreenName>ScreenPrepare</ScreenName>
+    <ScreenVersion>1</ScreenVersion>
+  </Informations>
+  <Backgrounds>
+    <Background Name="Background1">
+      <Type>Video</Type>
+      <SlideShowTextures />
+      <Video>BG_Video</Video>
+      <Skin>BG_Options</Skin>
+      <Color Name="BackgroundColor" />
+    </Background>
+  </Backgrounds>
+  <Statics>
+    <Static Name="StaticVideoBackground">
+      <Skin/>
+      <Color Name="Visible"/>
+      <Rect>
+        <X>0</X>
+        <Y>0</Y>
+        <W>1280</W>
+        <H>720</H>
+        <Z>5</Z>
+      </Rect>
+    </Static>
+    <Static Name="StaticMenuBar">
+      <Skin/>
+      <Color Name="BackgroundColorAlpha"/>
+      <Rect>
+        <X>0</X>
+        <Y>40</Y>
+        <W>1280</W>
+        <H>45</H>
+        <Z>1</Z>
+      </Rect>
+    </Static>
+    <Static Name="StaticBottomBar">
+      <Skin/>
+      <Color Name="BackgroundColorAlpha"/>
+      <Rect>
+        <X>0</X>
+        <Y>630</Y>
+        <W>1280</W>
+        <H>90</H>
+        <Z>1</Z>
+      </Rect>
+    </Static>
+    <Static Name="StaticCover">
+      <Skin />
+      <Color Name="Visible" />
+      <Rect>
+        <X>40</X>
+        <Y>600</Y>
+        <W>100</W>
+        <H>100</H>
+        <Z>-1</Z>
+      </Rect>
+    </Static>
+    <Static Name="StaticPlayerBG">
+      <Skin />
+      <Color Name="BackgroundColorAlpha" />
+      <Rect>
+        <X>5</X>
+        <Y>0</Y>
+        <W>430</W>
+        <H>120</H>
+        <Z>-1</Z>
+      </Rect>
+    </Static>
+    <Static Name="StaticPlayerIndicator">
+      <Skin />
+      <Color Name="Visible" />
+      <Rect>
+        <X>0</X>
+        <Y>0</Y>
+        <W>5</W>
+        <H>120</H>
+        <Z>-1</Z>
+      </Rect>
+    </Static>
+    <Static Name="StaticPlayerAvatar">
+      <Skin>VocaluxeIcon</Skin>
+      <Color Name="Visible" />
+      <Rect>
+        <X>15</X>
+        <Y>10</Y>
+        <W>100</W>
+        <H>100</H>
+        <Z>-3</Z>
+      </Rect>
+    </Static>
+  </Statics>
+  <Texts>
+    <Text Name="TextScreenName">
+      <X>640</X>
+      <Y>50</Y>
+      <Z>0</Z>
+      <H>27</H>
+      <MaxW>0</MaxW>
+      <Color Name="StaticColor" />
+      <SelColor Name="TextSelColor" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text>TR_SCREENPREPARE_MENU</Text>
+    </Text>
+    <Text Name="TextTitle">
+      <X>170</X>
+      <Y>648</Y>
+      <Z>0</Z>
+      <H>30</H>
+      <MaxW>0</MaxW>
+      <Color Name="StaticColor" />
+      <SelColor Name="TextSelColor" />
+      <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextArtist">
+      <X>170</X>
+      <Y>680</Y>
+      <Z>0</Z>
+      <H>20</H>
+      <MaxW>0</MaxW>
+      <Color Name="StaticColor" />
+      <SelColor Name="TextSelColor" />
+      <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextScreen">
+      <X>186</X>
+      <Y>4</Y>
+      <Z>0</Z>
+      <H>17</H>
+      <MaxW>0</MaxW>
+      <Color Name="StaticColor" />
+      <SelColor Name="TextSelColor" />
+      <Align>Center</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextPlayerName">
+      <X>125</X>
+      <Y>17</Y>
+      <Z>-3</Z>
+      <H>30</H>
+      <MaxW>285</MaxW>
+      <Color Name="TextColor" />
+      <SelColor Name="TextSelColor" />
+      <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextPlayerDifficulty">
+      <X>125</X>
+      <Y>48</Y>
+      <Z>-3</Z>
+      <H>20</H>
+      <MaxW>285</MaxW>
+      <Color Name="TextColor" />
+      <SelColor Name="TextSelColor" />
+      <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextPlayerVoice">
+      <X>125</X>
+      <Y>82</Y>
+      <Z>-3</Z>
+      <H>20</H>
+      <MaxW>285</MaxW>
+      <Color Name="TextColor" />
+      <SelColor Name="TextSelColor" />
+      <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+    <Text Name="TextCountdown">
+      <X>1240</X>
+      <Y>660</Y>
+      <Z>-3</Z>
+      <H>30</H>
+      <MaxW>320</MaxW>
+      <Color Name="TextColor" />
+      <SelColor Name="TextSelColor" />
+      <Align>Right</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text />
+    </Text>
+  </Texts>
+  <Buttons />
+  <SongMenus />
+  <Lyrics />
+  <SelectSlides />
+  <SingNotes />
+  <NameSelections />
+  <Equalizers>
+    <Equalizer Name="Equalizer">
+      <Skin/>
+      <Rect>
+        <X>125</X>
+        <Y>90</Y>
+        <W>310</W>
+        <H>30</H>
+        <Z>-2</Z>
+      </Rect>
+      <NumBars>24</NumBars>
+      <Space>2</Space>
+      <Style>Columns</Style>
+      <DrawNegative>TR_CONFIG_OFF</DrawNegative>
+      <Color Name="Visible">
+        <A>0.3</A>
+      </Color>
+      <MaxColor Name="Visible">
+        <A>0.4</A>
+      </MaxColor>
+    </Equalizer>
+  </Equalizers>
+  <Playlists />
+  <ParticleEffects />
+  <ScreenSettings />
+  <Metas>
+    <Meta Name="MetaPlayerPanel1N1">
+      <Rect>
+        <X>423</X>
+        <Y>300</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel1N2">
+      <Rect>
+        <X>423</X>
+        <Y>227</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel2N2">
+      <Rect>
+        <X>423</X>
+        <Y>227</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel1N3">
+      <Rect>
+        <X>423</X>
+        <Y>154</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel2N3">
+      <Rect>
+        <X>423</X>
+        <Y>300</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel3N3">
+      <Rect>
+        <X>125</X>
+        <Y>227</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel1N4">
+      <Rect>
+        <X>125</X>
+        <Y>227</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel2N4">
+      <Rect>
+        <X>125</X>
+        <Y>373</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel3N4">
+      <Rect>
+        <X>720</X>
+        <Y>227</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel4N4">
+      <Rect>
+        <X>720</X>
+        <Y>373</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel1N5">
+      <Rect>
+        <X>125</X>
+        <Y>154</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel2N5">
+      <Rect>
+        <X>125</X>
+        <Y>300</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel3N5">
+      <Rect>
+        <X>125</X>
+        <Y>446</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel4N5">
+      <Rect>
+        <X>720</X>
+        <Y>227</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel5N5">
+      <Rect>
+        <X>720</X>
+        <Y>373</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel1N6">
+      <Rect>
+        <X>125</X>
+        <Y>154</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel2N6">
+      <Rect>
+        <X>125</X>
+        <Y>300</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel3N6">
+      <Rect>
+        <X>125</X>
+        <Y>446</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel4N6">
+      <Rect>
+        <X>720</X>
+        <Y>154</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel5N6">
+      <Rect>
+        <X>720</X>
+        <Y>300</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+    <Meta Name="MetaPlayerPanel6N6">
+      <Rect>
+        <X>720</X>
+        <Y>446</Y>
+        <W>0</W>
+        <H>0</H>
+        <Z>0</Z>
+      </Rect>
+    </Meta>
+  </Metas>
+</Screen>

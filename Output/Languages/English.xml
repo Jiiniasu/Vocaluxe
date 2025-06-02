@@ -288,4 +288,8 @@
   <string name="TR_REPORTER_LAST_ERROR_TITLE_TEXT">Last error</string>
   <string name="TR_REPORTER_LAST_ERROR_NA">Not available</string>
   <string name="TR_REPORTER_ISSUE_TEMPLATE">Describe your issue here.\n\n### Steps to reproduce\nTell us how to reproduce this issue.\n\n### Vocaluxe version and logfile\n{0}\n{1}</string>
+  <string name="TR_SCREENPREPARE_MENU">Prepare to sing</string>
+  <string name="TR_SCREENPREPARE_LETS_GO">Let's go!</string>
+  <string name="TR_SCREENPREPARE_STARTING_IN">Starting in %v seconds...</string>
+  <string name="TR_SCREENPREPARE_SINGING_AS">Singing as %v</string>
 </resources>

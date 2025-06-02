@@ -340,6 +340,7 @@
       <DependentUpon>Reporter.cs</DependentUpon>
     </Compile>
     <Compile Include="Screens\CPopupScreenServerQR.cs" />
+    <Compile Include="Screens\CScreenPrepare.cs" />
     <Compile Include="Screens\CScreenOptionsVideoAdjustments.cs" />
     <Compile Include="SongQueue\CSongQueue.cs" />
     <Compile Include="GameModes\IGameMode.cs" />

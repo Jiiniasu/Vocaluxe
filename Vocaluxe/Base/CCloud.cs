@@ -14,6 +14,9 @@ using System.Threading.Tasks;
 using Polly;
 using Polly.Retry;
 using VocaluxeLib.Songs;
+using System.Runtime.Remoting.Metadata.W3cXsd2001;
+using System.Linq;
+using System.ServiceModel.Web;
 
 namespace Vocaluxe.Base
 {
@@ -33,6 +36,7 @@ namespace Vocaluxe.Base
         private static ClientWebSocket _WebSocket;
         private static readonly JsonSerializerSettings _JsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
         private static string _State = "loading_game";
+        private static DateTime _LastPlayerChange = DateTime.Now;
         public static bool PauseSong;
         public static bool StopSong;
         public static bool RestartSong;
@@ -115,7 +119,9 @@ namespace Vocaluxe.Base
                     EventMessage message;
                     try
                     {
-                        message = JsonConvert.DeserializeObject<EventMessage>(await readString(_WebSocket));
+                        string incoming = await readString(_WebSocket);
+                        CLog.CCloudLog.Information("Received message: {data}", CLog.Params(incoming));
+                        message = JsonConvert.DeserializeObject<EventMessage>(incoming);
                     }
                     catch (Exception e)
                     {
@@ -126,18 +132,14 @@ namespace Vocaluxe.Base
                     switch (message.eventName)
                     {
                         case "previewSong":
-                            PreviewSong(JsonConvert.DeserializeObject<EventData>(message.data).id);
+                            if (CGraphics.CurrentScreen.GetType() == typeof(Screens.CScreenSong))
+                                PreviewSong(JsonConvert.DeserializeObject<EventData>(message.data).id);
                             break;
                         case "startSong":
-                            if (CGraphics.CurrentScreen.GetType() != typeof(Screens.CScreenSing))
+                            if (CGraphics.CurrentScreen.GetType() == typeof(Screens.CScreenSong))
                             {
-                                await setState("starting_song");
+                                await setState("preparing_song");
                                 StopSong = false;
-                                if (PreviewSong(JsonConvert.DeserializeObject<EventData>(message.data).id))
-                                {
-                                    System.Threading.Thread.Sleep(5000);
-                                }
-                                AssignPlayersFromCloud();
                                 StartSong(JsonConvert.DeserializeObject<EventData>(message.data).id);
                             }
                             break;
@@ -149,6 +151,14 @@ namespace Vocaluxe.Base
                             break;
                         case "restartSong":
                             RestartSong = true;
+                            break;
+                        case "PlayerUpdated":
+                            CloudPlayer player = JsonConvert.DeserializeObject<CloudPlayer>(message.data);
+                            CGame.Players[player.Id - 1].ProfileID = player.ProfileGuid;
+                            CGame.Players[player.Id - 1].Difficulty = player.Difficulty;
+                            CGame.Players[player.Id - 1].ToneHelperText = player.ToneHelperText;
+                            CGame.Players[player.Id - 1].VoiceNr = player.Voice;
+                            _LastPlayerChange = DateTime.Now;
                             break;
                         default:
                             break;
@@ -170,6 +180,11 @@ namespace Vocaluxe.Base
             string message = JsonConvert.SerializeObject(new GameStateMessage(new GameState(state, songId)), _JsonSerializerSettings);
             _State = state;
             return sendString(_WebSocket, message, CancellationToken.None);
+        }
+
+        public static bool isUpdated(DateTime lastCheck)
+        {
+            return (_LastPlayerChange > lastCheck);
         }
 
         public static CloudSong[] loadSongs(List<CloudSong> songs)
@@ -259,14 +274,18 @@ namespace Vocaluxe.Base
             if (songID == -1)
                 return false;
 
+            CSong song = CSongs.GetSong(songID);
+
             EGameMode gm = CSongs.GetSong(songID).IsDuet ? EGameMode.TR_GAMEMODE_DUET : EGameMode.TR_GAMEMODE_NORMAL;
 
             CGame.Reset();
             CGame.ClearSongs();
 
+            CBase.BackgroundMusic.LoadPreview(song, song.Preview.StartTime);
+
             if (CGame.AddSong(songID, gm))
             {
-                CGraphics.FadeTo(EScreen.Sing);
+                CGraphics.FadeTo(EScreen.Prepare);
                 return true;
             }
             else
@@ -356,6 +375,9 @@ namespace Vocaluxe.Base
 
         [JsonProperty("data")]
         public string data { get; set; }
+
+        [JsonProperty("channel")]
+        public string channel { get; set; }
     }
 
     class EventData

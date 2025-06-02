@@ -402,6 +402,7 @@ namespace VocaluxeLib
         OptionsTheme,
 
         Names,
+        Prepare,
         Credits,
         Party,
 
