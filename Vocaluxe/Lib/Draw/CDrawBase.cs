@@ -330,6 +330,7 @@ namespace Vocaluxe.Lib.Draw
         /// <param name="bounds">A SRectF struct containing which part of the texture should be drawn</param>
         /// <param name="space">The space between the texture and the reflection</param>
         /// <param name="height">The height of the reflection</param>
+        /// <param name="allMonitors">Render on all monitors</param>
         public void DrawTextureReflection(CTextureRef textureRef, SRectF rect, SColorF color, SRectF bounds, float space, float height, bool allMonitors = true)
         {
             Debug.Assert(height >= 0);
@@ -341,17 +342,7 @@ namespace Vocaluxe.Lib.Draw
             if (!_GetTexture(textureRef, out texture))
                 return;
 
-            int loops;
-            if (allMonitors)
-            {
-                loops = CConfig.Config.Graphics.NumScreens;
-            }
-            else
-            {
-                loops = 1;
-            }
-
-            for (int i = 0; i < loops; i++)
+            for (int i = 0; i < (allMonitors ? CConfig.Config.Graphics.NumScreens : 1); i++)
             {
                 SRectF newrect = rect;
                 SRectF newbounds = bounds;

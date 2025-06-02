@@ -340,10 +340,7 @@ namespace Vocaluxe.Lib.Draw
 
         public void DrawRect(SColorF color, SRectF rect, bool allMonitors = true)
         {
-            int loops = 1;
-            if (allMonitors)
-                loops = CConfig.Config.Graphics.NumScreens;
-            for (int i = 0; i < loops; i++)
+            for (int i = 0; i < (allMonitors ? CConfig.Config.Graphics.NumScreens : 1); i++)
             {
                 SRectF newrect = rect;
                 newrect.X += CSettings.RenderW * i;
@@ -370,54 +367,60 @@ namespace Vocaluxe.Lib.Draw
             }
         }
 
-        public void DrawRectReflection(SColorF color, SRectF rect, float space, float height)
+        public void DrawRectReflection(SColorF color, SRectF rect, float space, float height, bool allMonitors = true)
         {
-            if (rect.H < height)
-                height = rect.H;
-
-            float rx1 = rect.X;
-            float rx2 = rect.X + rect.W;
-            float ry1 = rect.Y + rect.H + space;
-            float ry2 = rect.Y + rect.H + space + height;
-
-            if (rx1 < rect.X)
-                rx1 = rect.X;
-
-            if (rx2 > rect.X + rect.W)
-                rx2 = rect.X + rect.W;
-
-            if (ry1 < rect.Y + space)
-                ry1 = rect.Y + space;
-
-            if (ry2 > rect.Y + rect.H + space + height)
-                ry2 = rect.Y + rect.H + space + height;
-
-
-            GL.Enable(EnableCap.Blend);
-            GL.MatrixMode(MatrixMode.Color);
-            GL.PushMatrix();
-            if (Math.Abs(rect.Rotation) > 0.001)
+            for (int i = 0; i < (allMonitors ? CConfig.Config.Graphics.NumScreens : 1); i++)
             {
-                GL.Translate(0.5f, 0.5f, 0);
-                GL.Rotate(-rect.Rotation, 0f, 0f, 1f);
-                GL.Translate(-0.5f, -0.5f, 0);
+                SRectF newrect = rect;
+                newrect.X += CSettings.RenderW * i;
+
+                if (newrect.H < height)
+                    height = newrect.H;
+
+                float rx1 = newrect.X;
+                float rx2 = newrect.X + newrect.W;
+                float ry1 = newrect.Y + newrect.H + space;
+                float ry2 = newrect.Y + newrect.H + space + height;
+
+                if (rx1 < newrect.X)
+                    rx1 = newrect.X;
+
+                if (rx2 > newrect.X + newrect.W)
+                    rx2 = newrect.X + newrect.W;
+
+                if (ry1 < newrect.Y + space)
+                    ry1 = newrect.Y + space;
+
+                if (ry2 > newrect.Y + newrect.H + space + height)
+                    ry2 = newrect.Y + newrect.H + space + height;
+
+
+                GL.Enable(EnableCap.Blend);
+                GL.MatrixMode(MatrixMode.Color);
+                GL.PushMatrix();
+                if (Math.Abs(newrect.Rotation) > 0.001)
+                {
+                    GL.Translate(0.5f, 0.5f, 0);
+                    GL.Rotate(-newrect.Rotation, 0f, 0f, 1f);
+                    GL.Translate(-0.5f, -0.5f, 0);
+                }
+
+                GL.Begin(PrimitiveType.Quads);
+
+                GL.Color4(color.R, color.G, color.B, color.A * CGraphics.GlobalAlpha);
+                GL.Vertex3(rx2, ry1, newrect.Z + CGraphics.ZOffset);
+
+                GL.Color4(color.R, color.G, color.B, 0f);
+                GL.Vertex3(rx2, ry2, newrect.Z + CGraphics.ZOffset);
+                GL.Vertex3(rx1, ry2, newrect.Z + CGraphics.ZOffset);
+
+                GL.Color4(color.R, color.G, color.B, color.A * CGraphics.GlobalAlpha);
+                GL.Vertex3(rx1, ry1, newrect.Z + CGraphics.ZOffset);
+
+                GL.End();
+                GL.PopMatrix();
+                GL.Disable(EnableCap.Blend);
             }
-
-            GL.Begin(PrimitiveType.Quads);
-
-            GL.Color4(color.R, color.G, color.B, color.A * CGraphics.GlobalAlpha);
-            GL.Vertex3(rx2, ry1, rect.Z + CGraphics.ZOffset);
-
-            GL.Color4(color.R, color.G, color.B, 0f);
-            GL.Vertex3(rx2, ry2, rect.Z + CGraphics.ZOffset);
-            GL.Vertex3(rx1, ry2, rect.Z + CGraphics.ZOffset);
-
-            GL.Color4(color.R, color.G, color.B, color.A * CGraphics.GlobalAlpha);
-            GL.Vertex3(rx1, ry1, rect.Z + CGraphics.ZOffset);
-
-            GL.End();
-            GL.PopMatrix();
-            GL.Disable(EnableCap.Blend);
         }
 
         protected override COGLTexture _CreateTexture(Size dataSize)

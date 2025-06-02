@@ -161,7 +161,7 @@ namespace VocaluxeLib.Menu
                         CBase.Drawing.DrawTextureReflection(texture, rect, color, bounds, ReflectionSpace, ReflectionHeight, AllMonitors);
                 }
                 else
-                    CBase.Drawing.DrawRect(color, rect);
+                    CBase.Drawing.DrawRect(color, rect, AllMonitors);
             }
 
             if (Selected && (CBase.Settings.GetProgramState() == EProgramState.EditTheme))

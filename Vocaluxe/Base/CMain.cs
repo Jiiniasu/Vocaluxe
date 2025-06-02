@@ -478,9 +478,9 @@ namespace Vocaluxe.Base
             CDraw.DrawRect(color, rect, allMonitors);
         }
 
-        public void DrawRectReflection(SColorF color, SRectF rect, float space, float height)
+        public void DrawRectReflection(SColorF color, SRectF rect, float space, float height, bool allMonitors = true)
         {
-            CDraw.DrawRectReflection(color, rect, space, height);
+            CDraw.DrawRectReflection(color, rect, space, height, allMonitors);
         }
     }
 

@@ -297,9 +297,10 @@ namespace Vocaluxe.Base
         /// <param name="rect">(Original) rectangle to draw the reflection for</param>
         /// <param name="space">Spacing between the rect and the reflection</param>
         /// <param name="height">Height of the reflection</param>
-        public static void DrawRectReflection(SColorF color, SRectF rect, float space, float height)
+        /// <param name="allMonitors">Render on all monitors</param>
+        public static void DrawRectReflection(SColorF color, SRectF rect, float space, float height, bool allMonitors = true)
         {
-            _Draw.DrawRectReflection(color, rect, space, height);
+            _Draw.DrawRectReflection(color, rect, space, height, allMonitors);
         }
 
         /// <summary>

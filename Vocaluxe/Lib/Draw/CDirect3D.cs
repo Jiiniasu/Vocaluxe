@@ -572,6 +572,7 @@ namespace Vocaluxe.Lib.Draw
         /// </summary>
         /// <param name="color">The color in which the rectangle will be drawn in</param>
         /// <param name="rect">The coordinates in a SRectF struct</param>
+        /// <param name="allMonitors">Render on all monitors</param>
         public void DrawRect(SColorF color, SRectF rect, bool allMonitors = true)
         {
             DrawTexture(_BlankTexture, rect, color, false, allMonitors);
@@ -584,9 +585,10 @@ namespace Vocaluxe.Lib.Draw
         /// <param name="rect">The coordinates in a SRectF struct</param>
         /// <param name="space">The space between the texture and the reflection</param>
         /// <param name="height">The height of the reflection</param>
-        public void DrawRectReflection(SColorF color, SRectF rect, float space, float height)
+        /// <param name="allMonitors">Render on all monitors</param>
+        public void DrawRectReflection(SColorF color, SRectF rect, float space, float height, bool allMonitors = true)
         {
-            DrawTextureReflection(_BlankTexture, rect, color, rect, space, height);
+            DrawTextureReflection(_BlankTexture, rect, color, rect, space, height, allMonitors);
         }
 
         protected override CD3DTexture _CreateTexture(Size dataSize)

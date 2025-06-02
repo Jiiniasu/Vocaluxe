@@ -310,7 +310,7 @@ namespace Vocaluxe.Lib.Draw
 
         public void DrawRect(SColorF color, SRectF rect, bool allMonitors = true) { }
 
-        public void DrawRectReflection(SColorF color, SRectF rect, float space, float height) { }
+        public void DrawRectReflection(SColorF color, SRectF rect, float space, float height, bool allMonitors = true) { }
 
         public CTextureRef AddTexture(Bitmap bmp)
         {
