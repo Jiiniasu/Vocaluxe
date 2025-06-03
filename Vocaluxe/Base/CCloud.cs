@@ -138,9 +138,10 @@ namespace Vocaluxe.Base
                         case "startSong":
                             if (CGraphics.CurrentScreen.GetType() == typeof(Screens.CScreenSong))
                             {
-                                await setState("preparing_song");
+                                int songId = JsonConvert.DeserializeObject<EventData>(message.data).id;
+                                await setState("preparing_song", songId);
                                 StopSong = false;
-                                StartSong(JsonConvert.DeserializeObject<EventData>(message.data).id);
+                                StartSong(songId);
                             }
                             break;
                         case "togglePause":
