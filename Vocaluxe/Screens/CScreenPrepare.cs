@@ -144,6 +144,11 @@ namespace Vocaluxe.Screens
             _Texts["TextArtist"].Text = CGame.GetSong(0).Artist;
             _Texts["TextTitle"].Text = CGame.GetSong(0).Title;
 
+            foreach (string PlayerTextVoice in _PlayerTextVoice)
+            {
+                _Texts[PlayerTextVoice].Visible = CGame.GetSong(0).IsDuet;
+            }
+
             base.OnShow();
 
             CCloud.AssignPlayersFromCloud();
