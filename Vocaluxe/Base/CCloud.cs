@@ -14,9 +14,6 @@ using System.Threading.Tasks;
 using Polly;
 using Polly.Retry;
 using VocaluxeLib.Songs;
-using System.Runtime.Remoting.Metadata.W3cXsd2001;
-using System.Linq;
-using System.ServiceModel.Web;
 
 namespace Vocaluxe.Base
 {
