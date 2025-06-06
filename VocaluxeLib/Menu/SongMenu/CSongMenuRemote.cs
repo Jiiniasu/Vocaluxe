@@ -263,19 +263,6 @@ namespace VocaluxeLib.Menu.SongMenu
                 _VideoBG.Draw(EAspect.Crop);
         }
 
-        private CText _ScaleText(CText text, float scaleFactor, EStyle style)
-        {
-            SRectF ScaledRect = new SRectF(text.X, text.Y, text.W, text.H, text.Z);
-            ScaledRect = ScaledRect.Scale(scaleFactor);
-            CText ScaledText = new CText(ScaledRect.X, ScaledRect.Y, ScaledRect.Z,
-                                    ScaledRect.H, ScaledRect.W, text.Align, style,
-                                    "Outline", text.Color, "");
-            ScaledText.MaxRect = new SRectF(ScaledText.MaxRect.X, ScaledText.MaxRect.Y, MaxRect.W + MaxRect.X - ScaledText.Rect.X - 5f, ScaledText.MaxRect.H, ScaledText.MaxRect.Z);
-            ScaledText.ResizeAlign = EHAlignment.Center;
-            ScaledText.Text = text.Text;
-            return ScaledText;
-        }
-
         public override void LoadSkin()
         {
             foreach (IThemeable themeable in _SubElements.OfType<IThemeable>())
