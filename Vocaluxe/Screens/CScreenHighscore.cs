@@ -182,7 +182,7 @@ namespace Vocaluxe.Screens
                     string name = _Scores[_Round][_Pos + p].Name;
                     name += " [" + CLanguage.Translate(Enum.GetName(typeof(EGameDifficulty), _Scores[_Round][_Pos + p].Difficulty)) + "]";
                     if (_IsDuet)
-                        name += " (P" + (_Scores[_Round][_Pos + p].VoiceNr + 1) + ")";
+                        name += " (" + CGame.GetSong(_Round).Notes.VoiceNames[_Scores[_Round][_Pos + p].VoiceNr] + ")";
                     _Texts[_TextName[p]].Text = name;
 
                     _Texts[_TextScore[p]].Text = _Scores[_Round][_Pos + p].Score.ToString("D");
