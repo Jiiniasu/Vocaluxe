@@ -68,6 +68,16 @@ namespace VocaluxeLib.Songs
         {
             get { return _Notes.Aggregate(String.Empty, (current, note) => current + note.Text); }
         }
+
+        public int MinNote
+        {
+            get { return _Notes.Min(note => note.Tone); }
+        }
+
+        public int MaxNote
+        {
+            get { return _Notes.Max(note => note.Tone); }
+        }
         #endregion Properties
 
         #region Methods

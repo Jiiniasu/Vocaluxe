@@ -42,6 +42,16 @@ namespace VocaluxeLib.Songs
             get { return _Lines.Count; }
         }
 
+        public int MinNote
+        {
+            get { return _Lines.Min(line => line.MinNote); }
+        }
+
+        public int MaxNote
+        {
+            get { return _Lines.Min(line => line.MaxNote); }
+        }
+
         /// <summary>
         ///     Total song length in beats
         /// </summary>

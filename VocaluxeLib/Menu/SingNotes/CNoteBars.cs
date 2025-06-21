@@ -125,20 +125,8 @@ namespace VocaluxeLib.Menu.SingNotes
             SPlayer playerData = CBase.Game.GetPlayers()[player];
             _Lines = CBase.Game.GetSong().Notes.GetVoice(playerData.VoiceNr).Lines;
 
-            for (int i = 0; i < _Lines.Count(); i++)
-            {
-                if (_Lines[i].Notes.Any())
-                {
-                    foreach (CSongNote note in _Lines[i].Notes.Where(note => note.Type != ENoteType.Freestyle))
-                    {
-                        _RangeSemiToneMin = (note.Tone < _RangeSemiToneMin) ? note.Tone : _RangeSemiToneMin;
-                        _RangeSemiToneMax = (note.Tone > _RangeSemiToneMax) ? note.Tone : _RangeSemiToneMax;
-                    }
-                }
-            }
-
-            _RangeSemiToneMin -= 2;
-            _RangeSemiToneMax += 2;
+            _RangeSemiToneMin = _Lines.Min(line => line.MinNote) - 2;
+            _RangeSemiToneMax = _Lines.Max(line => line.MaxNote) + 2;
 
             int rangeToneCount = _RangeSemiToneMax - _RangeSemiToneMin;
 
