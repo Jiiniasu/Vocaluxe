@@ -42,6 +42,7 @@ namespace Vocaluxe.Base
         {
             HttpResponseMessage response;
             CLog.CCloudLog.Information("POST to {uri}...", CLog.Params(url));
+            CLog.CCloudLog.Information("Payload: {payload}...", CLog.Params(payload));
             return await _HTTPRetryPolicy.ExecuteAsync(async () =>
             {
                 var content = new StringContent(payload, Encoding.UTF8, "application/json");
@@ -357,6 +358,7 @@ namespace Vocaluxe.Base
         public string Title { get; set; }
         public List<string> Editions { get; set; }
         public List<string> Genres { get; set; }
+        public List<string> Languages { get; set; }
         public string Album { get; set; }
         public string Year { get; set; }
         public int DataBaseSongID { get; set; }

@@ -205,10 +205,15 @@ namespace VocaluxeLib.Songs
                                     CLog.CSongLog.Warning("[{SongFileName}] Invalid edition: {Value}", CLog.Params(_Song.FileName, value));
                                 break;
                             case "GENRE":
-                                if (value.Length > 1)
-                                    _Song.Genres.Add(value);
-                                else
-                                    CLog.CSongLog.Warning("[{SongFileName}] Invalid genre: {Value}", CLog.Params(_Song.FileName, value));
+                                string[] genres = value.Split(',');
+                                foreach (string genre in genres)
+                                {
+                                    string trimmedGenre = genre.Trim();
+                                    if (trimmedGenre.Length > 0)
+                                        _Song.Genres.Add(trimmedGenre);
+                                    else
+                                        CLog.CSongLog.Warning("[{SongFileName}] Invalid genre: {Value}", CLog.Params(_Song.FileName, value));
+                                }
                                 break;
                             case "ALBUM":
                                 _Song.Album = value;
@@ -221,10 +226,15 @@ namespace VocaluxeLib.Songs
                                     CLog.CSongLog.Warning("[{SongFileName}] Invalid year: {Value}", CLog.Params(_Song.FileName, value));
                                 break;
                             case "LANGUAGE":
-                                if (value.Length > 1)
-                                    _Song.Languages.Add(_UnifyLanguage(value));
-                                else
-                                    CLog.CSongLog.Warning("[{SongFileName}] Invalid language: {Value}", CLog.Params(_Song.FileName, value));
+                                string[] languages = value.Split(',');
+                                foreach (string language in languages)
+                                {
+                                    string trimmedLanguage = language.Trim();
+                                    if (trimmedLanguage.Length > 0)
+                                        _Song.Languages.Add(trimmedLanguage);
+                                    else
+                                        CLog.CSongLog.Warning("[{SongFileName}] Invalid language: {Value}", CLog.Params(_Song.FileName, value));
+                                }
                                 break;
                             case "COMMENT":
                                 if (!String.IsNullOrEmpty(_Song._Comment))
@@ -433,27 +443,6 @@ namespace VocaluxeLib.Songs
                     _Song.TitleSorting = _Song.Title;
 
                 return true;
-            }
-
-            private static string _UnifyLanguage(string lang)
-            {
-                if (lang != "")
-                {
-                    lang = Char.ToUpperInvariant(lang[0]) + lang.Substring(1).ToLowerInvariant();
-                    switch (lang)
-                    {
-                        case "Englisch":
-                            lang = "English";
-                            break;
-                        case "Deutsch":
-                            lang = "German";
-                            break;
-                        case "Spanisch":
-                            lang = "Spanish";
-                            break;
-                    }
-                }
-                return lang;
             }
 
             private enum ENoteReadMode
