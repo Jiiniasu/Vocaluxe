@@ -75,7 +75,7 @@ namespace VocaluxeLib.Songs
             { 
                 return _Notes.Where(note => note.Type != ENoteType.Freestyle)
                              .Select(note => note.Tone)
-                             .DefaultIfEmpty(0)
+                             .DefaultIfEmpty(int.MaxValue)
                              .Min(); 
             }
         }
@@ -86,7 +86,7 @@ namespace VocaluxeLib.Songs
             { 
                 return _Notes.Where(note => note.Type != ENoteType.Freestyle)
                              .Select(note => note.Tone)
-                             .DefaultIfEmpty(0)
+                             .DefaultIfEmpty(int.MinValue)
                              .Max(); 
             }
         }
