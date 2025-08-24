@@ -555,9 +555,6 @@ namespace Vocaluxe.Screens
 
             for (int i = 0; i < song.Notes.VoiceCount; i++)
             {
-                if (i > 1)
-                    break; // for later
-
                 CVoice voice = song.Notes.GetVoice(i);
                 CSongLine[] lines = voice.Lines;
 

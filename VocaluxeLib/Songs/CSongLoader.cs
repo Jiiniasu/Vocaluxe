@@ -349,8 +349,7 @@ namespace VocaluxeLib.Songs
                                     int player;
                                     if (int.TryParse(identifier.Substring(1).Trim(), out player))
                                     {
-                                        foreach (int curPlayer in player.GetSetBits())
-                                            _Song.Notes.VoiceNames[curPlayer] = value;
+                                        _Song.Notes.VoiceNames[player - 1] = value;
                                     }
                                 }
                                 else
@@ -616,7 +615,7 @@ namespace VocaluxeLib.Songs
                                         beat += currentBeat;
 
                                     bool ignored = false;
-                                    foreach (int curPlayer in player.GetSetBits())
+                                    for (int curPlayer = player - 1; curPlayer < player; curPlayer++)
                                     {
                                         //Create the note here as we want independent instances in the lines. Otherwhise we can't modify them later
                                         lastNote = new CSongNote(beat, length, tone, text, noteType);
@@ -684,7 +683,7 @@ namespace VocaluxeLib.Songs
                                 }
                                 else
                                 {
-                                    foreach (int curPlayer in player.GetSetBits())
+                                    for (int curPlayer = player - 1; curPlayer < player; curPlayer++)
                                     {
                                         if (!_NewSentence(curPlayer, beat))
                                             CLog.CSongLog.Warning("[{SongFileName}] Ignored line break for player {CurPlayerNr} (Overlapping or duplicate) (in line {LineNr})", CLog.Params(_Song.FileName, (curPlayer + 1) , _LineNr));
