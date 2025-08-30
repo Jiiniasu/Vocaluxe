@@ -25,7 +25,7 @@ namespace VocaluxeLib.Songs
     {
         private readonly List<CSongLine> _Lines = new List<CSongLine>();
 
-        public CVoice() {}
+        public CVoice() { }
 
         public CVoice(CVoice voice)
         {
@@ -44,12 +44,29 @@ namespace VocaluxeLib.Songs
 
         public int MinNote
         {
-            get { return _Lines.Min(line => line.MinNote); }
+            get
+            {
+                return _Lines.Where(line => line.MinNote != int.MinValue)
+                               .Select(line => line.MinNote)
+                               .DefaultIfEmpty(0)
+                               .Min();
+            }
         }
 
         public int MaxNote
         {
-            get { return _Lines.Min(line => line.MaxNote); }
+            get
+            {
+                return _Lines.Where(line => line.MaxNote != int.MaxValue)
+                               .Select(line => line.MaxNote)
+                               .DefaultIfEmpty(0)
+                               .Max();
+            }
+        }
+
+        public int NoteRange
+        {
+            get { return MaxNote - MinNote; }
         }
 
         /// <summary>
@@ -133,7 +150,7 @@ namespace VocaluxeLib.Songs
             //Check for actual notes (startbeat may be lower than first note)
             while (insPos >= 0 && _Lines[insPos].NoteCount > 0 && _Lines[insPos].FirstNoteBeat > startBeat)
                 insPos--;
-            CSongLine line = new CSongLine {StartBeat = startBeat};
+            CSongLine line = new CSongLine { StartBeat = startBeat };
             if (insPos >= 0)
             {
                 CSongLine prevLine = _Lines[insPos];

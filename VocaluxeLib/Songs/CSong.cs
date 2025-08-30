@@ -182,11 +182,19 @@ namespace VocaluxeLib.Songs
         // Notes
         public readonly CNotes Notes = new CNotes();
 
+        public int MaxNoteRange
+        {
+            get
+            {
+                return Notes.Voices.Max(voice => voice.NoteRange);
+            }
+        }
+
         public IList<EGameMode> AvailableGameModes
         {
             get
             {
-                var gms = new List<EGameMode> {IsDuet ? EGameMode.TR_GAMEMODE_DUET : EGameMode.TR_GAMEMODE_NORMAL};
+                var gms = new List<EGameMode> { IsDuet ? EGameMode.TR_GAMEMODE_DUET : EGameMode.TR_GAMEMODE_NORMAL };
                 if (Medley.Source != EDataSource.None)
                     gms.Add(EGameMode.TR_GAMEMODE_MEDLEY);
                 if (ShortEnd.Source != EDataSource.None)
@@ -207,7 +215,7 @@ namespace VocaluxeLib.Songs
         }
 
         //No point creating a song without a text file --> Use factory method LoadSong
-        private CSong() {}
+        private CSong() { }
 
         public CSong(CSong song)
         {
@@ -382,7 +390,7 @@ namespace VocaluxeLib.Songs
                 {
                     if (sentences[i] != sentences[j] || sentences[i] == "")
                         continue;
-                    var tempSeries = new SSeries {Start = i, End = i};
+                    var tempSeries = new SSeries { Start = i, End = i };
 
                     int max;
                     if (j + j - i > voice.NumLines)

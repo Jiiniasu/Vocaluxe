@@ -123,7 +123,10 @@ namespace VocaluxeLib.Menu.SingNotes
                 _NoteBaseColor = new SColorF(Color.White);
 
             SPlayer playerData = CBase.Game.GetPlayers()[player];
-            _Lines = CBase.Game.GetSong().Notes.GetVoice(playerData.VoiceNr).Lines;
+            CSong Song = CBase.Game.GetSong();
+            _RangeSemiToneCount = Math.Max(Song.MaxNoteRange + 4, _RangeSemiToneCount);
+
+            _Lines = Song.Notes.GetVoice(playerData.VoiceNr).Lines;
 
             _RangeSemiToneMin = _Lines.Where(line => line.MinNote != int.MinValue)
                                       .Select(line => line.MinNote)
@@ -133,18 +136,6 @@ namespace VocaluxeLib.Menu.SingNotes
                                       .Select(line => line.MaxNote)
                                       .DefaultIfEmpty(0)
                                       .Max() + 2;
-
-            int rangeToneCount = _RangeSemiToneMax - _RangeSemiToneMin;
-
-            if (rangeToneCount < _RangeSemiToneCount)
-            {
-                int extraRangeToneCount = (_RangeSemiToneCount - (rangeToneCount));
-                _RangeSemiToneMax += extraRangeToneCount / 2;
-                _RangeSemiToneMin -= extraRangeToneCount / 2;
-                rangeToneCount = _RangeSemiToneMax - _RangeSemiToneMin;
-            }
-
-            _RangeSemiToneCount = rangeToneCount;
 
             _NumNoteLines = (_RangeSemiToneCount + 1) / 2;
             _ToneHeight = Rect.H / _NumNoteLines;
