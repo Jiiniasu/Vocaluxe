@@ -320,7 +320,7 @@ namespace VocaluxeLib.Menu
         /// <param name="tag">User value (e.g. id of entry)</param>
         public void AddValue(string text, int translationId, CTextureRef texture = null, int tag = 0)
         {
-            SValue value = new SValue {Text = text, TranslationId = translationId, Tag = tag, Texture = texture};
+            SValue value = new SValue { Text = text, TranslationId = translationId, Tag = tag, Texture = texture };
 
             _Values.Add(value);
 
@@ -584,7 +584,7 @@ namespace VocaluxeLib.Menu
             return _Theme;
         }
 
-        public void UnloadSkin() {}
+        public void UnloadSkin() { }
 
         public void LoadSkin()
         {

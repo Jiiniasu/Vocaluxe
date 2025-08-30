@@ -23,7 +23,7 @@ namespace Vocaluxe.Base.ThemeSystem
 {
     class CBaseSkin : CSkin
     {
-        public CBaseSkin(string folder, string file, CTheme parent) : base(folder, file, parent) {}
+        public CBaseSkin(string folder, string file, CTheme parent) : base(folder, file, parent) { }
 
         public override bool Load()
         {

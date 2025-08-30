@@ -49,16 +49,16 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            _ThemeTexts = new string[] {_TextDescription, _TextTargetAudience, _TextNumTeams, _TextNumPlayers, _TextAuthor, _TextVersion, _TextError};
-            _ThemeButtons = new string[] {_ButtonStart, _ButtonExit};
-            _ThemeSelectSlides = new string[] {_SelectSlideModes};
+            _ThemeTexts = new string[] { _TextDescription, _TextTargetAudience, _TextNumTeams, _TextNumPlayers, _TextAuthor, _TextVersion, _TextError };
+            _ThemeButtons = new string[] { _ButtonStart, _ButtonExit };
+            _ThemeSelectSlides = new string[] { _SelectSlideModes };
         }
 
         public override bool HandleInput(SKeyEvent keyEvent)
         {
             base.HandleInput(keyEvent);
 
-            if (keyEvent.KeyPressed) {}
+            if (keyEvent.KeyPressed) { }
             else
             {
                 switch (keyEvent.Key)

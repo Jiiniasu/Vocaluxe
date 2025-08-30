@@ -22,7 +22,7 @@ namespace VocaluxeLib.PartyModes.Challenge
 {
     // ReSharper disable UnusedMember.Global
     public class CPartyScreenChallengeConfig : CPartyScreenChallenge
-        // ReSharper restore UnusedMember.Global
+    // ReSharper restore UnusedMember.Global
     {
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
@@ -46,14 +46,14 @@ namespace VocaluxeLib.PartyModes.Challenge
             base.Init();
 
             _ThemeSelectSlides = new string[] { _SelectSlideNumPlayers, _SelectSlideNumMics, _SelectSlideNumRounds, _SelectSlideNumJokers, _SelectSlideRefillJokers };
-            _ThemeButtons = new string[] {_ButtonNext, _ButtonBack};
+            _ThemeButtons = new string[] { _ButtonNext, _ButtonBack };
         }
 
         public override bool HandleInput(SKeyEvent keyEvent)
         {
             base.HandleInput(keyEvent);
 
-            if (keyEvent.KeyPressed) {}
+            if (keyEvent.KeyPressed) { }
             else
             {
                 switch (keyEvent.Key)

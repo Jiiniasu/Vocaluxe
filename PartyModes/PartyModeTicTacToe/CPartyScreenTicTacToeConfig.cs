@@ -16,17 +16,14 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Windows.Forms;
-using VocaluxeLib.Songs;
 
 namespace VocaluxeLib.PartyModes.TicTacToe
 {
     // ReSharper disable UnusedMember.Global
     public class CPartyScreenTicTacToeConfig : CPartyScreenTicTacToe
-        // ReSharper restore UnusedMember.Global
+    // ReSharper restore UnusedMember.Global
     {
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
@@ -47,14 +44,14 @@ namespace VocaluxeLib.PartyModes.TicTacToe
             base.Init();
 
             _ThemeSelectSlides = new string[] { _SelectSlideNumFields };
-            _ThemeButtons = new string[] {_ButtonNext, _ButtonBack};
+            _ThemeButtons = new string[] { _ButtonNext, _ButtonBack };
         }
 
         public override bool HandleInput(SKeyEvent keyEvent)
         {
             base.HandleInput(keyEvent);
 
-            if (keyEvent.KeyPressed) {}
+            if (keyEvent.KeyPressed) { }
             else
             {
                 switch (keyEvent.Key)

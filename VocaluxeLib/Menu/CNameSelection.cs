@@ -16,8 +16,8 @@
 #endregion
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Forms;
 using System.Xml.Serialization;
 using VocaluxeLib.Draw;
@@ -127,7 +127,7 @@ namespace VocaluxeLib.Menu
         public CNameSelection(int partyModeID)
         {
             _PartyModeID = partyModeID;
-            _Theme = new SThemeNameSelection {Tiles = new SThemeNameSelectionTiles {Name = new SThemeNameSelectionName()}};
+            _Theme = new SThemeNameSelection { Tiles = new SThemeNameSelectionTiles { Name = new SThemeNameSelectionName() } };
 
             _Tiles = new List<CTile>();
             _VisibleProfiles = new List<Guid>();
@@ -151,9 +151,9 @@ namespace VocaluxeLib.Menu
             _PrepareTiles();
 
             _PlayerSelector = new CStatic(_PartyModeID, _TextureTileSelected, new SColorF(), new SRectF(0, 0, _Theme.Tiles.W + 6, _Theme.Tiles.H + 6, Rect.Z - 0.5f))
-                {
-                    Visible = false
-                };
+            {
+                Visible = false
+            };
 
             _UpdateVisibleProfiles();
 
@@ -239,7 +239,7 @@ namespace VocaluxeLib.Menu
                     if (_Tiles[_ActualSelection].ProfileID == Guid.Empty)
                     {
                         _ActualSelection = _Tiles.Count - _Theme.Tiles.NumW;
-                        while(_Tiles[_ActualSelection + 1].ProfileID != Guid.Empty)
+                        while (_Tiles[_ActualSelection + 1].ProfileID != Guid.Empty)
                         {
                             _ActualSelection++;
                         }
@@ -277,7 +277,7 @@ namespace VocaluxeLib.Menu
                 _Player = player;
                 _PlayerSelector.Color = CBase.Themes.GetPlayerColor(player);
             }
-                //Normal activation
+            //Normal activation
             else if (active)
             {
                 SelectedID = _VisibleProfiles.ElementAt(0);
@@ -286,7 +286,7 @@ namespace VocaluxeLib.Menu
                 _PlayerSelector.Color = CBase.Themes.GetPlayerColor(player);
                 _PlayerSelector.Visible = true;
             }
-                //Deactivate
+            //Deactivate
             else
             {
                 SelectedID = Guid.Empty;
@@ -362,7 +362,7 @@ namespace VocaluxeLib.Menu
             return new CStatic(_PartyModeID);
         }
 
-        public void UnloadSkin() {}
+        public void UnloadSkin() { }
 
         public void LoadSkin()
         {
@@ -434,7 +434,7 @@ namespace VocaluxeLib.Menu
                 {
                     var rect = new SRectF(MaxRect.X + j * (_Theme.Tiles.W + _Theme.Tiles.SpaceW), MaxRect.Y + i * (_Theme.Tiles.H + _Theme.Tiles.SpaceH),
                                           _Theme.Tiles.W, _Theme.Tiles.H, MaxRect.Z);
-                    var tileStatic = new CStatic(_PartyModeID, _TextureEmptyTile, _ColorEmptyTile, rect) {Aspect = EAspect.Crop};
+                    var tileStatic = new CStatic(_PartyModeID, _TextureEmptyTile, _ColorEmptyTile, rect) { Aspect = EAspect.Crop };
                     var tileText = new CText(rect.X + rect.W / 2, rect.Y + rect.H + _Theme.Tiles.Name.Space, rect.Z, _Theme.Tiles.Name.Height, rect.W, EAlignment.Center,
                                              _Theme.Tiles.Name.Style, _Theme.Tiles.Name.Font, _ColorNameTile, "");
                     _Tiles.Add(new CTile(tileStatic, tileText, Guid.Empty));

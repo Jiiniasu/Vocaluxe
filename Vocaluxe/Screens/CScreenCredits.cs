@@ -236,14 +236,14 @@ namespace Vocaluxe.Screens
             string paragraph = "Inspired by the achievements of UltraStar Deluxe and its variants and pursuing the goal of making " +
                                "a good thing even better, we ended up rewriting the game from scratch. And a new implementation in a new " +
                                "programming language called for a new name - and VOCALUXE [ˈvoʊˈkəˈlʌks] it is!";
-            string[] words = paragraph.Split(new char[] {' '});
+            string[] words = paragraph.Split(new char[] { ' ' });
             _Paragraphs.Add(words);
 
             paragraph = "This first public version has already implemented many of the original features and it is fully " +
                         "compatible with all the song files in your existing song collection. The code design allows a much faster " +
                         "implementation of new features, thus the roadmap for the next few stable releases is packed and we expect much " +
                         "shorter release cycles than ever before. And, of course, our and your ideas may be the features of tomorrow.";
-            words = paragraph.Split(new char[] {' '});
+            words = paragraph.Split(new char[] { ' ' });
             _Paragraphs.Add(words);
 
             paragraph = "We appreciate the feedback in the beta release phase and are, of course, always open for bug reports, " +
@@ -251,16 +251,16 @@ namespace Vocaluxe.Screens
                         "Vocaluxe an international experience from the very beginning and all those diligent song makers out there - " +
                         "there's something for everyone in the huge collection of available songs! Last but not least, thanks to " +
                         "Kosal Sen's Philly Sans type used in the Vocaluxe Logo.";
-            words = paragraph.Split(new char[] {' '});
+            words = paragraph.Split(new char[] { ' ' });
             _Paragraphs.Add(words);
 
             paragraph = "Go ahead and grab your mics, crank up your stereo, warm up your voice and get ready to sing to the best " +
                         "of your abilities!";
-            words = paragraph.Split(new char[] {' '});
+            words = paragraph.Split(new char[] { ' ' });
             _Paragraphs.Add(words);
 
             _BGTheme.Type = EBackgroundTypes.Color;
-            _BGTheme.Color = new SThemeColor {Name = null, R = 0, G = 0.18f, B = 0.474f, A = 1};
+            _BGTheme.Color = new SThemeColor { Name = null, R = 0, G = 0.18f, B = 0.474f, A = 1 };
         }
 
         public override void LoadTheme(string xmlPath)
@@ -354,13 +354,13 @@ namespace Vocaluxe.Screens
             _AddTranslations();
         }
 
-        public override void ReloadTheme(string xmlPath) {}
+        public override void ReloadTheme(string xmlPath) { }
 
-        public override void SaveTheme() {}
+        public override void SaveTheme() { }
 
-        public override void UnloadSkin() {}
+        public override void UnloadSkin() { }
 
-        public override void ReloadSkin() {}
+        public override void ReloadSkin() { }
 
         public override bool HandleInput(SKeyEvent keyEvent)
         {
@@ -579,7 +579,7 @@ namespace Vocaluxe.Screens
             {
                 active = true;
 
-                for (int i = 0; i < _Translations.Count; i++) 
+                for (int i = 0; i < _Translations.Count; i++)
                 {
                     if (i * 1500f < _TranslationsTimer.ElapsedMilliseconds)
                     {
@@ -603,12 +603,12 @@ namespace Vocaluxe.Screens
                     if (_Translations[i].Y <= 360f)
                     {
                         //Fade out
-                        float alpha = ((360 - _Translations[i].Y) / 200).Clamp(0,1);
+                        float alpha = ((360 - _Translations[i].Y) / 200).Clamp(0, 1);
                         _Translations[i].Alpha = 1 - alpha;
                     }
                 }
 
-                
+
             }
             if (_TextTimer.IsRunning)
                 active = _TextTimer.ElapsedMilliseconds <= 10000;

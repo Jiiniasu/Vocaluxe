@@ -76,9 +76,9 @@ namespace VocaluxeLib.Menu
         public override void Init()
         {
             base.Init();
-            _ThemeButtons = new string[] {_ButtonBack, _ButtonNext, _ButtonRandom, _ButtonIncreaseTeams, _ButtonDecreaseTeams, _ButtonIncreasePlayer, _ButtonDecreasePlayer};
-            _ThemeSelectSlides = new string[] {_SelectSlideTeams, _SelectSlidePlayer};
-            _ThemeNameSelections = new string[] {_NameSelection};
+            _ThemeButtons = new string[] { _ButtonBack, _ButtonNext, _ButtonRandom, _ButtonIncreaseTeams, _ButtonDecreaseTeams, _ButtonIncreasePlayer, _ButtonDecreasePlayer };
+            _ThemeSelectSlides = new string[] { _SelectSlideTeams, _SelectSlidePlayer };
+            _ThemeNameSelections = new string[] { _NameSelection };
 
             _ChooseAvatarStatic = GetNewStatic();
             _ChooseAvatarStatic.Visible = false;
@@ -89,7 +89,7 @@ namespace VocaluxeLib.Menu
 
         public void SetPartyModeData(int numPlayer)
         {
-            SetPartyModeData(1, numPlayer, new int[] {numPlayer});
+            SetPartyModeData(1, numPlayer, new int[] { numPlayer });
             _CurrentTeam = 0;
         }
 
@@ -403,7 +403,7 @@ namespace VocaluxeLib.Menu
                 _OldMouseX = mouseEvent.X;
                 _OldMouseY = mouseEvent.Y;
             }
-                // LeftButton isn't hold anymore, but Select-Mode is still active -> "Drop" of Avatar
+            // LeftButton isn't hold anymore, but Select-Mode is still active -> "Drop" of Avatar
             else if (_SelectedProfileID != Guid.Empty && !_SelectingFast)
             {
                 //Check if mouse is in drop-area
@@ -730,7 +730,7 @@ namespace VocaluxeLib.Menu
             }
         }
 
-        private void _AddPlayer(int team, Guid profileID, bool updateElements=true)
+        private void _AddPlayer(int team, Guid profileID, bool updateElements = true)
         {
             if (_NumPlayerTeams[team] == _TeamList[team].Count && !_ChangePlayerNumDynamic)
                 return;
@@ -786,7 +786,7 @@ namespace VocaluxeLib.Menu
                 for (int p = 0; p < _NumPlayerTeams[t]; p++)
                 {
                     Guid profileID = _NameSelections[_NameSelection].GetRandomUnusedProfile();
-                    if(profileID != Guid.Empty)
+                    if (profileID != Guid.Empty)
                         _AddPlayer(t, profileID);
                 }
             }

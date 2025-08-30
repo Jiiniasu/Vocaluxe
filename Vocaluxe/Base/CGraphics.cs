@@ -64,7 +64,7 @@ namespace Vocaluxe.Base
             // Add Screens, must be the same order as in EScreens!
             using (CBenchmark.Time("Build Screen List"))
 
-            _Screens.Add(new CScreenTest());
+                _Screens.Add(new CScreenTest());
             _Screens.Add(new CScreenLoad());
             _Screens.Add(new CScreenMain());
             _Screens.Add(new CScreenSong());
@@ -616,7 +616,7 @@ namespace Vocaluxe.Base
             if (CConfig.Config.Debug.DebugLevel == EDebugLevel.TR_CONFIG_OFF)
                 return;
 
-            List<String> debugOutput = new List<string> {CTime.GetFPS().ToString("FPS: 000")};
+            List<String> debugOutput = new List<string> { CTime.GetFPS().ToString("FPS: 000") };
 
             if (CConfig.Config.Debug.DebugLevel >= EDebugLevel.TR_CONFIG_LEVEL1)
             {

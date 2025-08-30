@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Xml.Serialization;
 using VocaluxeLib.Draw;
-using VocaluxeLib.Xml;
 
 namespace VocaluxeLib.Menu
 {
@@ -132,7 +131,7 @@ namespace VocaluxeLib.Menu
             set
             {
                 //Animation is still running, so use current state for calculations
-                if(_ProgressCurrent != _ProgressTarget)
+                if (_ProgressCurrent != _ProgressTarget)
                 {
                     _ProgressLast = _ProgressCurrent;
                     _ColorProgressLast = _ColorProgressCurrent;
@@ -278,7 +277,7 @@ namespace VocaluxeLib.Menu
                 CBase.Drawing.DrawRect(new SColorF(1f, 1f, 1f, 0.5f), Rect, AllMonitors);
         }
 
-        public void UnloadSkin() {}
+        public void UnloadSkin() { }
 
         public void LoadSkin()
         {
@@ -344,7 +343,7 @@ namespace VocaluxeLib.Menu
                         _AnimDuration = Math.Max(100f, (Rect.W * 0.015f * 1000) * Math.Abs(_ProgressTarget - _ProgressCurrent));
                     else
                         _AnimDuration = Math.Max(100f, (Rect.H * 0.015f * 1000) * Math.Abs(_ProgressTarget - _ProgressCurrent));
-                } 
+                }
             }
             //Movement animation
             if (_AnimateMovement == EOffOn.TR_CONFIG_ON)
@@ -368,7 +367,7 @@ namespace VocaluxeLib.Menu
                 if (col.From < _ProgressTarget)
                     col.Color.Get(_PartyModeID, out _ColorProgressTarget);
 
-            if(_Animate && _AnimateColoring == EOffOn.TR_CONFIG_ON)
+            if (_Animate && _AnimateColoring == EOffOn.TR_CONFIG_ON)
             {
                 float animFactor = (_AnimTimer.ElapsedMilliseconds / _AnimDuration).Clamp(0, 1);
 
@@ -406,7 +405,7 @@ namespace VocaluxeLib.Menu
                     if (_TextureProgressBegin == null)
                         _RectProgressBegin = new SRectF(Rect.X + Rect.W, Rect.Y, 0, 0, Rect.Z);
                     else
-                        _RectProgressBegin = new SRectF(Rect.X + Rect.W - Rect.H * _TextureProgressBegin.OrigAspect, Rect.Y, Rect.H *_TextureProgressBegin.OrigAspect, Rect.H, Rect.Z);
+                        _RectProgressBegin = new SRectF(Rect.X + Rect.W - Rect.H * _TextureProgressBegin.OrigAspect, Rect.Y, Rect.H * _TextureProgressBegin.OrigAspect, Rect.H, Rect.Z);
                     break;
 
                 case EDirection.Down:

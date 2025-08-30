@@ -41,7 +41,7 @@ namespace Vocaluxe.Base
                     break;
 #endif
 
-                    // case ERecordLib.PortAudio:
+                // case ERecordLib.PortAudio:
                 default:
                     _Record = new CPortAudioRecord();
                     break;
@@ -126,8 +126,8 @@ namespace Vocaluxe.Base
             {
                 foreach (CRecordDevice device in devices)
                 {
-                    for(int ch = 0; ch < device.Channels; ++ch)
-                        device.PlayerChannel[ch] = CConfig.GetPlayerFromMicConfig(device.Name, device.Driver, ch+1);
+                    for (int ch = 0; ch < device.Channels; ++ch)
+                        device.PlayerChannel[ch] = CConfig.GetPlayerFromMicConfig(device.Name, device.Driver, ch + 1);
                 }
                 return devices;
             }

@@ -1,18 +1,18 @@
-﻿using System;
-using System.Text;
-using Newtonsoft.Json;
-using System.Net.Http;
+﻿using Newtonsoft.Json;
+using Polly;
+using Polly.Retry;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
+using System.Net.Http;
+using System.Net.WebSockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using VocaluxeLib;
 using VocaluxeLib.Log;
 using VocaluxeLib.Profile;
-using System.Drawing;
-using System.Collections.Generic;
-using System.Net.WebSockets;
-using System.Threading;
-using System.Threading.Tasks;
-using Polly;
-using Polly.Retry;
 using VocaluxeLib.Songs;
 
 namespace Vocaluxe.Base
@@ -164,7 +164,8 @@ namespace Vocaluxe.Base
                     }
                 }
                 CLog.CCloudLog.Warning("Connection to websocket closed!");
-            };
+            }
+            ;
         }
 
         public static Task setState(string state)

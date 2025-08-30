@@ -15,9 +15,9 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System;
 
 namespace VocaluxeLib.Songs
 {
@@ -70,7 +70,7 @@ namespace VocaluxeLib.Songs
                 int max = _Notes.Max(note => note.Tone);
                 int range = max - min;
                 int maxrange = ((CBase.Settings.GetNumNoteLines()) * 2) - 1;
-                return min - (int)Math.Floor((double)(maxrange - range)/2);
+                return min - (int)Math.Floor((double)(maxrange - range) / 2);
             }
         }
         #endregion Properties

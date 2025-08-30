@@ -15,9 +15,9 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using NUnit.Framework;
 using System;
 using System.IO;
-using NUnit.Framework;
 using VocaluxeLib.Log.Rolling;
 
 namespace Tests.VocaluxeLib.Log.Rolling
@@ -47,14 +47,14 @@ namespace Tests.VocaluxeLib.Log.Rolling
         #region Tests
 
         [Test]
-        public void RollFilesTest([Range(0,4)] int numFilesExisting, [Range(0, 3)] int numOldFilesToKeep)
+        public void RollFilesTest([Range(0, 4)] int numFilesExisting, [Range(0, 3)] int numOldFilesToKeep)
         {
             // Create existing files
             if (numFilesExisting > 0)
             {
                 CreateFile(_TestFolder, _TestFileName, 0);
             }
-            
+
             for (var i = 1; i < numFilesExisting; i++)
             {
                 CreateFile(_TestFolder, GetFileName(i), i);
@@ -63,7 +63,7 @@ namespace Tests.VocaluxeLib.Log.Rolling
 
             // Roll the files
             CLogFileRoller.RollLogs(Path.Combine(_TestFolder, _TestFileName), numOldFilesToKeep);
-            
+
 
             // Check main file
             Assert.IsFalse(File.Exists(Path.Combine(_TestFolder, _TestFileName)), "Main file was not deleted.");
@@ -71,7 +71,7 @@ namespace Tests.VocaluxeLib.Log.Rolling
             for (int i = 1; i <= Math.Max(numOldFilesToKeep, numFilesExisting); i++)
             {
                 var fileToCheck = Path.Combine(_TestFolder, GetFileName(i));
-                if (i <= Math.Min(numFilesExisting,numOldFilesToKeep))
+                if (i <= Math.Min(numFilesExisting, numOldFilesToKeep))
                 {
                     Assert.IsTrue(File.Exists(fileToCheck), $"File {GetFileName(i)} is missing.");
                     Assert.AreEqual((i - 1).ToString(), File.ReadAllText(fileToCheck), "Rotation is wrong");

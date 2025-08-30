@@ -15,14 +15,12 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
 using Vocaluxe.Base;
-using Vocaluxe.Reporting;
 using VocaluxeLib;
-using VocaluxeLib.Log;
 using VocaluxeLib.PartyModes.Challenge;
 
 namespace Tests.PartyModeChallenge

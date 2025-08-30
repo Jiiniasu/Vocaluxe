@@ -22,8 +22,8 @@ using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
 using VocaluxeLib.Menu;
-using VocaluxeLib.Songs;
 using VocaluxeLib.Profile;
+using VocaluxeLib.Songs;
 
 namespace Vocaluxe.Screens
 {
@@ -110,7 +110,7 @@ namespace Vocaluxe.Screens
                     _NameSelections[s + "ScreenNameSelection"].Visible = false;
                 }
             }
-            
+
             _CreatePlayerElements();
             _Statics["StaticPlayerAvatar"].Aspect = EAspect.Crop;
             _AddStatic(_ChooseAvatarStatic);
@@ -277,7 +277,7 @@ namespace Vocaluxe.Screens
                     }
                 }
             }
-                //Normal Keyboard handling
+            //Normal Keyboard handling
             else
             {
                 base.HandleInput(keyEvent);
@@ -419,7 +419,7 @@ namespace Vocaluxe.Screens
                 _OldMouseX = mouseEvent.X;
                 _OldMouseY = mouseEvent.Y;
             }
-                // LeftButton isn't hold anymore, but Select-Mode is still active -> "Drop" of Avatar
+            // LeftButton isn't hold anymore, but Select-Mode is still active -> "Drop" of Avatar
             else if (_SelectedProfileID != Guid.Empty && !_SelectingFast)
             {
                 //Foreach Drop-Area
@@ -591,7 +591,7 @@ namespace Vocaluxe.Screens
             _NameSelections[_NameSelection].Init();
 
             _LoadProfiles();
-            
+
             _SelectElement(_Buttons[_ButtonStart]);
         }
 
@@ -624,7 +624,7 @@ namespace Vocaluxe.Screens
         private void _BuildElementStrings()
         {
             _MetaRelativePlayerPanel = new string[CSettings.MaxScreenPlayer];
-            _MetaPlayersPanel= new string[CConfig.GetNumScreens()];
+            _MetaPlayersPanel = new string[CConfig.GetNumScreens()];
             _ButtonPlayer = new string[CConfig.GetNumScreens(), CSettings.MaxScreenPlayer];
             _StaticScreenBG = new string[CConfig.GetNumScreens()];
             _StaticPlayer = new string[CConfig.GetNumScreens(), CSettings.MaxScreenPlayer];
@@ -676,7 +676,7 @@ namespace Vocaluxe.Screens
             equalizers.Add("EqualizerPlayer");
             selectslides.Add("SelectSlideDuetPlayer");
 
-            for (int screen = 0; screen <  CConfig.GetNumScreens(); screen++)
+            for (int screen = 0; screen < CConfig.GetNumScreens(); screen++)
             {
                 _StaticScreenBG[screen] = "StaticScreenBGS" + (screen + 1);
                 _TextScreen[screen] = "TextScreenS" + (screen + 1);
@@ -765,7 +765,7 @@ namespace Vocaluxe.Screens
             //_CheckPlayers();
 
             _LoadPlayerPanels();
-            
+
             _NameSelections[_NameSelection].UpdateList();
             _ProfilesChanged = false;
             _AvatarsChanged = false;
@@ -789,7 +789,7 @@ namespace Vocaluxe.Screens
             CSong firstSong = CGame.GetSong(0);
             for (int s = 0; s < CConfig.GetNumScreens(); s++)
             {
-                for(int p = 0; p < CSettings.MaxScreenPlayer; p++)
+                for (int p = 0; p < CSettings.MaxScreenPlayer; p++)
                 {
                     if (CGame.GetNumSongs() == 1 && firstSong.IsDuet)
                     {
@@ -799,7 +799,7 @@ namespace Vocaluxe.Screens
                             _SelectSlides[_SelectSlideDuetPlayer[s, p]].AddValue(firstSong.Notes.VoiceNames[j]);
                     }
                     else
-                    _SelectSlides[_SelectSlideDuetPlayer[s, p]].Visible = false;
+                        _SelectSlides[_SelectSlideDuetPlayer[s, p]].Visible = false;
                 }
             }
             /*for (int i = 0; i < (CConfig.GetNumScreens() * CSettings.MaxScreenPlayer); i++)
@@ -942,7 +942,7 @@ namespace Vocaluxe.Screens
             CConfig.Config.Game.Players[playerNum] = String.Empty;
             CConfig.SaveConfig();
             //Update texture and name
-            if(playerNum < _PlayerStaticAvatar.Length)
+            if (playerNum < _PlayerStaticAvatar.Length)
                 _Statics[_PlayerStaticAvatar[playerNum]].Texture = _OriginalPlayerAvatarTextures[playerNum];
             if (playerNum < _PlayerText.Length)
                 _Texts[_PlayerText[playerNum]].Text = CProfiles.GetPlayerName(Guid.Empty, playerNum + 1);
@@ -1075,11 +1075,12 @@ namespace Vocaluxe.Screens
                     }
                     else
                     {
-                        if(screenPlayers == 4 && p > 1)
+                        if (screenPlayers == 4 && p > 1)
                         {
                             _LinkPlayerElementsToPlayer(player, s, p + 1);
                             player++;
-                        } else
+                        }
+                        else
                         {
                             _LinkPlayerElementsToPlayer(player, s, p);
                             player++;

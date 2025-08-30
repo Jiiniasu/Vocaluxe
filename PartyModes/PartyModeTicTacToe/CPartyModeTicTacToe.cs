@@ -90,7 +90,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
 
         public readonly EGameMode[] AvailableGameModes = { EGameMode.TR_GAMEMODE_NORMAL, EGameMode.TR_GAMEMODE_SHORTSONG, EGameMode.TR_GAMEMODE_DUET };
 
-    private enum EStage
+        private enum EStage
         {
             Config,
             Songs,
@@ -137,36 +137,36 @@ namespace VocaluxeLib.PartyModes.TicTacToe
             _ScreenSongOptions.Selection.RandomOnly = false;
             _ScreenSongOptions.Selection.PartyMode = true;
             _ScreenSongOptions.Selection.CategoryChangeAllowed = true;
-            _ScreenSongOptions.Selection.NumJokers = new int[] {5, 5};
-            _ScreenSongOptions.Selection.TeamNames = new string[] {"foo", "bar"};
+            _ScreenSongOptions.Selection.NumJokers = new int[] { 5, 5 };
+            _ScreenSongOptions.Selection.TeamNames = new string[] { "foo", "bar" };
 
             _ScreenSongOptions.Sorting.SearchString = String.Empty;
             _ScreenSongOptions.Sorting.SearchActive = false;
             _ScreenSongOptions.Sorting.DuetOptions = EDuetOptions.NoDuets;
 
             GameData = new SData
-                {
-                    NumPlayerTeam1 = 2,
-                    NumPlayerTeam2 = 2,
-                    NumFields = 9,
-                    ProfileIDsTeam1 = new List<Guid>(),
-                    ProfileIDsTeam2 = new List<Guid>(),
-                    PlayerTeam1 = new List<int>(),
-                    PlayerTeam2 = new List<int>(),
-                    CurrentRoundNr = 0,
-                    FieldNr = 0,
-                    Sorting = CBase.Config.GetSongSorting(),
-                    SongSource = ESongSource.TR_SONGSOURCE_ALLSONGS,
-                    PlaylistID = 0,
-                    CategoryIndex = 0,
-                    GameMode = EGameMode.TR_GAMEMODE_NORMAL,
-                    NumMedleySongs = 5,
-                    Rounds = new List<CRound>(),
-                    Songs = new List<int>(),
-                    NumJokerRandom = new int[2],
-                    NumJokerRetry = new int[2],
-                    RefillJokers = EOffOn.TR_CONFIG_OFF
-                };
+            {
+                NumPlayerTeam1 = 2,
+                NumPlayerTeam2 = 2,
+                NumFields = 9,
+                ProfileIDsTeam1 = new List<Guid>(),
+                ProfileIDsTeam2 = new List<Guid>(),
+                PlayerTeam1 = new List<int>(),
+                PlayerTeam2 = new List<int>(),
+                CurrentRoundNr = 0,
+                FieldNr = 0,
+                Sorting = CBase.Config.GetSongSorting(),
+                SongSource = ESongSource.TR_SONGSOURCE_ALLSONGS,
+                PlaylistID = 0,
+                CategoryIndex = 0,
+                GameMode = EGameMode.TR_GAMEMODE_NORMAL,
+                NumMedleySongs = 5,
+                Rounds = new List<CRound>(),
+                Songs = new List<int>(),
+                NumJokerRandom = new int[2],
+                NumJokerRetry = new int[2],
+                RefillJokers = EOffOn.TR_CONFIG_OFF
+            };
         }
 
         public override void SetDefaults()
@@ -313,7 +313,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
             throw new ArgumentException("Not required!");
         }
 
-        public override void JokerUsed(int teamNr) {}
+        public override void JokerUsed(int teamNr) { }
 
         public override void SongSelected(int songID)
         {
@@ -499,7 +499,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
             players[0].ProfileID = GameData.ProfileIDsTeam1[round.SingerTeam1];
             players[1].ProfileID = GameData.ProfileIDsTeam2[round.SingerTeam2];
 
-            foreach(int song in round.SongIDs)
+            foreach (int song in round.SongIDs)
                 CBase.Game.AddSong(song, GameData.GameMode);
         }
 

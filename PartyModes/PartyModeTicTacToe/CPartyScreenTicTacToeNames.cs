@@ -23,7 +23,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
 {
     // ReSharper disable UnusedMember.Global
     public class CPartyScreenTicTacToeNames : CMenuPartyNameSelection
-        // ReSharper restore UnusedMember.Global
+    // ReSharper restore UnusedMember.Global
     {
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
@@ -49,8 +49,8 @@ namespace VocaluxeLib.PartyModes.TicTacToe
                 _PartyMode.GameData.ProfileIDsTeam2.RemoveAt(_PartyMode.GameData.ProfileIDsTeam2.Count - 1);
 
             SetPartyModeData(2, _PartyMode.GameData.NumPlayerTeam1 + _PartyMode.GameData.NumPlayerTeam2,
-                             new int[] {_PartyMode.GameData.NumPlayerTeam1, _PartyMode.GameData.NumPlayerTeam2});
-            List<Guid>[] ids = new List<Guid>[] {_PartyMode.GameData.ProfileIDsTeam1, _PartyMode.GameData.ProfileIDsTeam2};
+                             new int[] { _PartyMode.GameData.NumPlayerTeam1, _PartyMode.GameData.NumPlayerTeam2 });
+            List<Guid>[] ids = new List<Guid>[] { _PartyMode.GameData.ProfileIDsTeam1, _PartyMode.GameData.ProfileIDsTeam2 };
             SetPartyModeProfiles(ids);
         }
 

@@ -88,15 +88,15 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            _ThemeStatics = new string[] {_StaticBG, _StaticCover};
-            _ThemeTexts = new string[] {_TextCurrentSong};
-            _ThemeButtons = new string[] {_ButtonPlay, _ButtonPause, _ButtonPrevious, _ButtonNext, _ButtonRepeat, _ButtonShowVideo, _ButtonSing, _ButtonToBackgroundVideo};
+            _ThemeStatics = new string[] { _StaticBG, _StaticCover };
+            _ThemeTexts = new string[] { _TextCurrentSong };
+            _ThemeButtons = new string[] { _ButtonPlay, _ButtonPause, _ButtonPrevious, _ButtonNext, _ButtonRepeat, _ButtonShowVideo, _ButtonSing, _ButtonToBackgroundVideo };
         }
 
         public override bool HandleInput(SKeyEvent keyEvent)
         {
             base.HandleInput(keyEvent);
-            if (keyEvent.KeyPressed && !Char.IsControl(keyEvent.Unicode)) {}
+            if (keyEvent.KeyPressed && !Char.IsControl(keyEvent.Unicode)) { }
             else
             {
                 switch (keyEvent.Key)

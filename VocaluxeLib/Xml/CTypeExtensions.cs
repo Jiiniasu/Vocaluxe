@@ -46,7 +46,7 @@ namespace VocaluxeLib.Xml
     [AttributeUsage(AttributeTargets.Field)]
     public class XmlNormalizedAttribute : XmlRangedAttribute
     {
-        public XmlNormalizedAttribute() : base(0, 1) {}
+        public XmlNormalizedAttribute() : base(0, 1) { }
     }
 
     /// <summary>

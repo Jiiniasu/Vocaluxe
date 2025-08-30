@@ -18,13 +18,13 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading;
-using System.IO;
-using System.Threading.Tasks;
-using System.Net.Http;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using VocaluxeLib;
 using VocaluxeLib.Log;
 using VocaluxeLib.Songs;
@@ -164,9 +164,12 @@ namespace Vocaluxe.Base
 
         public static int GetSongIdFromDataBaseSongId(int dataBaseSongId)
         {
-            try {
+            try
+            {
                 return _Songs.FirstOrDefault(song => song.DataBaseSongID == dataBaseSongId).ID;
-            } catch {
+            }
+            catch
+            {
                 return -1;
             }
         }
@@ -293,7 +296,7 @@ namespace Vocaluxe.Base
                 {
                     // ReSharper disable LoopCanBeConvertedToQuery
                     foreach (CSongPointer sp in Categories[_CatIndex].Songs)
-                        // ReSharper restore LoopCanBeConvertedToQuery
+                    // ReSharper restore LoopCanBeConvertedToQuery
                     {
                         if (!sp.IsSung)
                             songs.Add(_Songs[sp.SongID]);
@@ -354,10 +357,10 @@ namespace Vocaluxe.Base
                 _Songs.Clear();
 
                 var files = Enumerable.Empty<string>();
-               
+
                 using (CBenchmark.Time("List Songs"))
                 {
-                    
+
                     foreach (string path in CConfig.SongFolders)
                     {
                         if (Directory.Exists(path))
@@ -384,15 +387,16 @@ namespace Vocaluxe.Base
                         List<CloudSong> songs = new List<CloudSong>();
                         foreach (CSong song in _Songs)
                         {
-                            songs.Add(new CloudSong { 
-                                GUID = song.Guid, 
-                                Artist = song.Artist, 
-                                Title = song.Title, 
-                                Editions = song.Editions, 
+                            songs.Add(new CloudSong
+                            {
+                                GUID = song.Guid,
+                                Artist = song.Artist,
+                                Title = song.Title,
+                                Editions = song.Editions,
                                 Genres = song.Genres,
                                 Languages = song.Languages,
-                                Album = song.Album, 
-                                Year = song.Year, 
+                                Album = song.Album,
+                                Year = song.Year,
                                 Voices = song.Notes.VoiceNames.All(),
                             });
                         }
@@ -414,14 +418,14 @@ namespace Vocaluxe.Base
                                 {
                                     if (codec.FormatID == imgguid)
                                         format = codec.MimeType;
-                                }                                
+                                }
                                 CCloud.putCover(_Songs[i].DataBaseSongID, Convert.ToBase64String(ms.ToArray()), format);
                             }
                         }
                     }
                 }
 
-                    using (CBenchmark.Time("Sorted Songs"))
+                using (CBenchmark.Time("Sorted Songs"))
                 {
                     Sorter.SongSorting = CConfig.Config.Game.SongSorting;
                     Sorter.IgnoreArticles = CConfig.Config.Game.IgnoreArticles;
@@ -451,7 +455,7 @@ namespace Vocaluxe.Base
 
             if (_CoverLoaderThread != null)
                 return;
-            _CoverLoaderThread = new Thread(_LoadCovers) {Name = "CoverLoader", Priority = ThreadPriority.BelowNormal, IsBackground = true};
+            _CoverLoaderThread = new Thread(_LoadCovers) { Name = "CoverLoader", Priority = ThreadPriority.BelowNormal, IsBackground = true };
             _CoverLoaderThread.Start();
         }
 

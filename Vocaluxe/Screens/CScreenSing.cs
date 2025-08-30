@@ -225,13 +225,13 @@ namespace Vocaluxe.Screens
                 {
                     case Keys.Escape:
                         _TogglePause();
-                        if ( CCloud.PauseSong)
+                        if (CCloud.PauseSong)
                             _SelectElement(_Buttons[_ButtonCancel]);
                         break;
 
                     case Keys.P:
                         _TogglePause();
-                        if ( CCloud.PauseSong)
+                        if (CCloud.PauseSong)
                             _SelectElement(_Buttons[_ButtonContinue]);
                         break;
 
@@ -264,7 +264,7 @@ namespace Vocaluxe.Screens
                         }
                         break;
                     case Keys.Enter:
-                        if ( CCloud.PauseSong)
+                        if (CCloud.PauseSong)
                         {
                             if (_Buttons[_ButtonContinue].Selected)
                                 _SetPause(false);
@@ -307,14 +307,14 @@ namespace Vocaluxe.Screens
             if (mouseEvent.RB)
             {
                 _TogglePause();
-                if ( CCloud.PauseSong)
+                if (CCloud.PauseSong)
                     _SelectElement(_Buttons[_ButtonContinue]);
             }
 
-            if (mouseEvent.LB && ! CCloud.PauseSong)
+            if (mouseEvent.LB && !CCloud.PauseSong)
                 _TogglePause();
 
-            if (mouseEvent.LB && _IsMouseOverCurSelection(mouseEvent) &&  CCloud.PauseSong)
+            if (mouseEvent.LB && _IsMouseOverCurSelection(mouseEvent) && CCloud.PauseSong)
             {
                 if (_Buttons[_ButtonContinue].Selected)
                     _SetPause(false);
@@ -329,7 +329,7 @@ namespace Vocaluxe.Screens
                 {
                     _RestartRound();
                     _SetPause(false);
-                }  
+                }
                 if (_Buttons[_ButtonSkip].Selected)
                 {
                     _NextSong();
@@ -417,7 +417,7 @@ namespace Vocaluxe.Screens
                 CCloud.StopSong = false;
                 _Stop();
             }
-            if ( CCloud.PauseSong != _PreviousPause)
+            if (CCloud.PauseSong != _PreviousPause)
             {
                 _SetPause(CCloud.PauseSong);
             }
@@ -815,7 +815,7 @@ namespace Vocaluxe.Screens
                             _TimeRects[i].Rect.Color = _Statics[_StaticTimeLineExpandedNormal].Color;
                         }
                     }
-                    _Statics[_StaticTimePointer].X = stat.X - (_Statics[_StaticTimePointer].W/2) + stat.W * (currentTime / totalTime);
+                    _Statics[_StaticTimePointer].X = stat.X - (_Statics[_StaticTimePointer].W / 2) + stat.W * (currentTime / totalTime);
                     break;
             }
         }
@@ -863,13 +863,13 @@ namespace Vocaluxe.Screens
 
             switch (CConfig.Config.Theme.TimerLook)
             {
-            case ETimerLook.TR_CONFIG_TIMERLOOK_NORMAL:
-                CDraw.DrawTexture(_Statics[_StaticTimeLine].Texture, _Statics[_StaticTimeLine].Rect, new SColorF(1, 1, 1, 1), _TimeLineRect);
-                break;
-            case ETimerLook.TR_CONFIG_TIMERLOOK_EXPANDED:
-                for (int i = 0; i < _TimeRects.Count; i++)
-                    CDraw.DrawTexture(_TimeRects[i].Rect.Texture, _Statics[_StaticTimeLine].Rect, _TimeRects[i].Rect.Color, _TimeRects[i].Rect.Rect);
-                break;
+                case ETimerLook.TR_CONFIG_TIMERLOOK_NORMAL:
+                    CDraw.DrawTexture(_Statics[_StaticTimeLine].Texture, _Statics[_StaticTimeLine].Rect, new SColorF(1, 1, 1, 1), _TimeLineRect);
+                    break;
+                case ETimerLook.TR_CONFIG_TIMERLOOK_EXPANDED:
+                    for (int i = 0; i < _TimeRects.Count; i++)
+                        CDraw.DrawTexture(_TimeRects[i].Rect.Texture, _Statics[_StaticTimeLine].Rect, _TimeRects[i].Rect.Color, _TimeRects[i].Rect.Rect);
+                    break;
             }
 
             _DrawLyricHelper();
@@ -972,7 +972,7 @@ namespace Vocaluxe.Screens
             CRecord.Start();
             if (_Webcam)
                 CWebcam.Start();
-            if(CConfig.UseCloudServer && CGame.GetSong() != null)
+            if (CConfig.UseCloudServer && CGame.GetSong() != null)
             {
                 CCloud.setState("playing_song", CGame.GetSong().DataBaseSongID);
             }
@@ -1060,10 +1060,11 @@ namespace Vocaluxe.Screens
                 CGame.ResetPlayer();
                 for (int i = 0; i < voiceAssignments.Length; i++)
                     CGame.Players[i].VoiceNr = voiceAssignments[i];
-            } else
+            }
+            else
             {
                 CGame.ResetPlayer();
-            }            
+            }
 
 
             _LoadCurrentSong();
@@ -1077,23 +1078,23 @@ namespace Vocaluxe.Screens
 
         private void _SetPause(bool paused)
         {
-             CCloud.PauseSong = paused;
+            CCloud.PauseSong = paused;
 
             _PreviousPause = paused;
 
             foreach (String s in _StaticsPause)
-                _Statics[s].Visible =  CCloud.PauseSong;
+                _Statics[s].Visible = CCloud.PauseSong;
 
             foreach (String s in _TextsPause)
-                _Texts[s].Visible =  CCloud.PauseSong;
+                _Texts[s].Visible = CCloud.PauseSong;
 
-            _Buttons[_ButtonCancel].Visible =  CCloud.PauseSong;
-            _Buttons[_ButtonContinue].Visible =  CCloud.PauseSong;
-            _Buttons[_ButtonSkip].Visible =  CCloud.PauseSong && CGame.NumRounds > CGame.RoundNr && CGame.NumRounds > 1;
-            _Buttons[_ButtonRestartGame].Visible =  CCloud.PauseSong;
-            _Buttons[_ButtonRestartRound].Visible =  CCloud.PauseSong && CGame.NumRounds > 1;
+            _Buttons[_ButtonCancel].Visible = CCloud.PauseSong;
+            _Buttons[_ButtonContinue].Visible = CCloud.PauseSong;
+            _Buttons[_ButtonSkip].Visible = CCloud.PauseSong && CGame.NumRounds > CGame.RoundNr && CGame.NumRounds > 1;
+            _Buttons[_ButtonRestartGame].Visible = CCloud.PauseSong;
+            _Buttons[_ButtonRestartRound].Visible = CCloud.PauseSong && CGame.NumRounds > 1;
 
-            if ( CCloud.PauseSong)
+            if (CCloud.PauseSong)
                 CSound.Pause(_CurrentStream);
             else
                 CSound.Play(_CurrentStream);
@@ -1908,11 +1909,11 @@ namespace Vocaluxe.Screens
         private void _UpdateNames()
         {
             CSong song = CGame.GetSong(0);
-            
+
             for (int i = 0; i < CGame.NumPlayers; i++)
             {
                 _Texts[_PlayerTextName[i]].Text = CProfiles.GetPlayerName(CGame.Players[i].ProfileID, i + 1);
-                if(song.IsDuet)
+                if (song.IsDuet)
                 {
                     _Texts[_PlayerTextName[i]].Text += " (" + song.Notes.VoiceNames[CGame.Players[i].VoiceNr] + ")";
                 }

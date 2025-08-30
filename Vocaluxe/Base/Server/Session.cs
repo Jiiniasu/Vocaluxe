@@ -38,7 +38,7 @@ namespace Vocaluxe.Base.Server
         {
             get { return _Roles; }
         }
-       
+
         private DateTime _LastSeen;
         public DateTime LastSeen
         {

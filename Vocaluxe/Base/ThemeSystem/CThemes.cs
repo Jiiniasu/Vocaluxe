@@ -17,11 +17,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
-using System.Diagnostics;
 using VocaluxeLib.Log;
 
 namespace Vocaluxe.Base.ThemeSystem
@@ -31,7 +31,7 @@ namespace Vocaluxe.Base.ThemeSystem
         private static readonly List<CTheme> _Themes = new List<CTheme>();
         public static string[] ThemeNames
         {
-            get { return _Themes.Where(th=>th is CBaseTheme).Select(th => th.Name).Distinct().ToArray(); }
+            get { return _Themes.Where(th => th is CBaseTheme).Select(th => th.Name).Distinct().ToArray(); }
         }
 
         public static string[] SkinNames
@@ -212,7 +212,7 @@ namespace Vocaluxe.Base.ThemeSystem
         public static SColorF GetPlayerColor(int playerNr)
         {
             SColorF color;
-            while(playerNr > CSettings.MaxScreenPlayer)
+            while (playerNr > CSettings.MaxScreenPlayer)
             {
                 playerNr -= CSettings.MaxScreenPlayer;
             }

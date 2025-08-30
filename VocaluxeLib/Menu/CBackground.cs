@@ -16,9 +16,9 @@
 #endregion
 
 using System;
-using System.Xml.Serialization;
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Xml.Serialization;
 using VocaluxeLib.Draw;
 
 namespace VocaluxeLib.Menu
@@ -72,7 +72,7 @@ namespace VocaluxeLib.Menu
         {
             _PartyModeID = partyModeID;
             ThemeLoaded = false;
-            _Theme = new SThemeBackground {SlideShowTextures = new List<string>()};
+            _Theme = new SThemeBackground { SlideShowTextures = new List<string>() };
 
             Color = new SColorF(0f, 0f, 0f, 1f);
         }
@@ -298,9 +298,9 @@ namespace VocaluxeLib.Menu
         #endregion internal
 
         #region ThemeEdit
-        public void MoveElement(int stepX, int stepY) {}
+        public void MoveElement(int stepX, int stepY) { }
 
-        public void ResizeElement(int stepW, int stepH) {}
+        public void ResizeElement(int stepW, int stepH) { }
         #endregion ThemeEdit
     }
 }

@@ -45,8 +45,8 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            _ThemeButtons = new string[] {_ButtonExit, _ButtonServer};
-            _ThemeSelectSlides = new string[] {_SelectSlideLanguage, _SelectSlideDebugLevel, _SelectSlideSongMenu, _SelectSlideSongSorting, _SelectSlideTabs, _SelectSlideHighscoreStyle};
+            _ThemeButtons = new string[] { _ButtonExit, _ButtonServer };
+            _ThemeSelectSlides = new string[] { _SelectSlideLanguage, _SelectSlideDebugLevel, _SelectSlideSongMenu, _SelectSlideSongSorting, _SelectSlideTabs, _SelectSlideHighscoreStyle };
         }
 
         public override void LoadTheme(string xmlPath)

@@ -48,7 +48,7 @@ namespace Vocaluxe.Lib.Database
             public string Str2;
         }
 
-        public CHighscoreDB(string filePath) : base(filePath) {}
+        public CHighscoreDB(string filePath) : base(filePath) { }
 
         public override bool Init()
         {
@@ -110,7 +110,7 @@ namespace Vocaluxe.Lib.Database
                 {
                     connection.Open();
                 }
-                catch (Exception) {}
+                catch (Exception) { }
 
                 using (var command = new SQLiteCommand(connection))
                 {
@@ -131,7 +131,7 @@ namespace Vocaluxe.Lib.Database
                 {
                     connection.Open();
                 }
-                catch (Exception) {}
+                catch (Exception) { }
 
                 using (var command = new SQLiteCommand(connection))
                     _IncreaseSongCounter(dataBaseSongID, command);
@@ -227,7 +227,7 @@ namespace Vocaluxe.Lib.Database
                 {
                     reader = command.ExecuteReader();
                 }
-                catch (Exception) {}
+                catch (Exception) { }
 
                 if (reader != null && reader.HasRows)
                 {
@@ -347,14 +347,14 @@ namespace Vocaluxe.Lib.Database
                         while (reader.Read())
                         {
                             var score = new SDBScoreEntry
-                                {
-                                    Name = reader.GetString(0),
-                                    Score = reader.GetInt32(1),
-                                    Date = new DateTime(reader.GetInt64(2)),
-                                    Difficulty = (EGameDifficulty)reader.GetInt32(3),
-                                    VoiceNr = reader.GetInt32(4),
-                                    ID = reader.GetInt32(5)
-                                };
+                            {
+                                Name = reader.GetString(0),
+                                Score = reader.GetInt32(1),
+                                Date = new DateTime(reader.GetInt64(2)),
+                                Difficulty = (EGameDifficulty)reader.GetInt32(3),
+                                VoiceNr = reader.GetInt32(4),
+                                ID = reader.GetInt32(5)
+                            };
 
                             scores.Add(score);
                         }
@@ -469,7 +469,7 @@ namespace Vocaluxe.Lib.Database
                             artist = reader.GetString(0);
 
                         if (!reader.IsDBNull(1))
-                            title = reader.GetString(1); 
+                            title = reader.GetString(1);
 
                         if (!reader.IsDBNull(2))
                             numPlayed = reader.GetInt32(2);
@@ -605,7 +605,7 @@ namespace Vocaluxe.Lib.Database
                     {
                         reader = command.ExecuteReader();
                     }
-                    catch (Exception) {}
+                    catch (Exception) { }
 
                     if (reader == null || reader.FieldCount == 0)
                     {
@@ -688,14 +688,14 @@ namespace Vocaluxe.Lib.Database
                     {
                         while (reader.Read())
                         {
-                            var data = new SData {Id = reader.GetInt32(0), Str1 = reader.GetString(1)};
+                            var data = new SData { Id = reader.GetInt32(0), Str1 = reader.GetString(1) };
                             Int64 ticks = 0;
 
                             try
                             {
                                 ticks = reader.GetInt64(2);
                             }
-                            catch {}
+                            catch { }
 
                             data.Ticks = _UnixTimeToTicks((int)ticks);
 
@@ -712,7 +712,7 @@ namespace Vocaluxe.Lib.Database
                     {
                         while (reader.Read())
                         {
-                            var data = new SData {Id = reader.GetInt32(0), Str1 = reader.GetString(1), Str2 = reader.GetString(2)};
+                            var data = new SData { Id = reader.GetInt32(0), Str1 = reader.GetString(1), Str2 = reader.GetString(2) };
                             songs.Add(data);
                         }
                     }
@@ -844,7 +844,7 @@ namespace Vocaluxe.Lib.Database
 
                             while (Sqlite3.sqlite3_step(stmt) == Sqlite3.SQLITE_ROW)
                             {
-                                var data = new SData {Id = Sqlite3.sqlite3_column_int(stmt, 0)};
+                                var data = new SData { Id = Sqlite3.sqlite3_column_int(stmt, 0) };
 
                                 byte[] bytes = Sqlite3.sqlite3_column_rawbytes(stmt, 1);
                                 data.Str1 = bytes != null ? utf8.GetString(Encoding.Convert(cp1252, utf8, bytes)) : "Someone";
@@ -876,7 +876,7 @@ namespace Vocaluxe.Lib.Database
 
                             while (Sqlite3.sqlite3_step(stmt) == Sqlite3.SQLITE_ROW)
                             {
-                                var data = new SData {Id = Sqlite3.sqlite3_column_int(stmt, 0)};
+                                var data = new SData { Id = Sqlite3.sqlite3_column_int(stmt, 0) };
 
                                 byte[] bytes = Sqlite3.sqlite3_column_rawbytes(stmt, 1);
                                 data.Str1 = bytes != null ? utf8.GetString(Encoding.Convert(cp1252, utf8, bytes)) : "Someone";
@@ -962,7 +962,7 @@ namespace Vocaluxe.Lib.Database
 
         private bool _ConvertV2toV3(SQLiteConnection connection)
         {
-            var command = new SQLiteCommand(connection) {CommandText = "ALTER TABLE Songs ADD DateAdded BIGINT"};
+            var command = new SQLiteCommand(connection) { CommandText = "ALTER TABLE Songs ADD DateAdded BIGINT" };
 
             command.ExecuteNonQuery();
             command.CommandText = "UPDATE Songs SET [DateAdded] = @DateAdded";

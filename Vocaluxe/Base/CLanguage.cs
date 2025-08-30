@@ -180,7 +180,7 @@ namespace Vocaluxe.Base
 
         private static bool _LoadPartyLanguageFile(int partyModeID, string filePath)
         {
-            var lang = new SPartyLanguage {PartyModeID = partyModeID};
+            var lang = new SPartyLanguage { PartyModeID = partyModeID };
 
             if (!_LoadLanguageEntries(filePath, out lang.Texts))
                 return false;
@@ -194,7 +194,7 @@ namespace Vocaluxe.Base
 
         private static void _LoadLanguageFile(string fileName)
         {
-            var lang = new SLanguage {FilePath = Path.Combine(CSettings.ProgramFolder, CSettings.FolderNameLanguages, fileName), PartyModeTexts = new List<SPartyLanguage>()};
+            var lang = new SLanguage { FilePath = Path.Combine(CSettings.ProgramFolder, CSettings.FolderNameLanguages, fileName), PartyModeTexts = new List<SPartyLanguage>() };
             if (!_LoadLanguageEntries(lang.FilePath, out lang.Texts))
                 return;
 

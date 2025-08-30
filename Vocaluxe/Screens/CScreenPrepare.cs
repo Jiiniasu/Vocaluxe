@@ -22,9 +22,6 @@ using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
 using VocaluxeLib.Menu;
-using VocaluxeLib.Songs;
-using VocaluxeLib.Profile;
-using System.Runtime.ConstrainedExecution;
 
 namespace Vocaluxe.Screens
 {
@@ -72,7 +69,7 @@ namespace Vocaluxe.Screens
             {
                 _OriginalPlayerAvatarTextures[i] = _Statics["StaticPlayerAvatar"].Texture;
             }
-            
+
             _CreatePlayerElements();
             _Statics["StaticPlayerAvatar"].Aspect = EAspect.Crop;
             _Statics["StaticVideoBackground"].Aspect = EAspect.Crop;
@@ -101,7 +98,7 @@ namespace Vocaluxe.Screens
 
             if (mouseEvent.RB)
             {
-                    CGraphics.FadeTo(EScreen.Song);
+                CGraphics.FadeTo(EScreen.Song);
             }
 
             return true;
@@ -119,21 +116,23 @@ namespace Vocaluxe.Screens
             else
                 _Statics["StaticVideoBackground"].Texture = CBackgroundMusic.Cover;
 
-            int elapsedSeconds = (int) Math.Round((DateTime.Now - showTime).TotalSeconds);
+            int elapsedSeconds = (int)Math.Round((DateTime.Now - showTime).TotalSeconds);
 
             if (elapsedSeconds > timeout && timeout > 0)
             {
                 timeout = 0;
                 CGraphics.FadeTo(EScreen.Sing);
-            } else if (elapsedSeconds < timeout)
+            }
+            else if (elapsedSeconds < timeout)
             {
                 _Texts["TextCountdown"].Text = CLanguage.Translate("TR_SCREENPREPARE_STARTING_IN").Replace("%v", Math.Round(timeout - (DateTime.Now - showTime).TotalSeconds).ToString());
-            } else
+            }
+            else
             {
                 _Texts["TextCountdown"].Text = CLanguage.Translate("TR_SCREENPREPARE_LETS_GO");
             }
 
-                return true;
+            return true;
         }
 
         public override void OnShow()
@@ -199,7 +198,7 @@ namespace Vocaluxe.Screens
 
             List<string> metas = new List<string>();
 
-            for (int numplayer = 0; numplayer <= CSettings.MaxScreenPlayer;  ++numplayer)
+            for (int numplayer = 0; numplayer <= CSettings.MaxScreenPlayer; ++numplayer)
             {
                 for (int player = 0; player <= numplayer; ++player)
                 {
@@ -207,7 +206,7 @@ namespace Vocaluxe.Screens
                 }
             }
 
-            for ( int player = 0; player < CGame.NumPlayers; player++)
+            for (int player = 0; player < CGame.NumPlayers; player++)
             {
                 _PlayerStaticBG[player] = "StaticPlayerBGP" + (player + 1);
                 _PlayerStaticIndicator[player] = "StaticPlayerIndicatorP" + (player + 1);
@@ -241,7 +240,7 @@ namespace Vocaluxe.Screens
 
             for (int screen = 0; screen < CConfig.GetNumScreens(); screen++)
             {
-                for ( int screenPlayer = 0; screenPlayer < screenPlayers; screenPlayer++ )
+                for (int screenPlayer = 0; screenPlayer < screenPlayers; screenPlayer++)
                 {
                     int screenPlayerCount = screenPlayers;
 

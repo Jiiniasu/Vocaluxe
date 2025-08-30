@@ -15,10 +15,10 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using PortAudioSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using PortAudioSharp;
 using Vocaluxe.Base;
 using VocaluxeLib.Log;
 

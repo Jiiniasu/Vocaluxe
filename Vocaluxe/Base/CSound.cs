@@ -16,13 +16,13 @@
 #endregion
 
 using System.IO;
+using System.Threading;
+using Vocaluxe.Lib.Sound;
 using Vocaluxe.Lib.Sound.Playback;
 using Vocaluxe.Lib.Sound.Playback.GstreamerSharp;
 using Vocaluxe.Lib.Sound.Playback.OpenAL;
 using Vocaluxe.Lib.Sound.Playback.PortAudio;
 using VocaluxeLib;
-using System.Threading;
-using Vocaluxe.Lib.Sound;
 
 namespace Vocaluxe.Base
 {

@@ -79,7 +79,7 @@ namespace VocaluxeLib.Menu.SongMenu
             _VideoBG = new CStatic(_Theme.SongMenuRemote.StaticVideoBG, _PartyModeID);
             _BigCover = new CStatic(_Theme.SongMenuRemote.StaticBigCover, _PartyModeID);
             _TextBG = new CStatic(_Theme.SongMenuRemote.StaticTextBG, _PartyModeID);
-            _SubElements.AddRange(new IMenuElement[] { _Artist, _Title, _SongLength});
+            _SubElements.AddRange(new IMenuElement[] { _Artist, _Title, _SongLength });
         }
 
         private void _ReadSubTheme()
@@ -111,7 +111,7 @@ namespace VocaluxeLib.Menu.SongMenu
                 _SelectionNr = CBase.Songs.GetVisibleSongNumber(CBase.BackgroundMusic.GetSongID());
                 _PreviewNr = _SelectionNr;
             }
-            
+
             if (CBase.BackgroundMusic.IsFinished() && !CBase.BackgroundMusic.IsLoading() && CBase.Graphics.GetNextScreenType() == EScreen.Unknown)
             {
                 Random rng = new Random();
@@ -121,10 +121,10 @@ namespace VocaluxeLib.Menu.SongMenu
             }
 
             if (songOptions.Selection.RandomOnly)
-                 _PreviewNr = _SelectionNr;
+                _PreviewNr = _SelectionNr;
 
             if (_Length < 0 && CBase.Songs.IsInCategory() && CBase.BackgroundMusic.GetLength() > 0)
-                 _UpdateLength(CBase.Songs.GetVisibleSong(_PreviewNr));
+                _UpdateLength(CBase.Songs.GetVisibleSong(_PreviewNr));
         }
 
         private void _UpdatePreview()
@@ -216,7 +216,7 @@ namespace VocaluxeLib.Menu.SongMenu
             }
 
             Random rng = new Random();
-            
+
             SetSelectedSong(_SelectionNr < 0 ? rng.Next(0, CBase.Songs.GetNumSongs()) : _SelectionNr);
         }
 
@@ -238,7 +238,7 @@ namespace VocaluxeLib.Menu.SongMenu
             _BigCover.Draw(EAspect.LetterBox);
             foreach (IMenuElement element in _SubElements)
                 element.Draw();
-            
+
         }
 
         public override CStatic GetSelectedSongCover()

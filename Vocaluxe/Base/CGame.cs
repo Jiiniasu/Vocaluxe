@@ -482,7 +482,7 @@ namespace Vocaluxe.Base
                 }
             }
 
-            return new float[] {GetTimeFromBeats(lastStart, GetSong().BPM), nextStart};
+            return new float[] { GetTimeFromBeats(lastStart, GetSong().BPM), nextStart };
         }
     }
 }

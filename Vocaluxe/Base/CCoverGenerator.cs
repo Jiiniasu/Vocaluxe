@@ -23,9 +23,9 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Text;
 using System.IO;
+using System.Linq;
 using Vocaluxe.Base.Fonts;
 using VocaluxeLib;
-using System.Linq;
 
 namespace Vocaluxe.Base
 {
@@ -49,9 +49,9 @@ namespace Vocaluxe.Base
         /// <summary>
         ///     Split lines after special chars, descending priority
         /// </summary>
-        private static readonly char[] _SplitCharPreferences = {':', '/', '-'};
-        private static readonly char[] _SplitCharAfter = {':', '/', '-', ' ', ')', '.', '*', ','};
-        private static readonly char[] _SplitCharBefore = {'('};
+        private static readonly char[] _SplitCharPreferences = { ':', '/', '-' };
+        private static readonly char[] _SplitCharAfter = { ':', '/', '-', ' ', ')', '.', '*', ',' };
+        private static readonly char[] _SplitCharBefore = { '(' };
 
         public CCoverGenerator(SThemeCoverGenerator theme, string basePath)
         {
@@ -118,7 +118,7 @@ namespace Vocaluxe.Base
             {
                 using (Bitmap bmp2 = new Bitmap(firstCoverPath))
                     g.DrawImage(bmp2, bmpBackground.GetRect(), 0, 0, bmp2.Width, bmp2.Height, GraphicsUnit.Pixel);
-                ColorMatrix cm = new ColorMatrix {Matrix33 = _Theme.ImageAlpha};
+                ColorMatrix cm = new ColorMatrix { Matrix33 = _Theme.ImageAlpha };
                 ia = new ImageAttributes();
                 ia.SetColorMatrix(cm);
             }

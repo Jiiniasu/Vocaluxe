@@ -25,7 +25,7 @@ namespace Vocaluxe.Base.ThemeSystem
 {
     class CPartyTheme : CTheme
     {
-        public CPartyTheme(string filePath, int partyModeID) : base(filePath, partyModeID) {}
+        public CPartyTheme(string filePath, int partyModeID) : base(filePath, partyModeID) { }
 
         public override void Unload()
         {

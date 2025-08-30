@@ -16,8 +16,8 @@
 #endregion
 
 using System.Collections.Generic;
-using VocaluxeLib.Draw;
 using System.Linq;
+using VocaluxeLib.Draw;
 
 namespace VocaluxeLib.Songs
 {

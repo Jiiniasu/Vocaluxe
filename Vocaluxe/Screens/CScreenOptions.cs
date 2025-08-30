@@ -41,14 +41,14 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            _ThemeButtons = new string[] {_ButtonOptionsGame, _ButtonOptionsSound, _ButtonOptionsRecord, _ButtonOptionsVideo, _ButtonOptionsLyrics, _ButtonOptionsTheme};
+            _ThemeButtons = new string[] { _ButtonOptionsGame, _ButtonOptionsSound, _ButtonOptionsRecord, _ButtonOptionsVideo, _ButtonOptionsLyrics, _ButtonOptionsTheme };
         }
 
         public override bool HandleInput(SKeyEvent keyEvent)
         {
             base.HandleInput(keyEvent);
 
-            if (keyEvent.KeyPressed) {}
+            if (keyEvent.KeyPressed) { }
             else
             {
                 switch (keyEvent.Key)

@@ -209,10 +209,10 @@ namespace WebserverInitalConfig
 
                     HTTP_SERVICE_CONFIG_SSL_QUERY inputConfigInfoQuery =
                         new HTTP_SERVICE_CONFIG_SSL_QUERY
-                            {
-                                QueryDesc = HTTP_SERVICE_CONFIG_QUERY_TYPE.HttpServiceConfigQueryExact,
-                                KeyDesc = sslKey
-                            };
+                        {
+                            QueryDesc = HTTP_SERVICE_CONFIG_QUERY_TYPE.HttpServiceConfigQueryExact,
+                            KeyDesc = sslKey
+                        };
 
                     IntPtr pInputConfigInfo =
                         Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(HTTP_SERVICE_CONFIG_SSL_QUERY)));
@@ -262,7 +262,7 @@ namespace WebserverInitalConfig
                                 Guid appId = outputConfigInfo.ParamDesc.AppId;
                                 string storeName = outputConfigInfo.ParamDesc.pSslCertStoreName;
 
-                                result = new SslCertificateInfo {AppId = appId, Hash = hash, StoreName = storeName, IpPort = ipPort};
+                                result = new SslCertificateInfo { AppId = appId, Hash = hash, StoreName = storeName, IpPort = ipPort };
                             }
                             finally
                             {
@@ -413,10 +413,10 @@ namespace WebserverInitalConfig
                         {
                             HTTP_SERVICE_CONFIG_SSL_QUERY inputConfigInfoQuery =
                                 new HTTP_SERVICE_CONFIG_SSL_QUERY
-                                    {
-                                        QueryDesc = HTTP_SERVICE_CONFIG_QUERY_TYPE.HttpServiceConfigQueryNext,
-                                        dwToken = token,
-                                    };
+                                {
+                                    QueryDesc = HTTP_SERVICE_CONFIG_QUERY_TYPE.HttpServiceConfigQueryNext,
+                                    dwToken = token,
+                                };
 
                             IntPtr pInputConfigInfo =
                                 Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(HTTP_SERVICE_CONFIG_SSL_QUERY)));
@@ -467,12 +467,12 @@ namespace WebserverInitalConfig
                                         IPEndPoint ipPort = ReadSockaddrStructure(outputConfigInfo.KeyDesc.pIpPort);
 
                                         var resultItem = new SslCertificateInfo
-                                            {
-                                                AppId = appId,
-                                                Hash = hash,
-                                                StoreName = storeName,
-                                                IpPort = ipPort
-                                            };
+                                        {
+                                            AppId = appId,
+                                            Hash = hash,
+                                            StoreName = storeName,
+                                            IpPort = ipPort
+                                        };
                                         result.Add(resultItem);
                                         token++;
                                     }
@@ -498,15 +498,15 @@ namespace WebserverInitalConfig
         {
             if (String.IsNullOrEmpty(networkURL))
                 throw new ArgumentNullException("networkURL");
-            HTTP_SERVICE_CONFIG_URLACL_SET res = new HTTP_SERVICE_CONFIG_URLACL_SET {KeyDesc = new HTTP_SERVICE_CONFIG_URLACL_KEY("")};
+            HTTP_SERVICE_CONFIG_URLACL_SET res = new HTTP_SERVICE_CONFIG_URLACL_SET { KeyDesc = new HTTP_SERVICE_CONFIG_URLACL_KEY("") };
             CallHttpApi(
                 delegate
                     {
                         HTTP_SERVICE_CONFIG_URLACL_QUERY inputquery = new HTTP_SERVICE_CONFIG_URLACL_QUERY
-                            {
-                                QueryDesc = HTTP_SERVICE_CONFIG_QUERY_TYPE.HttpServiceConfigQueryExact,
-                                KeyDesc = new HTTP_SERVICE_CONFIG_URLACL_KEY(networkURL)
-                            };
+                        {
+                            QueryDesc = HTTP_SERVICE_CONFIG_QUERY_TYPE.HttpServiceConfigQueryExact,
+                            KeyDesc = new HTTP_SERVICE_CONFIG_URLACL_KEY(networkURL)
+                        };
 
                         IntPtr pInputQuery = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(HTTP_SERVICE_CONFIG_URLACL_QUERY)));
                         Marshal.StructureToPtr(inputquery, pInputQuery, false);
@@ -601,7 +601,7 @@ namespace WebserverInitalConfig
                         HTTP_SERVICE_CONFIG_URLACL_KEY keyDesc = new HTTP_SERVICE_CONFIG_URLACL_KEY(networkURL);
                         HTTP_SERVICE_CONFIG_URLACL_PARAM paramDesc = new HTTP_SERVICE_CONFIG_URLACL_PARAM(securityDescriptor);
 
-                        HTTP_SERVICE_CONFIG_URLACL_SET inputConfigInfoSet = new HTTP_SERVICE_CONFIG_URLACL_SET {KeyDesc = keyDesc, ParamDesc = paramDesc};
+                        HTTP_SERVICE_CONFIG_URLACL_SET inputConfigInfoSet = new HTTP_SERVICE_CONFIG_URLACL_SET { KeyDesc = keyDesc, ParamDesc = paramDesc };
 
                         IntPtr pInputConfigInfo = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(HTTP_SERVICE_CONFIG_URLACL_SET)));
                         Marshal.StructureToPtr(inputConfigInfoSet, pInputConfigInfo, false);

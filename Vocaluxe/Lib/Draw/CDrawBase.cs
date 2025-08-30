@@ -16,12 +16,12 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 using System.Threading;
 using Vocaluxe.Base;
+using Vocaluxe.Base.Server;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
-using System.Diagnostics;
-using Vocaluxe.Base.Server;
 
 namespace Vocaluxe.Lib.Draw
 {

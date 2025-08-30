@@ -77,7 +77,7 @@ namespace VocaluxeLib.Songs
                 if (!String.IsNullOrEmpty(_Song._Comment))
                 {
                     string comment = _Song._Comment.Replace("\r\n", "\n").Replace('\r', '\n');
-                    char[] splitChar = {'\n'};
+                    char[] splitChar = { '\n' };
                     _WriteHeaderEntrys("COMMENT", comment.Split(splitChar));
                 }
                 _WriteHeaderEntry("TITLE", _Song.Title);

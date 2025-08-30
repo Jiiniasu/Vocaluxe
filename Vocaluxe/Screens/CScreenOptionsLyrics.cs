@@ -39,8 +39,8 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            _ThemeButtons = new string[] {_ButtonExit};
-            _ThemeSelectSlides = new string[] {_SelectSlideLyricStyle, _SelectSlideLyricsPosition};
+            _ThemeButtons = new string[] { _ButtonExit };
+            _ThemeSelectSlides = new string[] { _SelectSlideLyricStyle, _SelectSlideLyricsPosition };
         }
 
         public override void LoadTheme(string xmlPath)
@@ -54,7 +54,7 @@ namespace Vocaluxe.Screens
         {
             base.HandleInput(keyEvent);
 
-            if (keyEvent.KeyPressed) {}
+            if (keyEvent.KeyPressed) { }
             else
             {
                 switch (keyEvent.Key)

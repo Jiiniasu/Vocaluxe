@@ -132,7 +132,7 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
             }
         }
 
-        public CPortAudioStream(int id, string medium, bool loop, EAudioEffect effect = EAudioEffect.None) : base(id, medium, loop, effect) {}
+        public CPortAudioStream(int id, string medium, bool loop, EAudioEffect effect = EAudioEffect.None) : base(id, medium, loop, effect) { }
 
         public override bool Open(bool prescan)
         {
@@ -188,13 +188,13 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
             _SyncTimer.Time = 0f;
 
             PortAudioSharp.PortAudio.PaStreamParameters? outputParams = new PortAudioSharp.PortAudio.PaStreamParameters
-                {
-                    channelCount = format.ChannelCount,
-                    device = _ApiInfo.defaultOutputDevice,
-                    sampleFormat = PortAudioSharp.PortAudio.PaSampleFormat.paInt16,
-                    suggestedLatency = _OutputDeviceInfo.defaultLowOutputLatency,
-                    hostApiSpecificStreamInfo = IntPtr.Zero
-                };
+            {
+                channelCount = format.ChannelCount,
+                device = _ApiInfo.defaultOutputDevice,
+                sampleFormat = PortAudioSharp.PortAudio.PaSampleFormat.paInt16,
+                suggestedLatency = _OutputDeviceInfo.defaultLowOutputLatency,
+                hostApiSpecificStreamInfo = IntPtr.Zero
+            };
 
             if (!_PaHandle.OpenOutputStream(
                 out _Stream,
@@ -217,7 +217,7 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
             _FileOpened = true;
             _Data = new CRingBuffer(_Bufsize);
             _NoMoreData = false;
-            _DecoderThread = new Thread(_Execute) {Priority = ThreadPriority.Normal, Name = Path.GetFileName(_Medium)};
+            _DecoderThread = new Thread(_Execute) { Priority = ThreadPriority.Normal, Name = Path.GetFileName(_Medium) };
             _DecoderThread.Start();
 
             return true;

@@ -25,7 +25,7 @@ namespace VocaluxeLib.Songs
         {
             private readonly List<string> _Names = new List<string>();
 
-            public CVoiceNames() {}
+            public CVoiceNames() { }
 
             public CVoiceNames(CVoiceNames names)
             {
@@ -59,7 +59,7 @@ namespace VocaluxeLib.Songs
 
             public List<string> All()
             {
-                if(_Names.Count > 0)
+                if (_Names.Count > 0)
                     return _Names;
                 return new List<string> { "Voice 1" };
             }
@@ -68,7 +68,7 @@ namespace VocaluxeLib.Songs
         private readonly List<CVoice> _Voices = new List<CVoice>();
         public readonly CVoiceNames VoiceNames = new CVoiceNames();
 
-        public CNotes() {}
+        public CNotes() { }
 
         public CNotes(CNotes notes)
         {

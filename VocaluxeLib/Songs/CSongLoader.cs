@@ -70,7 +70,7 @@ namespace VocaluxeLib.Songs
                 _Song.FileName = Path.GetFileName(filePath);
                 return true;
             }
-            
+
 
             public bool ReadHeader(bool useSetEncoding = false)
             {
@@ -123,7 +123,7 @@ namespace VocaluxeLib.Songs
                         if (value == "")
                         {
                             _Song.UnknownTags.Add(line);
-                            CLog.CSongLog.Warning("[{SongFileName}] Empty value skipped",  CLog.Params(_Song.FileName));
+                            CLog.CSongLog.Warning("[{SongFileName}] Empty value skipped", CLog.Params(_Song.FileName));
                             continue;
                         }
 
@@ -136,7 +136,7 @@ namespace VocaluxeLib.Songs
                                 {
                                     if (useSetEncoding)
                                     {
-                                        CLog.CSongLog.Warning("[{SongFileName}] Duplicate encoding ignored",  CLog.Params(_Song.FileName));
+                                        CLog.CSongLog.Warning("[{SongFileName}] Duplicate encoding ignored", CLog.Params(_Song.FileName));
                                         continue;
                                     }
                                     sr.Dispose();
@@ -365,32 +365,32 @@ namespace VocaluxeLib.Songs
                     if (sr.EndOfStream)
                     {
                         //No other data then header
-                        CLog.CSongLog.Error("[{SongFileName}] Lyrics/Notes missing",  CLog.Params(_Song.FileName));
+                        CLog.CSongLog.Error("[{SongFileName}] Lyrics/Notes missing", CLog.Params(_Song.FileName));
 
                         return false;
                     }
 
                     if ((headerFlags & EHeaderFlags.Title) == 0)
                     {
-                        CLog.CSongLog.Error("[{SongFileName}] Title tag missing",  CLog.Params(_Song.FileName));
+                        CLog.CSongLog.Error("[{SongFileName}] Title tag missing", CLog.Params(_Song.FileName));
                         return false;
                     }
 
                     if ((headerFlags & EHeaderFlags.Artist) == 0)
                     {
-                        CLog.CSongLog.Error("[{SongFileName}] Artist tag missing",  CLog.Params(_Song.FileName));
+                        CLog.CSongLog.Error("[{SongFileName}] Artist tag missing", CLog.Params(_Song.FileName));
                         return false;
                     }
 
                     if ((headerFlags & EHeaderFlags.MP3) == 0)
                     {
-                        CLog.CSongLog.Error("[{SongFileName}] MP3 tag missing",  CLog.Params(_Song.FileName));
+                        CLog.CSongLog.Error("[{SongFileName}] MP3 tag missing", CLog.Params(_Song.FileName));
                         return false;
                     }
 
                     if ((headerFlags & EHeaderFlags.BPM) == 0)
                     {
-                        CLog.CSongLog.Error("[{SongFileName}] BPM tag missing",  CLog.Params(_Song.FileName));
+                        CLog.CSongLog.Error("[{SongFileName}] BPM tag missing", CLog.Params(_Song.FileName));
                         return false;
                     }
 
@@ -501,7 +501,7 @@ namespace VocaluxeLib.Songs
 
                 if (!File.Exists(filePath))
                 {
-                    CLog.CSongLog.Error("[{SongFileName}] The file songfile does not exist",  CLog.Params(_Song.FileName));
+                    CLog.CSongLog.Error("[{SongFileName}] The file songfile does not exist", CLog.Params(_Song.FileName));
                     return false;
                 }
 
@@ -512,8 +512,8 @@ namespace VocaluxeLib.Songs
                 int player = 1;
                 _LineNr = 0;
 
-                char[] trimChars = {' ', ':'};
-                char[] splitChars = {' '};
+                char[] trimChars = { ' ', ':' };
+                char[] splitChars = { ' ' };
 
                 var changesMade = new CAutoChanges();
 
@@ -669,7 +669,7 @@ namespace VocaluxeLib.Songs
                                 if (lastNote != null && beat <= lastNote.EndBeat)
                                 {
                                     CLog.CSongLog.Warning("[{SongFileName}] Line break is before previous note end. Adjusted. (in line {LineNr})", CLog.Params(_Song.FileName, _LineNr));
-                                    
+
                                     changesMade.AjustedBreakCt++;
                                     if (_Song.Relative)
                                         currentBeat += lastNote.EndBeat - beat + 1;
@@ -686,7 +686,7 @@ namespace VocaluxeLib.Songs
                                     for (int curPlayer = player - 1; curPlayer < player; curPlayer++)
                                     {
                                         if (!_NewSentence(curPlayer, beat))
-                                            CLog.CSongLog.Warning("[{SongFileName}] Ignored line break for player {CurPlayerNr} (Overlapping or duplicate) (in line {LineNr})", CLog.Params(_Song.FileName, (curPlayer + 1) , _LineNr));
+                                            CLog.CSongLog.Warning("[{SongFileName}] Ignored line break for player {CurPlayerNr} (Overlapping or duplicate) (in line {LineNr})", CLog.Params(_Song.FileName, (curPlayer + 1), _LineNr));
                                     }
                                 }
                                 break;
@@ -730,7 +730,7 @@ namespace VocaluxeLib.Songs
 
                 if (changesMade.IsModified)
                 {
-                    CLog.Warning("Automatic changes have been made to {FilePath} Please check result!\r\n{ChangesMade}" , CLog.Params(filePath, changesMade));
+                    CLog.Warning("Automatic changes have been made to {FilePath} Please check result!\r\n{ChangesMade}", CLog.Params(filePath, changesMade));
                     if (CBase.Config.GetSaveModifiedSongs() == EOffOn.TR_CONFIG_ON)
                     {
                         string name = Path.GetFileNameWithoutExtension(_Song.FileName);

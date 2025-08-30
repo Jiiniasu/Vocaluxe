@@ -41,7 +41,7 @@ namespace Vocaluxe.Lib.Database
     {
         private SQLiteTransaction _TransactionCover;
 
-        public CCoverDB(string filePath) : base(filePath) {}
+        public CCoverDB(string filePath) : base(filePath) { }
 
         public override bool Init()
         {

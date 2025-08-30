@@ -19,16 +19,15 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Drawing;
-using System.Runtime.CompilerServices;
 using Vocaluxe.Base.Fonts;
 using Vocaluxe.Base.ThemeSystem;
 using VocaluxeLib;
-using VocaluxeLib.Game;
 using VocaluxeLib.Draw;
+using VocaluxeLib.Game;
 using VocaluxeLib.Log;
 using VocaluxeLib.Menu;
-using VocaluxeLib.Songs;
 using VocaluxeLib.Profile;
+using VocaluxeLib.Songs;
 
 namespace Vocaluxe.Base
 {
@@ -340,7 +339,7 @@ namespace Vocaluxe.Base
         {
             return CBackgroundMusic.IsPlaying;
         }
-        
+
         public bool IsLoading()
         {
             return CBackgroundMusic.IsLoading;

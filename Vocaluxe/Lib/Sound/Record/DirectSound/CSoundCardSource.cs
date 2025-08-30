@@ -15,11 +15,11 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using SlimDX.DirectSound;
+using SlimDX.Multimedia;
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using SlimDX.DirectSound;
-using SlimDX.Multimedia;
 
 namespace Vocaluxe.Lib.Sound.Record.DirectSound
 {
@@ -94,7 +94,7 @@ namespace Vocaluxe.Lib.Sound.Record.DirectSound
 
             for (int i = 0; i < _BufferPortionCount; i++)
             {
-                var notification = new NotificationPosition {Offset = _BufferPortionCount - 1 + (_BufferPortionSize * i), Event = new AutoResetEvent(false)};
+                var notification = new NotificationPosition { Offset = _BufferPortionCount - 1 + (_BufferPortionSize * i), Event = new AutoResetEvent(false) };
                 _Notifications.Add(notification);
             }
 
@@ -104,7 +104,7 @@ namespace Vocaluxe.Lib.Sound.Record.DirectSound
             for (int i = 0; i < _Notifications.Count; i++)
                 _WaitHandles[i] = _Notifications[i].Event;
 
-            _CaptureThread = new Thread(_DoCapture) {Name = "DirectSoundCapture", IsBackground = true};
+            _CaptureThread = new Thread(_DoCapture) { Name = "DirectSoundCapture", IsBackground = true };
 
             _Running = true;
             _CaptureThread.Start();
@@ -175,7 +175,7 @@ namespace Vocaluxe.Lib.Sound.Record.DirectSound
 
         // ReSharper disable InconsistentNaming
         protected void Dispose(bool disposing)
-            // ReSharper restore InconsistentNaming
+        // ReSharper restore InconsistentNaming
         {
             if (disposing)
             {

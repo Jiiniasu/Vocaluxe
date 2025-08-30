@@ -28,7 +28,7 @@ namespace WebserverInitalConfig
     {
         // ReSharper disable InconsistentNaming
         private static void Main(string[] args)
-            // ReSharper restore InconsistentNaming
+        // ReSharper restore InconsistentNaming
         {
             int result = 0;
             try
@@ -57,15 +57,15 @@ namespace WebserverInitalConfig
                     catch (AuthenticationException)
                     {
                         ProcessStartInfo proc = new ProcessStartInfo
-                            {
-                                UseShellExecute = true,
-                                WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
-                                FileName = AppDomain.CurrentDomain.FriendlyName,
-                                Arguments = String.Join(" ", args),
-                                Verb = "runas",
-                                CreateNoWindow = true,
-                                WindowStyle = ProcessWindowStyle.Hidden,
-                            };
+                        {
+                            UseShellExecute = true,
+                            WorkingDirectory = AppDomain.CurrentDomain.BaseDirectory,
+                            FileName = AppDomain.CurrentDomain.FriendlyName,
+                            Arguments = String.Join(" ", args),
+                            Verb = "runas",
+                            CreateNoWindow = true,
+                            WindowStyle = ProcessWindowStyle.Hidden,
+                        };
 
                         try
                         {

@@ -15,10 +15,10 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using Vocaluxe.Base;
-using System;
 
 namespace Vocaluxe.Lib.Sound.Record
 {

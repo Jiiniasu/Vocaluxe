@@ -15,9 +15,9 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using System;
 using AForge.Video;
 using AForge.Video.DirectShow;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -48,20 +48,20 @@ namespace Vocaluxe.Lib.Webcam
                 if (tmpdev.VideoCapabilities.Length == 0)
                     continue;
                 var device = new SWebcamDevice
-                    {
-                        Name = info.Name,
-                        MonikerString = info.MonikerString,
-                        Capabilities = new List<SCapabilities>(tmpdev.VideoCapabilities.Length)
-                    };
+                {
+                    Name = info.Name,
+                    MonikerString = info.MonikerString,
+                    Capabilities = new List<SCapabilities>(tmpdev.VideoCapabilities.Length)
+                };
 
                 foreach (VideoCapabilities capabilities in tmpdev.VideoCapabilities)
                 {
                     var item = new SCapabilities
-                        {
-                            Framerate = capabilities.AverageFrameRate,
-                            Height = capabilities.FrameSize.Height,
-                            Width = capabilities.FrameSize.Width
-                        };
+                    {
+                        Framerate = capabilities.AverageFrameRate,
+                        Height = capabilities.FrameSize.Height,
+                        Width = capabilities.FrameSize.Width
+                    };
                     device.Capabilities.Add(item);
                 }
                 _Devices.Add(device);

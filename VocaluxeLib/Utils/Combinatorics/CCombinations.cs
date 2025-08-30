@@ -105,7 +105,7 @@ namespace VocaluxeLib.Utils.Combinatorics
                 Debug.Assert(_N >= 0 && _K >= 0);
             }
 
-            public void Dispose() {}
+            public void Dispose() { }
 
             public bool MoveNext()
             {

@@ -15,10 +15,10 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
 using VocaluxeLib.Utils.Combinatorics;
 
 namespace Tests.VocaluxeLib.Utils.Combinatorics
@@ -53,7 +53,7 @@ namespace Tests.VocaluxeLib.Utils.Combinatorics
         public void TestResults([Range(0, 8, 1)] int n)
         {
             Random rand = new Random();
-            
+
             for (int k = 0; k <= n; k++)
             {
                 List<int> collection = new List<int>(n);

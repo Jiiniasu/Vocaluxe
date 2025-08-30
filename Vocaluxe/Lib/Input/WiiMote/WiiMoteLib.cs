@@ -18,7 +18,6 @@
 using System;
 using System.Drawing;
 using System.Threading;
-using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Log;
 
@@ -232,7 +231,7 @@ namespace Vocaluxe.Lib.Input.WiiMote
 
         private void _StartReader()
         {
-            _Reader = new Thread(_ReaderLoop) {Name = "WiiMoteLib"};
+            _Reader = new Thread(_ReaderLoop) { Name = "WiiMoteLib" };
             _Reader.Start();
         }
 
@@ -583,34 +582,34 @@ namespace Vocaluxe.Lib.Input.WiiMote
             switch (sensitivity)
             {
                 case EIRSensitivity.Level1:
-                    _WriteData(_RegisterIRSensitivity1, 9, new byte[] {0x02, 0x00, 0x00, 0x71, 0x01, 0x00, 0x64, 0x00, 0xfe});
+                    _WriteData(_RegisterIRSensitivity1, 9, new byte[] { 0x02, 0x00, 0x00, 0x71, 0x01, 0x00, 0x64, 0x00, 0xfe });
                     Thread.Sleep(50);
-                    _WriteData(_RegisterIRSensitivity2, 2, new byte[] {0xfd, 0x05});
+                    _WriteData(_RegisterIRSensitivity2, 2, new byte[] { 0xfd, 0x05 });
                     break;
                 case EIRSensitivity.Level2:
-                    _WriteData(_RegisterIRSensitivity1, 9, new byte[] {0x02, 0x00, 0x00, 0x71, 0x01, 0x00, 0x96, 0x00, 0xb4});
+                    _WriteData(_RegisterIRSensitivity1, 9, new byte[] { 0x02, 0x00, 0x00, 0x71, 0x01, 0x00, 0x96, 0x00, 0xb4 });
                     Thread.Sleep(50);
-                    _WriteData(_RegisterIRSensitivity2, 2, new byte[] {0xb3, 0x04});
+                    _WriteData(_RegisterIRSensitivity2, 2, new byte[] { 0xb3, 0x04 });
                     break;
                 case EIRSensitivity.Level3:
-                    _WriteData(_RegisterIRSensitivity1, 9, new byte[] {0x02, 0x00, 0x00, 0x71, 0x01, 0x00, 0xaa, 0x00, 0x64});
+                    _WriteData(_RegisterIRSensitivity1, 9, new byte[] { 0x02, 0x00, 0x00, 0x71, 0x01, 0x00, 0xaa, 0x00, 0x64 });
                     Thread.Sleep(50);
-                    _WriteData(_RegisterIRSensitivity2, 2, new byte[] {0x63, 0x03});
+                    _WriteData(_RegisterIRSensitivity2, 2, new byte[] { 0x63, 0x03 });
                     break;
                 case EIRSensitivity.Level4:
-                    _WriteData(_RegisterIRSensitivity1, 9, new byte[] {0x02, 0x00, 0x00, 0x71, 0x01, 0x00, 0xc8, 0x00, 0x36});
+                    _WriteData(_RegisterIRSensitivity1, 9, new byte[] { 0x02, 0x00, 0x00, 0x71, 0x01, 0x00, 0xc8, 0x00, 0x36 });
                     Thread.Sleep(50);
-                    _WriteData(_RegisterIRSensitivity2, 2, new byte[] {0x35, 0x03});
+                    _WriteData(_RegisterIRSensitivity2, 2, new byte[] { 0x35, 0x03 });
                     break;
                 case EIRSensitivity.Level5:
-                    _WriteData(_RegisterIRSensitivity1, 9, new byte[] {0x07, 0x00, 0x00, 0x71, 0x01, 0x00, 0x72, 0x00, 0x20});
+                    _WriteData(_RegisterIRSensitivity1, 9, new byte[] { 0x07, 0x00, 0x00, 0x71, 0x01, 0x00, 0x72, 0x00, 0x20 });
                     Thread.Sleep(50);
-                    _WriteData(_RegisterIRSensitivity2, 2, new byte[] {0x1, 0x03});
+                    _WriteData(_RegisterIRSensitivity2, 2, new byte[] { 0x1, 0x03 });
                     break;
                 case EIRSensitivity.Max:
-                    _WriteData(_RegisterIRSensitivity1, 9, new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x90, 0x00, 0x41});
+                    _WriteData(_RegisterIRSensitivity1, 9, new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x90, 0x00, 0x41 });
                     Thread.Sleep(50);
-                    _WriteData(_RegisterIRSensitivity2, 2, new byte[] {0x40, 0x00});
+                    _WriteData(_RegisterIRSensitivity2, 2, new byte[] { 0x40, 0x00 });
                     break;
             }
             Thread.Sleep(50);
@@ -670,7 +669,7 @@ namespace Vocaluxe.Lib.Input.WiiMote
 
         private void _WriteData(int address, byte data)
         {
-            _WriteData(address, 1, new byte[] {data});
+            _WriteData(address, 1, new byte[] { data });
         }
 
         private void _WriteData(int address, byte size, byte[] buff)

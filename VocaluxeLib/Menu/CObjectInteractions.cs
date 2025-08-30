@@ -330,7 +330,7 @@ namespace VocaluxeLib.Menu
             {
                 if (_IsVisible(i))
                 {
-                    var zs = new SZSort {ID = i, Z = _GetZValue(i)};
+                    var zs = new SZSort { ID = i, Z = _GetZValue(i) };
                     items.Add(zs);
                 }
             }

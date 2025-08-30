@@ -15,11 +15,11 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using Microsoft.Win32;
 using System;
 using System.IO;
 using System.Reflection;
 using System.Security;
-using Microsoft.Win32;
 using Vocaluxe.Base;
 using VocaluxeLib.Log;
 
@@ -99,7 +99,8 @@ namespace Vocaluxe
 
         private static void _EnsureDataFolderExists()
         {
-            if (!Directory.Exists(CSettings.DataFolder)) {
+            if (!Directory.Exists(CSettings.DataFolder))
+            {
                 Directory.CreateDirectory(CSettings.DataFolder);
                 // copy default profiles to DataFolder instead of adding ProgramFolder to CConfig.ProfileFolders
                 // because we want to be able to edit them, but might not have permission to write to ProgramFolder
@@ -107,7 +108,8 @@ namespace Vocaluxe
                 Directory.CreateDirectory(profilePath);
                 DirectoryInfo defaultProfileDir = new DirectoryInfo(Path.Combine(CSettings.ProgramFolder, CSettings.FolderNameProfiles));
                 FileInfo[] files = defaultProfileDir.GetFiles();
-                foreach (FileInfo file in files) {
+                foreach (FileInfo file in files)
+                {
                     string newPath = Path.Combine(profilePath, file.Name);
                     file.CopyTo(newPath, false);
                 }

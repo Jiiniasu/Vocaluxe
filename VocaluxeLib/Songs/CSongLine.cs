@@ -71,23 +71,23 @@ namespace VocaluxeLib.Songs
 
         public int MinNote
         {
-            get 
-            { 
+            get
+            {
                 return _Notes.Where(note => note.Type != ENoteType.Freestyle)
                              .Select(note => note.Tone)
                              .DefaultIfEmpty(int.MaxValue)
-                             .Min(); 
+                             .Min();
             }
         }
 
         public int MaxNote
         {
             get
-            { 
+            {
                 return _Notes.Where(note => note.Type != ENoteType.Freestyle)
                              .Select(note => note.Tone)
                              .DefaultIfEmpty(int.MinValue)
-                             .Max(); 
+                             .Max();
             }
         }
         #endregion Properties

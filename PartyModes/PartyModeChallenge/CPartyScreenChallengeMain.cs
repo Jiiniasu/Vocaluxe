@@ -41,7 +41,7 @@ namespace VocaluxeLib.PartyModes.Challenge
 
     // ReSharper disable UnusedMember.Global
     public class CPartyScreenChallengeMain : CPartyScreenChallenge
-        // ReSharper restore UnusedMember.Global
+    // ReSharper restore UnusedMember.Global
     {
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
@@ -107,7 +107,7 @@ namespace VocaluxeLib.PartyModes.Challenge
                     _ButtonNextRound, _ButtonBack, _ButtonExit, _ButtonPopupYes, _ButtonPopupNo, _ButtonPlayerScrollDown, _ButtonPlayerScrollUp, _ButtonRoundsScrollDown,
                     _ButtonRoundsScrollUp
                 };
-            _ThemeStatics = new string[] {_StaticPopupBG, _StaticNextPlayer};
+            _ThemeStatics = new string[] { _StaticPopupBG, _StaticNextPlayer };
         }
 
         public override void LoadTheme(string xmlPath)
@@ -134,7 +134,7 @@ namespace VocaluxeLib.PartyModes.Challenge
         {
             base.HandleInput(keyEvent);
 
-            if (keyEvent.KeyPressed) {}
+            if (keyEvent.KeyPressed) { }
             else
             {
                 switch (keyEvent.Key)
@@ -364,7 +364,7 @@ namespace VocaluxeLib.PartyModes.Challenge
             _RoundsTable = new List<CRoundsTableRow>();
             for (int i = 0; i < 5; i++)
             {
-                var rtr = new CRoundsTableRow {TextPlayer = new List<CText>(), TextScores = new List<CText>()};
+                var rtr = new CRoundsTableRow { TextPlayer = new List<CText>(), TextScores = new List<CText>() };
                 _RoundsTable.Add(rtr);
             }
             //Create statics and texts for rounds
@@ -491,7 +491,7 @@ namespace VocaluxeLib.PartyModes.Challenge
 
         private void _BuildPlayerTable()
         {
-            _PlayerTableScrollArea = new SRectF {X = _Texts[_TextPosition].X, Y = _Texts[_TextPosition].Y, W = _Texts[_TextGamePoints].X - _Texts[_TextPosition].X};
+            _PlayerTableScrollArea = new SRectF { X = _Texts[_TextPosition].X, Y = _Texts[_TextPosition].Y, W = _Texts[_TextGamePoints].X - _Texts[_TextPosition].X };
 
             _PlayerTable = new List<STableRow>();
             float delta = _Texts[_TextPosition].Rect.H * 1.2f;
@@ -501,14 +501,14 @@ namespace VocaluxeLib.PartyModes.Challenge
             for (int i = 0; i < 10; i++)
             {
                 var row = new STableRow
-                    {
-                        Pos = GetNewText(_Texts[_TextPosition]),
-                        Name = GetNewText(_Texts[_TextPlayerName]),
-                        Rounds = GetNewText(_Texts[_TextNumPlayed]),
-                        Won = GetNewText(_Texts[_TextWon]),
-                        SingPoints = GetNewText(_Texts[_TextSingPoints]),
-                        GamePoints = GetNewText(_Texts[_TextGamePoints])
-                    };
+                {
+                    Pos = GetNewText(_Texts[_TextPosition]),
+                    Name = GetNewText(_Texts[_TextPlayerName]),
+                    Rounds = GetNewText(_Texts[_TextNumPlayed]),
+                    Won = GetNewText(_Texts[_TextWon]),
+                    SingPoints = GetNewText(_Texts[_TextSingPoints]),
+                    GamePoints = GetNewText(_Texts[_TextGamePoints])
+                };
 
                 row.Pos.Y += delta * (i + 1);
                 row.Name.Y += delta * (i + 1);

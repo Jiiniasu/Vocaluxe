@@ -190,7 +190,7 @@ namespace VocaluxeLib.Menu
                     _AddLyric(new CLyric(ly, PartyModeID), ly.Name);
 
                 foreach (SThemeMeta me in Theme.Metas)
-                    _AddMeta (new CMeta(me, PartyModeID), me.Name);
+                    _AddMeta(new CMeta(me, PartyModeID), me.Name);
 
                 foreach (SThemeNameSelection ns in Theme.NameSelections)
                     _AddNameSelection(new CNameSelection(ns, PartyModeID), ns.Name);
@@ -455,7 +455,7 @@ namespace VocaluxeLib.Menu
 
         public abstract bool UpdateGame();
 
-        public virtual void ApplyVolume() {}
+        public virtual void ApplyVolume() { }
 
         public virtual void OnShow()
         {

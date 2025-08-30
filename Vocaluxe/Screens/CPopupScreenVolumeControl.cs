@@ -42,8 +42,8 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            _ThemeStatics = new string[] {_StaticBG};
-            _ThemeSelectSlides = new string[] {_SelectSlideVolume};
+            _ThemeStatics = new string[] { _StaticBG };
+            _ThemeSelectSlides = new string[] { _SelectSlideVolume };
         }
 
         public override void LoadTheme(string xmlPath)

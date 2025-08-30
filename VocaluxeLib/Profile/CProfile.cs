@@ -61,7 +61,7 @@ namespace VocaluxeLib.Profile
         [XmlElement("Avatar")]
         // ReSharper disable UnusedMember.Global
         public string AvatarFileName
-            // ReSharper restore UnusedMember.Global
+        // ReSharper restore UnusedMember.Global
         {
             get { return Path.GetFileName(Avatar.FileName); }
             set
@@ -141,7 +141,7 @@ namespace VocaluxeLib.Profile
                 string filename = string.Empty;
                 // ReSharper disable LoopCanBeConvertedToQuery
                 foreach (char chr in PlayerName)
-                    // ReSharper restore LoopCanBeConvertedToQuery
+                // ReSharper restore LoopCanBeConvertedToQuery
                 {
                     if (char.IsLetter(chr))
                         filename += chr.ToString();

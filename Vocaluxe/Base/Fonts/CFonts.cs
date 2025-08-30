@@ -288,7 +288,7 @@ namespace Vocaluxe.Base.Fonts
                     return false;
                 }
             }
-            
+
             using (CBenchmark.Time("Build Glyphs"))
             {
                 _BuildGlyphs();

@@ -49,7 +49,7 @@ namespace Vocaluxe.Lib.Playlist
                 string filename = string.Empty;
                 // ReSharper disable LoopCanBeConvertedToQuery
                 foreach (char chr in Name)
-                    // ReSharper restore LoopCanBeConvertedToQuery
+                // ReSharper restore LoopCanBeConvertedToQuery
                 {
                     if (char.IsLetter(chr))
                         filename += chr.ToString();
@@ -61,7 +61,7 @@ namespace Vocaluxe.Lib.Playlist
                 File = CHelper.GetUniqueFileName(Path.Combine(CSettings.DataFolder, CConfig.FolderPlaylists), filename + ".xml");
             }
 
-            SPlaylist data = new SPlaylist {Info = {Name = Name}, Songs = Songs.Select(plSong => plSong.ToStruct()).ToArray()};
+            SPlaylist data = new SPlaylist { Info = { Name = Name }, Songs = Songs.Select(plSong => plSong.ToStruct()).ToArray() };
 
             var xml = new CXmlSerializer();
             xml.Serialize(File, data);
@@ -100,10 +100,10 @@ namespace Vocaluxe.Lib.Playlist
         public void AddSong(int songID)
         {
             var song = new CPlaylistSong
-                {
-                    SongID = songID,
-                    GameMode = CSongs.GetSong(songID).IsGameModeAvailable(EGameMode.TR_GAMEMODE_DUET) ? EGameMode.TR_GAMEMODE_DUET : EGameMode.TR_GAMEMODE_NORMAL
-                };
+            {
+                SongID = songID,
+                GameMode = CSongs.GetSong(songID).IsGameModeAvailable(EGameMode.TR_GAMEMODE_DUET) ? EGameMode.TR_GAMEMODE_DUET : EGameMode.TR_GAMEMODE_NORMAL
+            };
 
             Songs.Add(song);
         }

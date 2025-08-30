@@ -23,7 +23,7 @@ namespace VocaluxeLib.PartyModes.Challenge
 {
     // ReSharper disable UnusedMember.Global
     public class CPartyScreenChallengeNames : CMenuPartyNameSelection
-        // ReSharper restore UnusedMember.Global
+    // ReSharper restore UnusedMember.Global
     {
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
@@ -48,7 +48,7 @@ namespace VocaluxeLib.PartyModes.Challenge
             while (_PartyMode.GameData.ProfileIDs.Count > _NumPlayer)
                 _PartyMode.GameData.ProfileIDs.RemoveAt(_PartyMode.GameData.ProfileIDs.Count - 1);
 
-            List<Guid>[] ids = new List<Guid>[] {_PartyMode.GameData.ProfileIDs};
+            List<Guid>[] ids = new List<Guid>[] { _PartyMode.GameData.ProfileIDs };
             SetPartyModeProfiles(ids);
         }
 

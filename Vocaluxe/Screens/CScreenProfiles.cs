@@ -16,17 +16,17 @@
 #endregion
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using Vocaluxe.Base;
 using VocaluxeLib;
+using VocaluxeLib.Draw;
 using VocaluxeLib.Menu;
 using VocaluxeLib.Profile;
-using VocaluxeLib.Draw;
 
 namespace Vocaluxe.Screens
 {
@@ -76,8 +76,8 @@ namespace Vocaluxe.Screens
 
             _ThemeButtons = new string[]
                 {_ButtonPlayerName, _ButtonExit, _ButtonSave, _ButtonNew, _ButtonDelete, _ButtonWebcam, _ButtonSaveSnapshot, _ButtonDiscardSnapshot, _ButtonTakeSnapshot};
-            _ThemeSelectSlides = new string[] {_SelectSlideProfiles, _SelectSlideDifficulty, _SelectSlideAvatars, _SelectSlideUserRole, _SelectSlideActive};
-            _ThemeStatics = new string[] {_StaticAvatar};
+            _ThemeSelectSlides = new string[] { _SelectSlideProfiles, _SelectSlideDifficulty, _SelectSlideAvatars, _SelectSlideUserRole, _SelectSlideActive };
+            _ThemeStatics = new string[] { _StaticAvatar };
 
             _EditMode = EEditMode.None;
             _ProfilesChanged = false;

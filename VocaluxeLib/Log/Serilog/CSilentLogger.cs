@@ -14,11 +14,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
-using System.Collections.Generic;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
+using System;
+using System.Collections.Generic;
 
 namespace VocaluxeLib.Log.Serilog
 {

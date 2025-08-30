@@ -24,7 +24,7 @@ namespace VocaluxeLib.PartyModes
     public abstract class CPartyMode : IPartyMode
     {
         private readonly int _ID;
-        protected SScreenSongOptions _ScreenSongOptions = new SScreenSongOptions {Selection = new SSelectionOptions(), Sorting = new SSortingOptions()};
+        protected SScreenSongOptions _ScreenSongOptions = new SScreenSongOptions { Selection = new SSelectionOptions(), Sorting = new SSortingOptions() };
         protected readonly Dictionary<string, CMenuParty> _Screens = new Dictionary<string, CMenuParty>();
 
         protected CPartyMode(int id)

@@ -15,13 +15,13 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using QRCoder;
 using System.Windows.Forms;
 using Vocaluxe.Base;
 using Vocaluxe.Base.Server;
 using VocaluxeLib;
-using VocaluxeLib.Menu;
 using VocaluxeLib.Draw;
-using QRCoder;
+using VocaluxeLib.Menu;
 
 namespace Vocaluxe.Screens
 {
@@ -43,8 +43,8 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            _ThemeStatics = new string[] {_StaticQRServer};
-            _ThemeTexts = new string[] {_TextServerAddress, _TextServerNotRunning};
+            _ThemeStatics = new string[] { _StaticQRServer };
+            _ThemeTexts = new string[] { _TextServerAddress, _TextServerNotRunning };
         }
 
         public override void OnShow()

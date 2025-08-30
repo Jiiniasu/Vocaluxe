@@ -38,32 +38,32 @@ namespace Vocaluxe
     class CLoadingException : Exception
     {
         public CLoadingException(string component)
-            : base("Failed to load " + component) {}
+            : base("Failed to load " + component) { }
     }
 
     static class CMainProgram
     {
-        
+
 
         private static CSplashScreen _SplashScreen;
 
         [STAThread, HandleProcessCorruptedStateExceptions]
         // ReSharper disable InconsistentNaming
         private static void Main(string[] args)
-            // ReSharper restore InconsistentNaming
+        // ReSharper restore InconsistentNaming
         {
 #if !DEBUG
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
 #endif
             AppDomain.CurrentDomain.AssemblyResolve += _AssemblyResolver;
             COSFunctions.AddEnvironmentPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libs\\unmanaged\\"));
-            #if ARCH_X86
+#if ARCH_X86
             COSFunctions.AddEnvironmentPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libs\\unmanaged\\x86\\"));
 #endif
 #if ARCH_X64
             COSFunctions.AddEnvironmentPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libs\\unmanaged\\x64\\"));
 #endif
-            
+
 
             // Close program if there is another instance running
             if (!_EnsureSingleInstance())
@@ -94,18 +94,18 @@ namespace Vocaluxe
 
                 // Init Log
                 CLog.Init(CSettings.FolderNameLogs,
-                    CSettings.FileNameMainLog, 
+                    CSettings.FileNameMainLog,
                     CSettings.FileNameSongLog,
                     CSettings.FileNameCloudLog,
-                    CSettings.FileNameCrashMarker, 
-                    CSettings.GetFullVersionText(), 
-                    CReporter.ShowReporterFunc, 
+                    CSettings.FileNameCrashMarker,
+                    CSettings.GetFullVersionText(),
+                    CReporter.ShowReporterFunc,
                     ELogLevel.Information);
 
                 if (!CProgrammHelper.CheckRequirements())
                     return;
                 CProgrammHelper.Init();
-                
+
                 using (CBenchmark.Time("Init Program"))
                 {
                     CMain.Init();
@@ -220,7 +220,7 @@ namespace Vocaluxe
                         if (!CThemes.Init())
                             throw new CLoadingException("theme");
                     }
-                    
+
                     using (CBenchmark.Time("Load Theme"))
                     {
                         CThemes.Load();
@@ -297,7 +297,7 @@ namespace Vocaluxe
             }
             catch (Exception e)
             {
-                CLog.Error(e, "Error on start up: {ExceptionMessage}", CLog.Params(e.Message), show:true);
+                CLog.Error(e, "Error on start up: {ExceptionMessage}", CLog.Params(e.Message), show: true);
                 if (_SplashScreen != null)
                     _SplashScreen.Close();
                 _CloseProgram();
@@ -441,7 +441,7 @@ namespace Vocaluxe
             {
                 CLog.Close(); // Do this last, so we get all log entries!
             }
-            catch (Exception) {}
+            catch (Exception) { }
             Environment.Exit(Environment.ExitCode);
         }
 
@@ -461,7 +461,7 @@ namespace Vocaluxe
                 return null;
 
             Assembly assembly = null;
-            string[] arr = args.Name.Split(new char[] {','});
+            string[] arr = args.Name.Split(new char[] { ',' });
             if (arr.Length > 0)
             {
 #if ARCH_X86
@@ -488,9 +488,9 @@ namespace Vocaluxe
                         CLog.Error("Cannot load assembly " + args.Name + " from " + path + ": " + e + "\r\nOuter Error: " + e1);
                     }
                 }
-                #if LINUX
+#if LINUX
                 catch(FileNotFoundException){}
-                #endif
+#endif
             }
             return assembly;
         }

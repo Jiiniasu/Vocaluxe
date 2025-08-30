@@ -40,7 +40,7 @@ namespace VocaluxeLib.Menu
     // ReSharper disable ClassNeverInstantiated.Global
     //Instantiated by reflection
     public class CScreenSetting : IThemeable
-        // ReSharper restore ClassNeverInstantiated.Global
+    // ReSharper restore ClassNeverInstantiated.Global
     {
         private readonly int _PartyModeID;
 
@@ -120,11 +120,11 @@ namespace VocaluxeLib.Menu
         }
 
         #region Dummy methods for interface
-        public void UnloadSkin() {}
+        public void UnloadSkin() { }
 
-        public void LoadSkin() {}
+        public void LoadSkin() { }
 
-        public void ReloadSkin() {}
+        public void ReloadSkin() { }
         #endregion
     }
 }

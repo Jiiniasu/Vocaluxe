@@ -15,11 +15,11 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using System;
 using Serilog;
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
+using System;
 
 namespace VocaluxeLib.Log.Enricher
 {

@@ -17,6 +17,7 @@
 
 using SlimDX;
 using SlimDX.Direct3D9;
+using SlimDX.Windows;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -24,7 +25,6 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using SlimDX.Windows;
 using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Draw;

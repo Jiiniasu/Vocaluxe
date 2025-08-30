@@ -64,7 +64,7 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            var texts = new List<string> {_TextSongName, _TextSongMode};
+            var texts = new List<string> { _TextSongName, _TextSongMode };
 
             _TextNumber = new string[_NumEntrys];
             for (int i = 0; i < _NumEntrys; i++)
@@ -104,7 +104,7 @@ namespace Vocaluxe.Screens
 
         public override bool HandleInput(SKeyEvent keyEvent)
         {
-            if (keyEvent.KeyPressed && !Char.IsControl(keyEvent.Unicode)) {}
+            if (keyEvent.KeyPressed && !Char.IsControl(keyEvent.Unicode)) { }
             else
             {
                 switch (keyEvent.Key)
@@ -138,7 +138,7 @@ namespace Vocaluxe.Screens
 
         public override bool HandleMouse(SMouseEvent mouseEvent)
         {
-            if (mouseEvent.LB && _IsMouseOverCurSelection(mouseEvent)) {}
+            if (mouseEvent.LB && _IsMouseOverCurSelection(mouseEvent)) { }
 
             if (mouseEvent.LB)
                 _LeaveScreen();

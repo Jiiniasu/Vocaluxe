@@ -49,11 +49,11 @@ namespace VocaluxeLib.Xml
         ///     Uniform settings for writing XML files. ALWAYS use this!
         /// </summary>
         private readonly XmlWriterSettings _XmlSettings = new XmlWriterSettings
-            {
-                Indent = true,
-                Encoding = Encoding.UTF8,
-                ConformanceLevel = ConformanceLevel.Document
-            };
+        {
+            Indent = true,
+            Encoding = Encoding.UTF8,
+            ConformanceLevel = ConformanceLevel.Document
+        };
 
         /// <summary>
         ///     Writes a value as a node or attribute

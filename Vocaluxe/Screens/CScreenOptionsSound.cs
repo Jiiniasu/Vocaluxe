@@ -45,7 +45,7 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            _ThemeButtons = new string[] {_ButtonExit};
+            _ThemeButtons = new string[] { _ButtonExit };
             _ThemeSelectSlides = new string[]
                 {_SelectSlideBackgroundMusic, _SelectSlideBackgroundMusicVolume, _SelectSlideBackgroundMusicSource, _SelectSlidePreviewMusicVolume, _SelectSlideGameMusicVolume, _SelectSlideKaraokeEffect};
         }
@@ -76,7 +76,7 @@ namespace Vocaluxe.Screens
         {
             base.HandleInput(keyEvent);
 
-            if (keyEvent.KeyPressed) {}
+            if (keyEvent.KeyPressed) { }
             else
             {
                 switch (keyEvent.Key)

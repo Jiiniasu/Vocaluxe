@@ -15,11 +15,11 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using Serilog;
 using System;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-using Serilog;
 using VocaluxeLib.Log.Enricher;
 using VocaluxeLib.Log.Rolling;
 using VocaluxeLib.Log.Serilog;
@@ -94,7 +94,7 @@ namespace VocaluxeLib.Log
                 }
 #endif
             }
-            
+
             // Write new marker
             File.WriteAllText(_CrashMarkerFilePath, _CurrentVersion, Encoding.UTF8);
 
@@ -120,7 +120,7 @@ namespace VocaluxeLib.Log
 
             _SongLog = new LoggerConfiguration()
                 .MinimumLevel.Is(logLevel.ToSerilogLogLevel())
-                .WriteTo.File(songLogFilePath, 
+                .WriteTo.File(songLogFilePath,
                     flushToDiskInterval: TimeSpan.FromSeconds(60),
                     outputTemplate: _SongLogTemplate)
 #if DEBUG
@@ -139,10 +139,10 @@ namespace VocaluxeLib.Log
                 .CreateLogger();
 
             // Adding first line to log with information about this run
-            Information("Starting to log", 
-                Params( new { Version = _CurrentVersion},
-                    new { StartDate = DateTime.Now},
-                    new { Id = Guid.NewGuid() } ) );
+            Information("Starting to log",
+                Params(new { Version = _CurrentVersion },
+                    new { StartDate = DateTime.Now },
+                    new { Id = Guid.NewGuid() }));
         }
 
         /// <summary>
@@ -214,9 +214,9 @@ namespace VocaluxeLib.Log
             }
 
             Regex theRegex = new Regex(@"{[^}]+}");
-            
+
             int i = 0;
-            return theRegex.Replace(template, delegate(Match match)
+            return theRegex.Replace(template, delegate (Match match)
             {
                 if (i >= propertyValues.Length)
                     return match.Value;

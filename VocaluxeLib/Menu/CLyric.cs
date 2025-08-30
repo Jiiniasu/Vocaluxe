@@ -415,7 +415,7 @@ namespace VocaluxeLib.Menu
         }
         #endregion draw
 
-        public void UnloadSkin() {}
+        public void UnloadSkin() { }
 
         public void LoadSkin()
         {

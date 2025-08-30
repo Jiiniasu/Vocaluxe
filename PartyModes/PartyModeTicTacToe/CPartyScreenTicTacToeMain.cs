@@ -33,7 +33,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
 
     // ReSharper disable UnusedMember.Global
     public class CPartyScreenTicTacToeMain : CPartyScreenTicTacToe
-        // ReSharper restore UnusedMember.Global
+    // ReSharper restore UnusedMember.Global
     {
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
@@ -89,7 +89,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
                     _ButtonNextRound, _ButtonBack, _ButtonExit, _ButtonPopupYes, _ButtonPopupNo, _ButtonField, _ButtonJokerRandomT1, _ButtonJokerRandomT2, _ButtonJokerRetryT1,
                     _ButtonJokerRetryT2
                 };
-            _ThemeStatics = new string[] {_StaticPopupBG, _StaticAvatarT1, _StaticAvatarT2};
+            _ThemeStatics = new string[] { _StaticPopupBG, _StaticAvatarT1, _StaticAvatarT2 };
         }
 
         public override void LoadTheme(string xmlPath)
@@ -107,7 +107,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
         {
             base.HandleInput(keyEvent);
 
-            if (keyEvent.KeyPressed) {}
+            if (keyEvent.KeyPressed) { }
             else
             {
                 switch (keyEvent.Key)
@@ -260,7 +260,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
                     _ShowPopup(false);
             }
 
-            if (mouseEvent.Wheel != 0) {}
+            if (mouseEvent.Wheel != 0) { }
 
             return true;
         }
@@ -445,11 +445,11 @@ namespace VocaluxeLib.PartyModes.TicTacToe
             }
             _PartyMode.UpdateSongList();
             int[] songIDs = new int[_PartyMode.GameData.GameMode == EGameMode.TR_GAMEMODE_MEDLEY ? _PartyMode.GameData.NumMedleySongs : 1];
-            for(int i = 0; i < songIDs.Length; i++)
+            for (int i = 0; i < songIDs.Length; i++)
             {
                 songIDs[i] = _PartyMode.GameData.Songs[0];
                 _PartyMode.GameData.Songs.RemoveAt(0);
-            }  
+            }
 
             _StartPreview(songIDs[0]);
             _Status = EStatus.FieldSelected;
@@ -510,7 +510,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
         {
             switch (jokerNum)
             {
-                    //Random-Joker
+                //Random-Joker
                 case 0:
                     if (_PartyMode.GameData.NumJokerRandom[teamNr] > 0)
                     {
@@ -519,7 +519,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
                     }
                     break;
 
-                    //Retry-Joker
+                //Retry-Joker
                 case 1:
                     if (_PartyMode.GameData.NumJokerRetry[teamNr] > 0 && _PartyMode.GameData.CurrentRoundNr > 1)
                     {
@@ -594,7 +594,7 @@ namespace VocaluxeLib.PartyModes.TicTacToe
         private void _BuildWinnerPossibilities()
         {
             var numOneRow = (int)Math.Sqrt(_PartyMode.GameData.NumFields);
-            _Possibilities = new int[(numOneRow * 2) + 2,numOneRow];
+            _Possibilities = new int[(numOneRow * 2) + 2, numOneRow];
             for (int i = 0; i < _Possibilities.GetLength(0); i++)
             {
                 if (i < numOneRow)

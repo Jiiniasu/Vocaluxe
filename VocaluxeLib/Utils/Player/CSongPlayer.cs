@@ -73,7 +73,7 @@ namespace VocaluxeLib.Utils.Player
             get { return _Song == null ? CBase.Cover.GetNoCover() : _Song.CoverTextureBig; }
         }
 
-        public CSongPlayer(bool loop = false) : base(loop) {}
+        public CSongPlayer(bool loop = false) : base(loop) { }
 
         public CTextureRef GetVideoTexture()
         {

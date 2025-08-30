@@ -264,13 +264,13 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _DrawNotes(SColorF color)
         {
-            for (int i = _CurrentLine > 0 ? _CurrentLine-1 : 0; i < _Lines.Count(); i++)
+            for (int i = _CurrentLine > 0 ? _CurrentLine - 1 : 0; i < _Lines.Count(); i++)
             {
                 if ((_Lines[i].EndBeat - CBase.Game.GetCurrentBeatF()) * _NoteWidth + _JudgementLine < 0)
                     continue;
                 if ((_Lines[i].StartBeat - CBase.Game.GetCurrentBeatF()) * _NoteWidth > Rect.W)
                     break;
-                    foreach (CSongNote note in _Lines[i].Notes)
+                foreach (CSongNote note in _Lines[i].Notes)
                 {
                     switch (note.Type)
                     {
@@ -347,7 +347,8 @@ namespace VocaluxeLib.Menu.SingNotes
                     octaveRect.H -= Rect.Y - octaveRect.Y;
                     octaveRect.Y = Rect.Y;
                 }
-                if (octaveRect.Y < Rect.Bottom) {
+                if (octaveRect.Y < Rect.Bottom)
+                {
                     CBase.Drawing.DrawRect(octaveColor, octaveRect, false);
                 }
                 octaveRect.Y = octaveRect.Y - 2 * _SemiToneHeight * 12;
@@ -463,13 +464,13 @@ namespace VocaluxeLib.Menu.SingNotes
             if (!_TrailSpawnTimer.IsRunning)
                 _TrailSpawnTimer.Start();
 
-            if (CBase.Record.ToneValid(_Player) && _TrailSpawnTimer.ElapsedMilliseconds > 10) 
+            if (CBase.Record.ToneValid(_Player) && _TrailSpawnTimer.ElapsedMilliseconds > 10)
             {
-                var size = toneHeight -4 + (CBase.Game.GetRandom(800) / 100);
+                var size = toneHeight - 4 + (CBase.Game.GetRandom(800) / 100);
                 var heightvariance = toneHeight / 6;
                 var voiceTrailRect = new SRectF(
                     Rect.X + _JudgementLine - toneHeight / 2,
-                    (Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (absTonePlayer - _RangeSemiToneMin) + 1)) - (size / 2)) + (-heightvariance + (CBase.Game.GetRandom((int)heightvariance*200) / 100)),
+                    (Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (absTonePlayer - _RangeSemiToneMin) + 1)) - (size / 2)) + (-heightvariance + (CBase.Game.GetRandom((int)heightvariance * 200) / 100)),
                     size,
                     size,
                     Rect.Z);

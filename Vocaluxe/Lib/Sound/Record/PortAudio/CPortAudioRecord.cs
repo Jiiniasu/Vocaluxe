@@ -16,8 +16,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Vocaluxe.Base;
@@ -108,7 +106,8 @@ namespace Vocaluxe.Lib.Sound.Record.PortAudio
             for (int dev = 0; dev < _Devices.Count; dev++)
             {
                 bool usingDevice = false;
-                for (int ch = 0; ch < _Devices[dev].Channels; ++ch) {
+                for (int ch = 0; ch < _Devices[dev].Channels; ++ch)
+                {
                     if (_Devices[dev].PlayerChannel[ch] > 0)
                         usingDevice = true;
                 }

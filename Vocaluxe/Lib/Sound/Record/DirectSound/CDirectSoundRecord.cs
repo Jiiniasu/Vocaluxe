@@ -15,9 +15,9 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using SlimDX.DirectSound;
 using System.Collections.Generic;
 using System.Linq;
-using SlimDX.DirectSound;
 
 namespace Vocaluxe.Lib.Sound.Record.DirectSound
 {

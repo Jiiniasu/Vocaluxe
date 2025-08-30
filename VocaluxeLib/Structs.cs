@@ -87,8 +87,8 @@ namespace VocaluxeLib
             A = a;
         }
 
-        public SColorF(SColorF color, float a) : this(color.R, color.G, color.B, a) {}
-        public SColorF(Color color, float a) : this(color.R / 255f, color.G / 255f, color.B / 255f, a) {}
+        public SColorF(SColorF color, float a) : this(color.R, color.G, color.B, a) { }
+        public SColorF(Color color, float a) : this(color.R / 255f, color.G / 255f, color.B / 255f, a) { }
 
         public SColorF(Color color)
         {

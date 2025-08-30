@@ -25,7 +25,7 @@ namespace Vocaluxe.Base.ThemeSystem
     {
         private CSkin _BaseSkin;
 
-        public CPartySkin(string folder, string file, CTheme parent) : base(folder, file, parent) {}
+        public CPartySkin(string folder, string file, CTheme parent) : base(folder, file, parent) { }
 
         public override bool Load()
         {

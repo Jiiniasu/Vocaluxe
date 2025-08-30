@@ -181,7 +181,7 @@ namespace VocaluxeLib
                 files = Directory.EnumerateFiles(dir.FullName, searchPattern, recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
                 files = files.Select(fullpath ? (Func<string, string>)Path.GetFullPath : Path.GetFileName);
             }
-            catch (Exception) {}
+            catch (Exception) { }
 
             return files;
         }
@@ -232,7 +232,7 @@ namespace VocaluxeLib
                 result = (T)Enum.Parse(typeof(T), value, ignoreCase);
                 return true;
             }
-            catch {}
+            catch { }
 
             return false;
         }

@@ -15,26 +15,25 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using System.Diagnostics;
-using System.Drawing.Imaging;
 using OpenTK;
 using OpenTK.Graphics;
+using OpenTK.Graphics.OpenGL;
 using System;
+using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Windows.Forms;
-using OpenTK.Graphics.OpenGL;
 using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
-using BeginMode = OpenTK.Graphics.OpenGL.BeginMode;
 using BlendingFactorDest = OpenTK.Graphics.OpenGL.BlendingFactorDest;
 using BlendingFactorSrc = OpenTK.Graphics.OpenGL.BlendingFactorSrc;
 using ClearBufferMask = OpenTK.Graphics.OpenGL.ClearBufferMask;
 using DepthFunction = OpenTK.Graphics.OpenGL.DepthFunction;
 using EnableCap = OpenTK.Graphics.OpenGL.EnableCap;
-using GL = OpenTK.Graphics.OpenGL.GL;
 using GenerateMipmapTarget = OpenTK.Graphics.OpenGL.GenerateMipmapTarget;
+using GL = OpenTK.Graphics.OpenGL.GL;
 using MatrixMode = OpenTK.Graphics.OpenGL.MatrixMode;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 using PixelInternalFormat = OpenTK.Graphics.OpenGL.PixelInternalFormat;

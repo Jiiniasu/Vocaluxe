@@ -17,7 +17,6 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Vocaluxe.Base;
 using Vocaluxe.Lib.Video.Acinerella;
 using VocaluxeLib.Log;
 
@@ -81,11 +80,11 @@ namespace Vocaluxe.Lib.Sound.Playback.Decoder
             }
 
             _FormatInfo = new SFormatInfo
-                {
-                    SamplesPerSecond = audiodecoder.StreamInfo.AudioInfo.SamplesPerSecond,
-                    BitDepth = audiodecoder.StreamInfo.AudioInfo.BitDepth,
-                    ChannelCount = audiodecoder.StreamInfo.AudioInfo.ChannelCount
-                };
+            {
+                SamplesPerSecond = audiodecoder.StreamInfo.AudioInfo.SamplesPerSecond,
+                BitDepth = audiodecoder.StreamInfo.AudioInfo.BitDepth,
+                ChannelCount = audiodecoder.StreamInfo.AudioInfo.ChannelCount
+            };
 
             _CurrentTime = 0f;
 
@@ -177,6 +176,6 @@ namespace Vocaluxe.Lib.Sound.Playback.Decoder
             timeStamp = 0f;
         }
 
-        public void Dispose() {}
+        public void Dispose() { }
     }
 }

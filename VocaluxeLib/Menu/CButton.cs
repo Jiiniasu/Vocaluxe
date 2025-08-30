@@ -126,10 +126,10 @@ namespace VocaluxeLib.Menu
         {
             _PartyModeID = button._PartyModeID;
             _Theme = new SThemeButton
-                {
-                    Skin = button._Theme.Skin,
-                    SkinSelected = button._Theme.SkinSelected
-                };
+            {
+                Skin = button._Theme.Skin,
+                SkinSelected = button._Theme.SkinSelected
+            };
 
             MaxRect = button.MaxRect;
             Color = button.Color;

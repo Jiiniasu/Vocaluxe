@@ -106,7 +106,7 @@ namespace VocaluxeLib.Menu.SongMenu
             }
         }
 
-        public CSongMenuTileBoard(int partyModeID) : base(partyModeID) {}
+        public CSongMenuTileBoard(int partyModeID) : base(partyModeID) { }
 
         public CSongMenuTileBoard(SThemeSongMenu theme, int partyModeID) : base(theme, partyModeID)
         {
@@ -119,7 +119,7 @@ namespace VocaluxeLib.Menu.SongMenu
             _VideoIcon = new CStatic(_Theme.SongMenuTileBoard.StaticVideoIcon, _PartyModeID);
             _MedleyCalcIcon = new CStatic(_Theme.SongMenuTileBoard.StaticMedleyCalcIcon, _PartyModeID);
             _MedleyTagIcon = new CStatic(_Theme.SongMenuTileBoard.StaticMedleyTagIcon, _PartyModeID);
-            _SubElements.AddRange(new IMenuElement[] {_Artist, _Title, _SongLength, _DuetIcon, _VideoIcon, _MedleyCalcIcon, _MedleyTagIcon});
+            _SubElements.AddRange(new IMenuElement[] { _Artist, _Title, _SongLength, _DuetIcon, _VideoIcon, _MedleyCalcIcon, _MedleyTagIcon });
         }
 
         private void _UpdateTileSelection()

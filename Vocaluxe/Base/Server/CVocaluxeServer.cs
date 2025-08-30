@@ -22,7 +22,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Security.Cryptography;
 using System.ServiceModel;
 using System.ServiceModel.Web;
@@ -52,16 +51,16 @@ namespace Vocaluxe.Base.Server
                 return "App controller";
             }
 
-            public override void Connect() {}
+            public override void Connect() { }
 
-            public override void Disconnect() {}
+            public override void Disconnect() { }
 
             public override bool IsConnected()
             {
                 return true;
             }
 
-            public override void SetRumble(float duration) {}
+            public override void SetRumble(float duration) { }
         }
 
         public static readonly CControllerFramework Controller = new CServerController();
@@ -249,7 +248,7 @@ namespace Vocaluxe.Base.Server
             return task.Result;
         }
 
-        
+
         public static void DoTaskWithoutReturn(Action action)
         {
             var task = new Task(action);
@@ -404,23 +403,23 @@ namespace Vocaluxe.Base.Server
             if (existingProfile != null)
             {
                 newProfile = new CProfile
-                    {
-                        ID = existingProfile.ID,
-                        FilePath = existingProfile.FilePath,
-                        Active = existingProfile.Active,
-                        Avatar = existingProfile.Avatar,
-                        Difficulty = existingProfile.Difficulty,
-                        UserRole = existingProfile.UserRole,
-                        PlayerName = existingProfile.PlayerName
-                    };
+                {
+                    ID = existingProfile.ID,
+                    FilePath = existingProfile.FilePath,
+                    Active = existingProfile.Active,
+                    Avatar = existingProfile.Avatar,
+                    Difficulty = existingProfile.Difficulty,
+                    UserRole = existingProfile.UserRole,
+                    PlayerName = existingProfile.PlayerName
+                };
             }
             else
             {
                 newProfile = new CProfile
-                    {
-                        Active = EOffOn.TR_CONFIG_ON,
-                        UserRole = EUserRole.TR_USERROLE_NORMAL
-                    };
+                {
+                    Active = EOffOn.TR_CONFIG_ON,
+                    UserRole = EUserRole.TR_USERROLE_NORMAL
+                };
             }
 
             if (profile.Avatar != null)
@@ -495,14 +494,14 @@ namespace Vocaluxe.Base.Server
         private static SProfileData _CreateProfileData(CProfile profile, bool isReadonly)
         {
             SProfileData profileData = new SProfileData
-                {
-                    IsEditable = !isReadonly,
-                    ProfileId = profile.ID,
-                    PlayerName = profile.PlayerName,
-                    //Is TR_USERROLE_GUEST or TR_USERROLE_NORMAL?
-                    Type = (profile.UserRole.HasFlag(EUserRole.TR_USERROLE_NORMAL) ? 1 : 0),
-                    Difficulty = (int)profile.Difficulty
-                };
+            {
+                IsEditable = !isReadonly,
+                ProfileId = profile.ID,
+                PlayerName = profile.PlayerName,
+                //Is TR_USERROLE_GUEST or TR_USERROLE_NORMAL?
+                Type = (profile.UserRole.HasFlag(EUserRole.TR_USERROLE_NORMAL) ? 1 : 0),
+                Difficulty = (int)profile.Difficulty
+            };
 
             CAvatar avatar = profile.Avatar;
             if (avatar != null)
@@ -634,9 +633,9 @@ namespace Vocaluxe.Base.Server
             {
                 List<CSong> songs = CSongs.Songs;
                 _SongInfoCache = (from s in songs
-                    select _GetSongInfo(s, sendCovers)).AsParallel().ToArray<SSongInfo>();
+                                  select _GetSongInfo(s, sendCovers)).AsParallel().ToArray<SSongInfo>();
             }
-            
+
             return _SongInfoCache;
         }
 
@@ -677,7 +676,7 @@ namespace Vocaluxe.Base.Server
                         result.Cover = new CBase64Image(_CreateDelayedImage(song.Folder + "\\" + song.CoverFileName));
                     }
                 }
-                    
+
             }
             return result;
         }
@@ -782,12 +781,12 @@ namespace Vocaluxe.Base.Server
         private static SPlaylistData _GetPlaylistInfo(CPlaylistFile playlist)
         {
             return new SPlaylistData
-                {
-                    PlaylistId = playlist.Id,
-                    PlaylistName = playlist.Name,
-                    SongCount = playlist.Songs.Count,
-                    LastChanged = DateTime.Now.ToLongDateString()
-                };
+            {
+                PlaylistId = playlist.Id,
+                PlaylistName = playlist.Name,
+                SongCount = playlist.Songs.Count,
+                LastChanged = DateTime.Now.ToLongDateString()
+            };
         }
 
         public static void RemovePlaylist(int playlistId)
@@ -887,8 +886,8 @@ namespace Vocaluxe.Base.Server
         public static Guid GetUserIdFromUsername(string username)
         {
             IEnumerable<Guid> playerIds = (from p in CProfiles.GetProfiles()
-                                          where String.Equals(p.PlayerName, username, StringComparison.OrdinalIgnoreCase)
-                                          select p.ID);
+                                           where String.Equals(p.PlayerName, username, StringComparison.OrdinalIgnoreCase)
+                                           select p.ID);
             try
             {
                 return playerIds.First();
@@ -965,8 +964,8 @@ namespace Vocaluxe.Base.Server
         {
             if (player > CGame.NumPlayers || !CProfiles.IsProfileIDValid(playerGUID))
                 return false;
-            CGame.Players[player-1].ProfileID = playerGUID;
-            
+            CGame.Players[player - 1].ProfileID = playerGUID;
+
             return true;
         }
         #endregion

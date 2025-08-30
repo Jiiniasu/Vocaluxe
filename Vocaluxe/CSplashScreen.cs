@@ -82,7 +82,7 @@ namespace Vocaluxe
             set { base.BackColor = value; }
         }
 
-        protected override void OnPaint(PaintEventArgs e) {}
+        protected override void OnPaint(PaintEventArgs e) { }
 
         protected override void OnPaintBackground(PaintEventArgs e)
         {

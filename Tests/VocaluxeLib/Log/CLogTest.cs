@@ -15,9 +15,9 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using NUnit.Framework;
 using System;
 using System.IO;
-using NUnit.Framework;
 using VocaluxeLib.Log;
 
 namespace Tests.VocaluxeLib.Log
@@ -50,7 +50,7 @@ namespace Tests.VocaluxeLib.Log
         #endregion
 
         #region Tests
-        
+
         #region Verbose tests
 
         [Test]
@@ -97,11 +97,11 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Verbose] " +_TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Verbose] " + _TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestExceptionMessage, mainLogContent, "Exception is missing");
             StringAssert.Contains(_SecondParam, mainLogContent, "Second data field is missing");
             StringAssert.Contains(_TestMessageWithResolvedData, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -118,7 +118,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -151,10 +151,10 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Verbose] " +_TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Verbose] " + _TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_SecondParam, mainLogContent, "Second data field is missing");
             StringAssert.Contains(_TestMessageWithResolvedData, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -171,7 +171,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -204,10 +204,10 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Verbose] " +_TestMessage, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Verbose] " + _TestMessage, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestExceptionMessage, mainLogContent, "Exception is missing");
             StringAssert.Contains(_TestMessage, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -224,7 +224,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -257,9 +257,9 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Verbose] " +_TestMessage, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Verbose] " + _TestMessage, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestMessage, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -279,7 +279,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -312,11 +312,11 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Debug] " +_TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Debug] " + _TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestExceptionMessage, mainLogContent, "Exception is missing");
             StringAssert.Contains(_SecondParam, mainLogContent, "Second data field is missing");
             StringAssert.Contains(_TestMessageWithResolvedData, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -333,7 +333,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -366,10 +366,10 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Debug] " +_TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Debug] " + _TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_SecondParam, mainLogContent, "Second data field is missing");
             StringAssert.Contains(_TestMessageWithResolvedData, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -386,7 +386,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -419,10 +419,10 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Debug] " +_TestMessage, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Debug] " + _TestMessage, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestExceptionMessage, mainLogContent, "Exception is missing");
             StringAssert.Contains(_TestMessage, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -439,7 +439,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -472,9 +472,9 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Debug] " +_TestMessage, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Debug] " + _TestMessage, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestMessage, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -494,7 +494,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -527,11 +527,11 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Information] " +_TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Information] " + _TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestExceptionMessage, mainLogContent, "Exception is missing");
             StringAssert.Contains(_SecondParam, mainLogContent, "Second data field is missing");
             StringAssert.Contains(_TestMessageWithResolvedData, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -548,7 +548,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -581,10 +581,10 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Information] " +_TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Information] " + _TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_SecondParam, mainLogContent, "Second data field is missing");
             StringAssert.Contains(_TestMessageWithResolvedData, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -601,7 +601,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -634,10 +634,10 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Information] " +_TestMessage, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Information] " + _TestMessage, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestExceptionMessage, mainLogContent, "Exception is missing");
             StringAssert.Contains(_TestMessage, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -654,7 +654,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -687,9 +687,9 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Information] " +_TestMessage, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Information] " + _TestMessage, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestMessage, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -709,7 +709,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -742,11 +742,11 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Warning] " +_TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Warning] " + _TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestExceptionMessage, mainLogContent, "Exception is missing");
             StringAssert.Contains(_SecondParam, mainLogContent, "Second data field is missing");
             StringAssert.Contains(_TestMessageWithResolvedData, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -763,7 +763,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -796,10 +796,10 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Warning] " +_TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Warning] " + _TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_SecondParam, mainLogContent, "Second data field is missing");
             StringAssert.Contains(_TestMessageWithResolvedData, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -816,7 +816,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -849,10 +849,10 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Warning] " +_TestMessage, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Warning] " + _TestMessage, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestExceptionMessage, mainLogContent, "Exception is missing");
             StringAssert.Contains(_TestMessage, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -869,7 +869,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -902,9 +902,9 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Warning] " +_TestMessage, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Warning] " + _TestMessage, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestMessage, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -924,7 +924,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -957,11 +957,11 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Error] " +_TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Error] " + _TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestExceptionMessage, mainLogContent, "Exception is missing");
             StringAssert.Contains(_SecondParam, mainLogContent, "Second data field is missing");
             StringAssert.Contains(_TestMessageWithResolvedData, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -978,7 +978,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -1011,10 +1011,10 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Error] " +_TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Error] " + _TestMessageWithResolvedData, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_SecondParam, mainLogContent, "Second data field is missing");
             StringAssert.Contains(_TestMessageWithResolvedData, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -1031,7 +1031,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -1064,10 +1064,10 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Error] " +_TestMessage, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Error] " + _TestMessage, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestExceptionMessage, mainLogContent, "Exception is missing");
             StringAssert.Contains(_TestMessage, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }
@@ -1084,7 +1084,7 @@ namespace Tests.VocaluxeLib.Log
             bool messageShown = false;
 
             // Init Log
-            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName,testFileMarkerName, versionTag,
+            CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) =>
             {
                 messageShown = true;
@@ -1117,9 +1117,9 @@ namespace Tests.VocaluxeLib.Log
 
             StringAssert.Contains("[Information] Starting to log", mainLogContent, "Main log start entry wrong");
             StringAssert.Contains("Version = " + versionTag, mainLogContent, "Main log version tag entry wrong");
-            StringAssert.Contains("[Error] " +_TestMessage, mainLogContent, "Main log entry wrong");
+            StringAssert.Contains("[Error] " + _TestMessage, mainLogContent, "Main log entry wrong");
             StringAssert.Contains(_TestMessage, songLogContent, "Song log entry wrong");
-            if(!show)
+            if (!show)
             {
                 Assert.IsFalse(messageShown);
             }

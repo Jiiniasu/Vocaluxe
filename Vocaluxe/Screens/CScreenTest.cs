@@ -56,7 +56,7 @@ namespace Vocaluxe.Screens
 
         public override bool HandleInput(SKeyEvent keyEvent)
         {
-            if (keyEvent.KeyPressed && !Char.IsControl(keyEvent.Unicode)) {}
+            if (keyEvent.KeyPressed && !Char.IsControl(keyEvent.Unicode)) { }
             else
             {
                 switch (keyEvent.Key)
@@ -89,7 +89,7 @@ namespace Vocaluxe.Screens
 
         public override bool HandleMouse(SMouseEvent mouseEvent)
         {
-            if (mouseEvent.LB && _IsMouseOverCurSelection(mouseEvent)) {}
+            if (mouseEvent.LB && _IsMouseOverCurSelection(mouseEvent)) { }
 
             if (mouseEvent.LB)
                 CGraphics.FadeTo(EScreen.Main);

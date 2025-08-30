@@ -34,7 +34,7 @@ namespace Vocaluxe.Base.ThemeSystem
             }
         }
 
-        public CBaseTheme(string filePath) : base(filePath, -1) {}
+        public CBaseTheme(string filePath) : base(filePath, -1) { }
 
         protected override CSkin _GetNewSkin(string path, string file)
         {

@@ -15,9 +15,8 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using System;
-using System.IO;
 using NUnit.Framework;
+using System.IO;
 using VocaluxeLib.Log;
 
 namespace Tests.VocaluxeLib.Log
@@ -75,8 +74,8 @@ namespace Tests.VocaluxeLib.Log
             string mainLogContent = File.ReadAllText(Path.Combine(_TestFolder, testFileName));
             string songLogContent = File.ReadAllText(Path.Combine(_TestFolder, testFileSongName));
 
-            StringAssert.Contains($"[Information] Started \"{ testMessage }\"", mainLogContent, "Start entry wrong");
-            StringAssert.Contains($"[Information] Finished \"{ testMessage }\" successfully in ", mainLogContent, "Finish entry wrong");
+            StringAssert.Contains($"[Information] Started \"{testMessage}\"", mainLogContent, "Start entry wrong");
+            StringAssert.Contains($"[Information] Finished \"{testMessage}\" successfully in ", mainLogContent, "Finish entry wrong");
             StringAssert.AreEqualIgnoringCase("", songLogContent, "Benchmark should not create song log entries");
         }
 
@@ -94,13 +93,13 @@ namespace Tests.VocaluxeLib.Log
             CLog.Init(_TestFolder, testFileName, testFileSongName, testFileCloudName, testFileMarkerName, versionTag,
                 (crash, cont, tag, log, error) => { Assert.Fail("Benchmarks should not show the reporter."); },
                 ELogLevel.Verbose);
-            
+
             using (var token = CBenchmark.Begin(testMessage))
             {
                 System.Threading.Thread.Sleep(1);
                 token.End();
             }
-            
+
             // Close logfile
             CLog.Close();
 
@@ -111,8 +110,8 @@ namespace Tests.VocaluxeLib.Log
             string mainLogContent = File.ReadAllText(Path.Combine(_TestFolder, testFileName));
             string songLogContent = File.ReadAllText(Path.Combine(_TestFolder, testFileSongName));
 
-            StringAssert.Contains($"[Information] Started \"{ testMessage }\"", mainLogContent, "Start entry wrong");
-            StringAssert.Contains($"[Information] Finished \"{ testMessage }\" successfully in ", mainLogContent, "Finish entry wrong");
+            StringAssert.Contains($"[Information] Started \"{testMessage}\"", mainLogContent, "Start entry wrong");
+            StringAssert.Contains($"[Information] Finished \"{testMessage}\" successfully in ", mainLogContent, "Finish entry wrong");
             StringAssert.AreEqualIgnoringCase("", songLogContent, "Benchmark should not create song log entries");
         }
 
@@ -146,8 +145,8 @@ namespace Tests.VocaluxeLib.Log
             string mainLogContent = File.ReadAllText(Path.Combine(_TestFolder, testFileName));
             string songLogContent = File.ReadAllText(Path.Combine(_TestFolder, testFileSongName));
 
-            StringAssert.Contains($"[Information] Started \"{ testMessage }\"", mainLogContent, "Start entry wrong");
-            StringAssert.Contains($"[Information] Failed \"{ testMessage }\" in ", mainLogContent, "Finish entry wrong");
+            StringAssert.Contains($"[Information] Started \"{testMessage}\"", mainLogContent, "Start entry wrong");
+            StringAssert.Contains($"[Information] Failed \"{testMessage}\" in ", mainLogContent, "Finish entry wrong");
             StringAssert.AreEqualIgnoringCase("", songLogContent, "Benchmark should not create song log entries");
         }
 

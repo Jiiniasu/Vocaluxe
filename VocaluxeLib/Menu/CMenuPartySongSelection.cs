@@ -18,7 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
-using VocaluxeLib.Draw;
 using VocaluxeLib.Songs;
 
 namespace VocaluxeLib.Menu
@@ -104,7 +103,7 @@ namespace VocaluxeLib.Menu
         {
             base.Init();
 
-            _ThemeButtons = new string[]{ _ButtonNext, _ButtonBack};
+            _ThemeButtons = new string[] { _ButtonNext, _ButtonBack };
             _ThemeSelectSlides = new string[] { _SelectSlideSongMode, _SelectSlideSource, _SelectSlidePlaylist, _SelectSlideSorting, _SelectSlideCategory, _SelectSlideNumMedleySongs };
 
             _SetAllowedOptions();
@@ -196,7 +195,7 @@ namespace VocaluxeLib.Menu
             }
 
             _SelectSlides[_SelectSlideNumMedleySongs].Clear();
-            for(int num = NumMinMedleySongs; num <= NumMaxMedleySongs; num++)
+            for (int num = NumMinMedleySongs; num <= NumMaxMedleySongs; num++)
             {
                 _SelectSlides[_SelectSlideNumMedleySongs].AddValue(num + " " + CBase.Language.Translate("TR_SONGS", PartyModeID));
             }
@@ -229,8 +228,8 @@ namespace VocaluxeLib.Menu
                 _FillCategorySlide();
 
                 _SelectSlides[_SelectSlideCategory].Selection = 0;
-            }    
-            
+            }
+
             Category = _SelectSlides[_SelectSlideCategory].Selection;
         }
 

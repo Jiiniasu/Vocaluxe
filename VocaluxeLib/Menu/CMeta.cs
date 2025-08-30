@@ -50,7 +50,7 @@ namespace VocaluxeLib.Menu
         public void LoadSkin()
         {
             if (!ThemeLoaded)
-                return;            
+                return;
 
             MaxRect = _Theme.Rect;
         }

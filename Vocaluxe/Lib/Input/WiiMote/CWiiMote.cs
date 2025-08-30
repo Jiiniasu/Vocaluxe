@@ -31,7 +31,7 @@ namespace Vocaluxe.Lib.Input.WiiMote
         private bool[] _ButtonStates;
         private Point _OldPosition;
         private bool _Connected;
-        
+
         private Object _Sync;
         private bool _Active;
         private CRumbleTimer _RumbleTimer;
@@ -76,7 +76,7 @@ namespace Vocaluxe.Lib.Input.WiiMote
             if (_Active)
                 return;
             _Active = true;
-          
+
 
             _WiiMote.Connect();
         }
@@ -118,7 +118,7 @@ namespace Vocaluxe.Lib.Input.WiiMote
                 _WiiMote.SetRumble(true);
                 Thread.Sleep(250);
                 _WiiMote.SetRumble(false);
-                
+
 
                 bool startRumble;
                 bool stopRumble;

@@ -125,7 +125,7 @@ namespace Vocaluxe.Lib.Video
             return true;
         }
 
-        public void Update() {}
+        public void Update() { }
 
         private bool _TryGetDecoder(CVideoStream stream, out CDecoder decoder)
         {

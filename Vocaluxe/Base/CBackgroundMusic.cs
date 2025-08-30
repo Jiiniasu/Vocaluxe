@@ -20,8 +20,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using VocaluxeLib;
-using VocaluxeLib.Songs;
 using VocaluxeLib.Draw;
+using VocaluxeLib.Songs;
 using VocaluxeLib.Utils.Player;
 
 namespace Vocaluxe.Base
@@ -265,7 +265,7 @@ namespace Vocaluxe.Base
 
         public static void Update()
         {
-            if (_PreviewStartHelperTask != null && ( _PreviewPlayer.Length > 0 || _PreviewStartWaitCounter++ >= _PreviewStartWaitMaxTries))
+            if (_PreviewStartHelperTask != null && (_PreviewPlayer.Length > 0 || _PreviewStartWaitCounter++ >= _PreviewStartWaitMaxTries))
             {
                 lock (_PreviewStartHelperTaskLock)
                 {
@@ -334,7 +334,7 @@ namespace Vocaluxe.Base
             bool songChanged = _CurPlayer.SongID != song.ID;
 
             _PreviewPlayer.Load(song);
-            
+
 
             //Change song position only if song is changed or near to end
             if (songChanged || _CurPlayer.Position + 30 < _CurPlayer.Length || _PreviewStartHelperTask == null)
@@ -378,9 +378,9 @@ namespace Vocaluxe.Base
                 Play();
             }
 
-            
 
-            
+
+
         }
 
         public static void StopPreview()

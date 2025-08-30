@@ -20,9 +20,9 @@ using System.Windows.Forms;
 using Vocaluxe.Base;
 using Vocaluxe.Lib.Webcam;
 using VocaluxeLib;
-using VocaluxeLib.Menu;
 using VocaluxeLib.Draw;
 using VocaluxeLib.Log;
+using VocaluxeLib.Menu;
 
 namespace Vocaluxe.Screens
 {
@@ -58,14 +58,14 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            _ThemeStatics = new string[] {_StaticWebcamOutput};
-            _ThemeButtons = new string[] {_ButtonExit, _ButtonScreenAdjustments};
+            _ThemeStatics = new string[] { _StaticWebcamOutput };
+            _ThemeButtons = new string[] { _ButtonExit, _ButtonScreenAdjustments };
             _ThemeSelectSlides = new string[]
                 {
                     _SelectSlideVideoBackgrounds, _SelectSlideVideoPreview, _SelectSlideVideosInSongs, _SelectSlideVideosToBackground, _SelectSlideWebcamDevices,
                     _SelectSlideWebcamCapabilities
                 };
-            _ThemeTexts = new string[] {_TextWebcams, _TextWebcamResolution};
+            _ThemeTexts = new string[] { _TextWebcams, _TextWebcamResolution };
         }
 
         public override void LoadTheme(string xmlPath)
@@ -83,7 +83,7 @@ namespace Vocaluxe.Screens
         {
             base.HandleInput(keyEvent);
 
-            if (keyEvent.KeyPressed) {}
+            if (keyEvent.KeyPressed) { }
             else
             {
                 switch (keyEvent.Key)

@@ -282,7 +282,7 @@ namespace VocaluxeLib.Xml
                             key = subNode.Name;
                         object subValue = _GetValue(subNode, subType);
                         if (subValue != null)
-                            add.Invoke(dict, new object[] {key, subValue});
+                            add.Invoke(dict, new object[] { key, subValue });
                     }
                 }
                 return dict;
@@ -382,7 +382,7 @@ namespace VocaluxeLib.Xml
             {
                 MethodInfo addMethod = type.GetMethod("Add");
                 foreach (object value in values)
-                    addMethod.Invoke(list, new object[] {value});
+                    addMethod.Invoke(list, new object[] { value });
             }
         }
 
@@ -394,7 +394,7 @@ namespace VocaluxeLib.Xml
         /// <returns>Newly created collection</returns>
         private static object _CreateList(Type type, ICollection values)
         {
-            object list = type.IsArray ? Array.CreateInstance(type.GetElementType(), values.Count) : Activator.CreateInstance(type, new object[] {values.Count});
+            object list = type.IsArray ? Array.CreateInstance(type.GetElementType(), values.Count) : Activator.CreateInstance(type, new object[] { values.Count });
             _FillList(list, type, values);
             return list;
         }
@@ -581,11 +581,11 @@ namespace VocaluxeLib.Xml
         public T DeserializeString<T>(string xml, T o) where T : new()
         {
             var reader = new XmlTextReader(new StringReader(xml))
-                {
-                    WhitespaceHandling = WhitespaceHandling.Significant,
-                    Normalization = true,
-                    XmlResolver = null
-                };
+            {
+                WhitespaceHandling = WhitespaceHandling.Significant,
+                Normalization = true,
+                XmlResolver = null
+            };
             try
             {
                 return _Deserialize<T>(reader, o);
@@ -620,11 +620,11 @@ namespace VocaluxeLib.Xml
             if (!File.Exists(filePath))
                 throw new FileNotFoundException(filePath);
             var reader = new XmlTextReader(filePath)
-                {
-                    WhitespaceHandling = WhitespaceHandling.Significant,
-                    Normalization = true,
-                    XmlResolver = null
-                };
+            {
+                WhitespaceHandling = WhitespaceHandling.Significant,
+                Normalization = true,
+                XmlResolver = null
+            };
             try
             {
                 return _Deserialize<T>(reader, o);

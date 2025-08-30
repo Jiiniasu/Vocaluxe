@@ -46,7 +46,7 @@ namespace Vocaluxe.Lib.Database
                 "babene03.png", "lukeIam.png"
             };
 #endif
-        public CResourceDB(string filePath) : base(filePath) {}
+        public CResourceDB(string filePath) : base(filePath) { }
 
         public override bool Init()
         {

@@ -17,7 +17,6 @@
 
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Xml.Serialization;
 using Vocaluxe.Base.Fonts;
 using VocaluxeLib;

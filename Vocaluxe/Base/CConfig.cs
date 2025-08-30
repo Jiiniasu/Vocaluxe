@@ -410,7 +410,7 @@ namespace Vocaluxe.Base
             if (Config.Game.MinLineBreakTime < 0)
                 Config.Game.MinLineBreakTime = 0.1f;
 
-            if (!Config.Game.NumPlayers.IsInRange(1, (CSettings.MaxScreenPlayer*CConfig.GetNumScreens())))
+            if (!Config.Game.NumPlayers.IsInRange(1, (CSettings.MaxScreenPlayer * CConfig.GetNumScreens())))
                 Config.Game.NumPlayers = 2;
             Array.Resize(ref Config.Game.Players, CSettings.MaxNumPlayer);
 
@@ -535,7 +535,7 @@ namespace Vocaluxe.Base
                 case "IgnoreArticles":
                     return "Ignore articles on song-sorting: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
                 case "NumPlayers":
-                    return "NumPlayers: 1 - "+CSettings.MaxNumPlayer+" (Limited by " + CSettings.MaxScreenPlayer + " * NumScreens)";
+                    return "NumPlayers: 1 - " + CSettings.MaxNumPlayer + " (Limited by " + CSettings.MaxScreenPlayer + " * NumScreens)";
                 case "JudgementDistance":
                     return "Distance to Judgement-Line";
                 case "Tabs":
@@ -737,9 +737,9 @@ namespace Vocaluxe.Base
                         SongFolders.Add(folder);
                 }
             }
-            
+
             //Test if songfolders are still empty or now empty
-            if(Config.Game.SongFolder.Length == 0)
+            if (Config.Game.SongFolder.Length == 0)
                 Config.Game.SongFolder = SongFolders.ToArray();
         }
 

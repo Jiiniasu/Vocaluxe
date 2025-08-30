@@ -76,7 +76,7 @@ namespace VocaluxeLib.PartyModes
             return true;
         }
 
-        public override void UpdateGame() {}
+        public override void UpdateGame() { }
 
         public override IMenu GetStartScreen()
         {
@@ -96,9 +96,9 @@ namespace VocaluxeLib.PartyModes
             return _ScreenSongOptions;
         }
 
-        public override void OnSongChange(int songIndex, ref SScreenSongOptions screenSongOptions) {}
+        public override void OnSongChange(int songIndex, ref SScreenSongOptions screenSongOptions) { }
 
-        public override void OnCategoryChange(int categoryIndex, ref SScreenSongOptions screenSongOptions) {}
+        public override void OnCategoryChange(int categoryIndex, ref SScreenSongOptions screenSongOptions) { }
 
         public override void SetSearchString(string searchString, bool visible)
         {

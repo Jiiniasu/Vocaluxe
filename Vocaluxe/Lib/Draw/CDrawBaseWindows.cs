@@ -52,7 +52,7 @@ namespace Vocaluxe.Lib.Draw
             {
                 _Form.Close();
             }
-            catch {}
+            catch { }
         }
 
         protected void _CenterToScreen()
@@ -154,9 +154,9 @@ namespace Vocaluxe.Lib.Draw
         protected void _OnMouseLeave(object sender, EventArgs e)
         {
             _Mouse.Visible = false;
-            #if !WIN && !DEBUG
+#if !WIN && !DEBUG
             _Form.Cursor = Cursors.Default;
-            #endif
+#endif
             Cursor.Show();
         }
 
@@ -164,9 +164,9 @@ namespace Vocaluxe.Lib.Draw
         {
             Cursor.Hide();
             _Mouse.Visible = true;
-            #if !WIN && !DEBUG //don't want to be stuck without a cursor when debugging
+#if !WIN && !DEBUG //don't want to be stuck without a cursor when debugging
             _Form.Cursor = new Cursor("Linux/blank.cur"); //Cursor.Hide() doesn't work in Mono
-            #endif
+#endif
         }
         #endregion
 

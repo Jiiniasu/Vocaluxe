@@ -44,12 +44,12 @@ namespace Vocaluxe.Base
             if (_PartyModes.Count > 0)
                 return false; //Already initialized
             SPartyMode pm = new SPartyMode
-                {
-                    Info = new SPartyModeInfos {Author = "Vocaluxe Team", Description = "Normal game", Name = "Normal", TargetAudience = "Just a normal game for everyone"},
-                    PartyMode = new CPartyModeNormal(-1),
-                    PartyModeSystemVersion = _PartyModeSystemVersion,
-                    ScreenFiles = new List<string>()
-                };
+            {
+                Info = new SPartyModeInfos { Author = "Vocaluxe Team", Description = "Normal game", Name = "Normal", TargetAudience = "Just a normal game for everyone" },
+                PartyMode = new CPartyModeNormal(-1),
+                PartyModeSystemVersion = _PartyModeSystemVersion,
+                ScreenFiles = new List<string>()
+            };
             _PartyModes.Add(-1, pm);
             _CurrentPartyMode = pm.PartyMode;
             Debug.Assert(_CurrentPartyMode != null && _CurrentPartyMode.ID == -1);
@@ -64,7 +64,8 @@ namespace Vocaluxe.Base
             get { return _CurrentPartyMode.ID; }
             set
             {
-                if (_CurrentPartyMode.ID == value) {
+                if (_CurrentPartyMode.ID == value)
+                {
                     _CurrentPartyMode.SetDefaults();
                     return;
                 }
@@ -228,7 +229,7 @@ namespace Vocaluxe.Base
                 return false;
 
             object instance = output.CreateInstance(typeof(IPartyMode).Namespace + "." + pm.Info.Folder + "." + pm.Info.PartyModeFile, false,
-                                                    BindingFlags.Public | BindingFlags.Instance, null, new object[] {_NextID++}, null, null);
+                                                    BindingFlags.Public | BindingFlags.Instance, null, new object[] { _NextID++ }, null, null);
             if (instance == null)
             {
                 CLog.Error("Error creating Instance of PartyMode file: " + filePath);
@@ -284,7 +285,7 @@ namespace Vocaluxe.Base
             compilerParams.ReferencedAssemblies.Add("System.Windows.Forms.dll");
             compilerParams.ReferencedAssemblies.Add("System.dll");
             compilerParams.ReferencedAssemblies.Add("System.Core.dll");
-            compilerParams.ReferencedAssemblies.Add(Path.Combine("libs","managed","VocaluxeLib.dll"));
+            compilerParams.ReferencedAssemblies.Add(Path.Combine("libs", "managed", "VocaluxeLib.dll"));
             compilerParams.GenerateInMemory = true;
 #if DEBUG
             compilerParams.IncludeDebugInformation = true;

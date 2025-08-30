@@ -17,7 +17,6 @@
 
 using System;
 using System.Diagnostics;
-using System.Runtime;
 using VocaluxeLib.Draw;
 
 namespace VocaluxeLib.Menu
@@ -126,7 +125,7 @@ namespace VocaluxeLib.Menu
             _Texture = texture;
             _Color = color;
             _Rect = new SRectF(x, y, size, size, z);
-            _Bounds = bounds; 
+            _Bounds = bounds;
             _Size = size;
             _Vx = vx;
             _Vy = vy;

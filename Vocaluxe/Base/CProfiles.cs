@@ -17,10 +17,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Drawing;
 using System.IO;
-using System.Net.Http;
+using System.Linq;
 using System.Text.RegularExpressions;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
@@ -209,7 +208,7 @@ namespace Vocaluxe.Base
 
         public static void LoadProfiles()
         {
-            var change = new SChange {Action = EAction.LoadProfiles};
+            var change = new SChange { Action = EAction.LoadProfiles };
 
             lock (_QueueMutex)
             {
@@ -219,7 +218,7 @@ namespace Vocaluxe.Base
 
         public static void LoadAvatars()
         {
-            var change = new SChange {Action = EAction.LoadAvatars};
+            var change = new SChange { Action = EAction.LoadAvatars };
 
             lock (_QueueMutex)
             {
@@ -232,7 +231,7 @@ namespace Vocaluxe.Base
             if (newProfile == null)
                 return;
 
-            var change = new SChange {Action = EAction.AddProfile, Profile = newProfile};
+            var change = new SChange { Action = EAction.AddProfile, Profile = newProfile };
 
             lock (_QueueMutex)
             {
@@ -245,7 +244,7 @@ namespace Vocaluxe.Base
             if (editProfile == null)
                 return;
 
-            var change = new SChange {Action = EAction.EditProfile, Profile = editProfile};
+            var change = new SChange { Action = EAction.EditProfile, Profile = editProfile };
 
             lock (_QueueMutex)
             {
@@ -258,7 +257,7 @@ namespace Vocaluxe.Base
             if (!IsProfileIDValid(profileID))
                 return;
 
-            var change = new SChange {Action = EAction.DeleteProfile, ProfileID = profileID};
+            var change = new SChange { Action = EAction.DeleteProfile, ProfileID = profileID };
 
             lock (_QueueMutex)
             {
@@ -271,7 +270,7 @@ namespace Vocaluxe.Base
             if (newAvatar == null)
                 return;
 
-            var change = new SChange {Action = EAction.AddAvatar, Avatar = newAvatar};
+            var change = new SChange { Action = EAction.AddAvatar, Avatar = newAvatar };
 
             lock (_QueueMutex)
             {
@@ -284,7 +283,7 @@ namespace Vocaluxe.Base
             if (editAvatar == null)
                 return;
 
-            var change = new SChange {Action = EAction.EditAvatar, Avatar = editAvatar};
+            var change = new SChange { Action = EAction.EditAvatar, Avatar = editAvatar };
 
             lock (_QueueMutex)
             {
@@ -324,9 +323,9 @@ namespace Vocaluxe.Base
         public static Guid NewProfile(string fileName = "")
         {
             var profile = new CProfile
-                {
-                    FilePath = fileName != "" ? Path.Combine(CConfig.ProfileFolders[0], fileName) : String.Empty
-                };
+            {
+                FilePath = fileName != "" ? Path.Combine(CConfig.ProfileFolders[0], fileName) : String.Empty
+            };
 
             if (File.Exists(profile.FilePath))
                 return Guid.Empty;
@@ -531,13 +530,13 @@ namespace Vocaluxe.Base
             {
                 foreach (CProfile profile in CCloud.getProfiles())
                 {
-                     _Profiles.Add(profile.ID, profile);
+                    _Profiles.Add(profile.ID, profile);
                 }
             }
             else
             {
                 var files = new List<string>();
-               
+
                 foreach (string path in CConfig.ProfileFolders)
                     files.AddRange(CHelper.ListFiles(path, "*.xml", true, true));
 

@@ -44,9 +44,9 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            _ThemeStatics = new string[] {"StaticMenuBar", _StaticWarningProfiles};
-            _ThemeButtons = new string[] {_ButtonSing, _ButtonParty, _ButtonOptions, _ButtonProfiles, _ButtonExit};
-            _ThemeTexts = new string[] {_TextRelease, _TextWarningProfiles};
+            _ThemeStatics = new string[] { "StaticMenuBar", _StaticWarningProfiles };
+            _ThemeButtons = new string[] { _ButtonSing, _ButtonParty, _ButtonOptions, _ButtonProfiles, _ButtonExit };
+            _ThemeTexts = new string[] { _TextRelease, _TextWarningProfiles };
         }
 
         public override void LoadTheme(string xmlPath)
@@ -64,7 +64,7 @@ namespace Vocaluxe.Screens
         {
             base.HandleInput(keyEvent);
 
-            if (keyEvent.KeyPressed) {}
+            if (keyEvent.KeyPressed) { }
             else
             {
                 switch (keyEvent.Key)

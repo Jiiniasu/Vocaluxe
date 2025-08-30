@@ -19,7 +19,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using VocaluxeLib;
 using VocaluxeLib.Log;
 using VocaluxeLib.Utils;
 
@@ -158,7 +157,7 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
             if (tone < 0)
                 return "inv.";
             tone += 24;
-            string[] notes = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
+            string[] notes = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
             string result = notes[tone % 12];
             if (withOctave)
                 result += (tone / 12);
@@ -337,7 +336,7 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
             STimedNote note;
             note.Note = tone;
             note.Time = 46;
-            List<STimedNote> tones = new List<STimedNote> {note};
+            List<STimedNote> tones = new List<STimedNote> { note };
             _TestFile(fileName, tones);
         }
 

@@ -332,7 +332,7 @@ namespace VocaluxeLib.Menu.SongMenu
             _LeaveCategory();
         }
 
-        public virtual void UnloadSkin() {}
+        public virtual void UnloadSkin() { }
 
         public virtual void LoadSkin()
         {
@@ -429,7 +429,7 @@ namespace VocaluxeLib.Menu.SongMenu
             {
                 _PlayPreviewAfterDelay();
             }
-        }        
+        }
 
         protected void _PlayPreviewAfterDelay()
         {

@@ -25,7 +25,7 @@ namespace VocaluxeLib.Game
 
         public CPoints(int numRounds, SPlayer[] players)
         {
-            _Rounds = new SPlayer[numRounds,players.Length];
+            _Rounds = new SPlayer[numRounds, players.Length];
 
             for (int round = 0; round < numRounds; round++)
             {

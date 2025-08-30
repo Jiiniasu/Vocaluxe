@@ -94,7 +94,7 @@ namespace Vocaluxe.Screens
         public override bool HandleInput(SKeyEvent keyEvent)
         {
             if ((keyEvent.Key == Keys.Up || keyEvent.Key == Keys.Down) && _EditMode == EEditMode.PlayerName)
-                    _EditMode = EEditMode.None;
+                _EditMode = EEditMode.None;
             if (_EditMode == EEditMode.None)
                 base.HandleInput(keyEvent);
 
@@ -115,8 +115,8 @@ namespace Vocaluxe.Screens
                 switch (keyEvent.Key)
                 {
                     case Keys.Escape:
-                            _DeleteProfile();
-                            _ClosePopup();
+                        _DeleteProfile();
+                        _ClosePopup();
                         break;
 
                     case Keys.Enter:

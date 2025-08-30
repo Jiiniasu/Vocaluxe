@@ -91,13 +91,13 @@ namespace Vocaluxe.Base
 
             string[] searchStrings = null;
             if (_SearchString != "")
-                searchStrings = _SearchString.ToUpper().Split(new char[] {' '});
+                searchStrings = _SearchString.ToUpper().Split(new char[] { ' ' });
 
             foreach (CSong song in CSongs.Songs)
             {
                 if (_PlaylistID != -1 && !CBase.Playlist.ContainsSong(_PlaylistID, song.ID))
                     continue;
-				
+
                 if ((song.IsDuet && _DuetOptions != EDuetOptions.NoDuets) || (!song.IsDuet && _DuetOptions != EDuetOptions.Duets))
                 {
                     if (searchStrings == null)

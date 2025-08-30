@@ -15,10 +15,10 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using OpenTK.Input;
 using System;
 using System.Threading;
 using System.Windows.Forms;
-using OpenTK.Input;
 using Vocaluxe.Base;
 using VocaluxeLib;
 
@@ -30,7 +30,7 @@ namespace Vocaluxe.Lib.Input
         private const float _LimitFactor = 1.0f;
 
         private GamePadState _OldButtonStates;
-        
+
         private bool _Connected
         {
             get { return _GamePadIndex != -1; }
@@ -55,7 +55,7 @@ namespace Vocaluxe.Lib.Input
             _Sync = new Object();
             _RumbleTimer = new CRumbleTimer();
 
-            _HandlerThread = new Thread(_MainLoop) {Name = "GamePad", Priority = ThreadPriority.BelowNormal};
+            _HandlerThread = new Thread(_MainLoop) { Name = "GamePad", Priority = ThreadPriority.BelowNormal };
             _EvTerminate = new AutoResetEvent(false);
 
             _OldButtonStates = new GamePadState();
@@ -106,7 +106,7 @@ namespace Vocaluxe.Lib.Input
 
         private void _MainLoop()
         {
-            
+
             while (_Active)
             {
                 Thread.Sleep(5);
@@ -177,12 +177,12 @@ namespace Vocaluxe.Lib.Input
                 || Math.Abs(buttonStates.ThumbSticks.Right.Y - _OldButtonStates.ThumbSticks.Right.Y) > 0.01
                 || lb || rb)
             {
-                var x = Math.Min(CSettings.RenderW, Math.Max(0, (int)(CSettings.RenderW  * (buttonStates.ThumbSticks.Right.X / 2.0 * _LimitFactor + 0.5f))));
-                var y = Math.Min(CSettings.RenderH, Math.Max(0, (int)(CSettings.RenderH  * (buttonStates.ThumbSticks.Right.Y / 2.0 * _LimitFactor * (-1) + 0.5f))));
+                var x = Math.Min(CSettings.RenderW, Math.Max(0, (int)(CSettings.RenderW * (buttonStates.ThumbSticks.Right.X / 2.0 * _LimitFactor + 0.5f))));
+                var y = Math.Min(CSettings.RenderH, Math.Max(0, (int)(CSettings.RenderH * (buttonStates.ThumbSticks.Right.Y / 2.0 * _LimitFactor * (-1) + 0.5f))));
 
                 AddMouseEvent(new SMouseEvent(ESender.Gamepad, EModifier.None, x, y, lb, false, rb, 0, false, false, false, false));
             }
-           
+
             _OldButtonStates = buttonStates;
         }
 
@@ -210,11 +210,11 @@ namespace Vocaluxe.Lib.Input
             GamePad.SetVibration(_GamePadIndex, 1.0f, 1.0f);
             Thread.Sleep(125);
             GamePad.SetVibration(_GamePadIndex, 0.0f, 0.0f);
-          
+
 
             return _GamePadIndex != -1;
         }
 
-        
+
     }
 }

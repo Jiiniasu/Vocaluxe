@@ -87,7 +87,7 @@ namespace Vocaluxe.Lib.Video.Acinerella
                     return true;
                 _Free();
             }
-            catch (Exception) {}
+            catch (Exception) { }
             CLog.Error("Error opening video file: " + _FileName);
             _Instance = IntPtr.Zero;
             return false;
@@ -106,7 +106,7 @@ namespace Vocaluxe.Lib.Video.Acinerella
                 return false;
             }
             RequestTime = 0f;
-            _Thread = new Thread(_Execute) {Priority = ThreadPriority.Normal, Name = Path.GetFileName(_FileName)};
+            _Thread = new Thread(_Execute) { Priority = ThreadPriority.Normal, Name = Path.GetFileName(_FileName) };
             _Thread.Start();
             return true;
         }
@@ -168,9 +168,9 @@ namespace Vocaluxe.Lib.Video.Acinerella
                     if (!Loop || _LastShownTime <= now || frameTime < _LastShownTime)
                         break; //Following frames (incl this one) are after now, so do not consider any of them
                 }
-                    // ReSharper disable CompareOfFloatsByEqualityOperator
+                // ReSharper disable CompareOfFloatsByEqualityOperator
                 else if (Loop && RequestTime == _LoopedRequestTime)
-                    // ReSharper restore CompareOfFloatsByEqualityOperator
+                // ReSharper restore CompareOfFloatsByEqualityOperator
                 {
                     //Frame time might have wrapped but now did not
                     if (frameTime < _LastShownTime && _LastShownTime <= now)
@@ -249,7 +249,7 @@ namespace Vocaluxe.Lib.Video.Acinerella
                 //we were more than 1 frame to slow -> Jump forward (This is save, as the decoder will skip frames if necessary)
                 // ReSharper disable CompareOfFloatsByEqualityOperator
                 if (Loop && RequestTime == _LoopedRequestTime)
-                    // ReSharper restore CompareOfFloatsByEqualityOperator
+                // ReSharper restore CompareOfFloatsByEqualityOperator
                 {
                     //In a loop our decoder may have reset RequestTime to 0 but we want a frame from the end of the video
                     //Skipping forward is fatal as it resets the decoder to decode already decoded frames causing lags
@@ -350,16 +350,16 @@ namespace Vocaluxe.Lib.Video.Acinerella
             bool hasFrameDecoded = false;
             if (dropFrame)
             {
-                
-                    var frameDropCount = (int)Math.Ceiling(timeDifference / _FrameDuration);
-                    if (!_DropSeekEnabled || frameDropCount < seekThreshold)
-                    {
-                        hasFrameDecoded = _DropWithSkip(frameDropCount);
-                    }
-                    else
-                    {
-                        hasFrameDecoded = _DropWithSeek(videoTime, frameDropCount);
-                    }
+
+                var frameDropCount = (int)Math.Ceiling(timeDifference / _FrameDuration);
+                if (!_DropSeekEnabled || frameDropCount < seekThreshold)
+                {
+                    hasFrameDecoded = _DropWithSkip(frameDropCount);
+                }
+                else
+                {
+                    hasFrameDecoded = _DropWithSeek(videoTime, frameDropCount);
+                }
             }
 
             if (!hasFrameDecoded)
@@ -441,7 +441,7 @@ namespace Vocaluxe.Lib.Video.Acinerella
                 CLog.Error(e, "Couldn't copy the frame to the managed environment.");
                 return false;
             }
-            
+
             if (decoder.Buffer != IntPtr.Zero)
             {
                 _LastDecodedTime = (float)decoder.Timecode;

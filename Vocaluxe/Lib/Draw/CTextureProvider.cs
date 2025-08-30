@@ -306,7 +306,7 @@ namespace Vocaluxe.Lib.Draw
             {
                 Debug.Assert(!_TextureCache.ContainsKey(texturePath));
                 texture.TexturePath = texturePath;
-                STextureCacheEntry cacheEntry = new STextureCacheEntry {OrigSize = origSize, Texture = texture};
+                STextureCacheEntry cacheEntry = new STextureCacheEntry { OrigSize = origSize, Texture = texture };
                 _TextureCache.Add(texturePath, cacheEntry);
             }
         }

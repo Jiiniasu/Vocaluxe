@@ -20,9 +20,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
 using VocaluxeLib.Log;
@@ -163,7 +163,7 @@ namespace Vocaluxe.Base
                 index = 0;
                 CConfig.Config.Theme.CoverTheme = _CoverThemes[0].Info.Name;
             }
-                return _CoverThemes[index];
+            return _CoverThemes[index];
         }
 
         /// <summary>

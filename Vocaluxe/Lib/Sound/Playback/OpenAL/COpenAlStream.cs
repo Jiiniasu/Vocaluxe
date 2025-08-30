@@ -15,11 +15,11 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using OpenTK.Audio;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
-using OpenTK.Audio;
 using Vocaluxe.Base;
 using Vocaluxe.Lib.Sound.Playback.Decoder;
 using VocaluxeLib.Log;
@@ -123,7 +123,7 @@ namespace Vocaluxe.Lib.Sound.Playback.OpenAL
             }
         }
 
-        public COpenAlStream(int id, string medium, bool loop, EAudioEffect effect = EAudioEffect.None) : base(id, medium, loop, effect) {}
+        public COpenAlStream(int id, string medium, bool loop, EAudioEffect effect = EAudioEffect.None) : base(id, medium, loop, effect) { }
 
         protected override void _Dispose(bool disposing)
         {
@@ -212,7 +212,7 @@ namespace Vocaluxe.Lib.Sound.Playback.OpenAL
             _SampleBuf = new byte[(int)CConfig.Config.Sound.AudioBufferSize];
             //From now on closing the driver and the decoder is handled by the thread ONLY!
 
-            _DecoderThread = new Thread(_Execute) {Priority = ThreadPriority.Normal, Name = Path.GetFileName(_Medium)};
+            _DecoderThread = new Thread(_Execute) { Priority = ThreadPriority.Normal, Name = Path.GetFileName(_Medium) };
             _DecoderThread.Start();
 
             _FileOpened = true;

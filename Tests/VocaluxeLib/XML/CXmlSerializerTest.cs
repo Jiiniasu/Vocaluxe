@@ -15,15 +15,15 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Xml.Serialization;
-using NUnit.Framework;
+using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Xml;
-using Vocaluxe.Base;
 
 namespace Tests.VocaluxeLib.XML
 {

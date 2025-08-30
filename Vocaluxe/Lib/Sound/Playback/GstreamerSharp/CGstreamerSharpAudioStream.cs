@@ -15,11 +15,10 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using System;
 using GLib;
 using Gst;
+using System;
 using Vocaluxe.Base;
-using VocaluxeLib;
 using VocaluxeLib.Log;
 
 namespace Vocaluxe.Lib.Sound.Playback.GstreamerSharp
@@ -71,18 +70,18 @@ namespace Vocaluxe.Lib.Sound.Playback.GstreamerSharp
         {
             get
             {
-                
+
                 if (_Element == null || (_Element.CurrentState == State.Paused && _Element.PendingState != State.VoidPending) || _IsFinished)
                     return _Position;
 
-                    
+
                 long position;
                 if (!_Element.QueryPosition(Format.Time, out position))
                     CLog.Error("Could not query position");
                 else
                     _Position = ((float)position / Constants.SECOND);
-                    
-                    
+
+
                 return _Position;
             }
             set
@@ -107,7 +106,7 @@ namespace Vocaluxe.Lib.Sound.Playback.GstreamerSharp
             }
         }
 
-        public CGstreamerSharpAudioStream(int id, string medium, bool loop, EAudioEffect effect = EAudioEffect.None) : base(id, medium, loop, effect) {}
+        public CGstreamerSharpAudioStream(int id, string medium, bool loop, EAudioEffect effect = EAudioEffect.None) : base(id, medium, loop, effect) { }
 
         public override bool Open(bool prescan)
         {
@@ -134,13 +133,13 @@ namespace Vocaluxe.Lib.Sound.Playback.GstreamerSharp
             {
                 audiokaraoke = ElementFactory.Make("audiokaraoke", "karaoke");
                 audioSinkBin.Add(audiokaraoke);
-                audioSinkBin.Add(convert); 
-                audioSinkBin.Add(audiosink); 
-                
+                audioSinkBin.Add(convert);
+                audioSinkBin.Add(audiosink);
+
                 audiokaraoke.Link(audiosink);
                 audiokaraoke["level"] = CConfig.Config.Sound.KaraokeEffectLevel;
                 audiokaraoke["mono-level"] = CConfig.Config.Sound.KaraokeEffectLevel;
-               
+
                 convert.Link(audiokaraoke);
             }
             else
@@ -150,8 +149,8 @@ namespace Vocaluxe.Lib.Sound.Playback.GstreamerSharp
                 convert.Link(audiosink);
             }
 
-            
-            
+
+
             Pad pad = convert.GetStaticPad("sink");
             GhostPad ghostpad = new GhostPad("sink", pad);
 
@@ -244,13 +243,13 @@ namespace Vocaluxe.Lib.Sound.Playback.GstreamerSharp
             // Should not be needed but we had an error report (#226) - so we double check here to prevent a crash
             if (element == null)
                 return;
-            
+
             if (element.TargetState == State.Playing)
                 element.SetState(State.Paused); //Stop output
             if (_CloseStreamListener != null)
                 _CloseStreamListener.OnCloseStream(this);
             //Now really close it in the background
-            var t = new System.Threading.Thread(() => _TerminateStream(element)) {Name = "GSt Terminate"};
+            var t = new System.Threading.Thread(() => _TerminateStream(element)) { Name = "GSt Terminate" };
             t.Start();
         }
 

@@ -124,7 +124,7 @@ namespace VocaluxeLib.Menu.SongMenu
             _VideoIcon = new CStatic(_Theme.SongMenuList.StaticVideoIcon, _PartyModeID);
             _MedleyCalcIcon = new CStatic(_Theme.SongMenuList.StaticMedleyCalcIcon, _PartyModeID);
             _MedleyTagIcon = new CStatic(_Theme.SongMenuList.StaticMedleyTagIcon, _PartyModeID);
-            _SubElements.AddRange(new IMenuElement[] {_Artist, _Title, _SongLength, _DuetIcon, _VideoIcon, _MedleyCalcIcon, _MedleyTagIcon});
+            _SubElements.AddRange(new IMenuElement[] { _Artist, _Title, _SongLength, _DuetIcon, _VideoIcon, _MedleyCalcIcon, _MedleyTagIcon });
         }
 
         private void _ReadSubTheme()
@@ -422,7 +422,7 @@ namespace VocaluxeLib.Menu.SongMenu
             if (!songOptions.Selection.RandomOnly || (!CBase.Songs.IsInCategory() && songOptions.Selection.CategoryChangeAllowed))
             {
                 if (mouseEvent.Wheel != 0 && CHelper.IsInBounds(_ScrollRect, mouseEvent))
-                    _UpdateList(_Offset +  mouseEvent.Wheel);
+                    _UpdateList(_Offset + mouseEvent.Wheel);
 
                 int lastSelection = _SelectionNr;
                 int i = 0;

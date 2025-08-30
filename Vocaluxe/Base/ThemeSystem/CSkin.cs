@@ -19,12 +19,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Xml.Serialization;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
-using VocaluxeLib.Xml;
-using System.Linq;
 using VocaluxeLib.Log;
+using VocaluxeLib.Xml;
 
 namespace Vocaluxe.Base.ThemeSystem
 {
@@ -47,7 +47,7 @@ namespace Vocaluxe.Base.ThemeSystem
                 get { return string.Join("\r\n", Textures); }
                 set
                 {
-                    string[] entries = value.Split(new string[] {"\r\n", "\n"}, StringSplitOptions.RemoveEmptyEntries);
+                    string[] entries = value.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
                     Textures = entries.Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList();
                 }
             }
@@ -57,7 +57,7 @@ namespace Vocaluxe.Base.ThemeSystem
                 get { return string.Join("\r\n", Videos); }
                 set
                 {
-                    string[] entries = value.Split(new string[] {"\r\n", "\n"}, StringSplitOptions.RemoveEmptyEntries);
+                    string[] entries = value.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
                     Videos = entries.Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList();
                 }
             }
@@ -67,7 +67,7 @@ namespace Vocaluxe.Base.ThemeSystem
                 get { return string.Join("\r\n", Colors); }
                 set
                 {
-                    string[] entries = value.Split(new string[] {"\r\n", "\n"}, StringSplitOptions.RemoveEmptyEntries);
+                    string[] entries = value.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
                     Colors = entries.Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToList();
                 }
             }
@@ -176,7 +176,7 @@ namespace Vocaluxe.Base.ThemeSystem
             // load videos
             foreach (KeyValuePair<string, string> kvp in _Data.Videos)
             {
-                CVideoSkinElement sk = new CVideoSkinElement {FileName = kvp.Value};
+                CVideoSkinElement sk = new CVideoSkinElement { FileName = kvp.Value };
                 if (!File.Exists(Path.Combine(_Folder, sk.FileName)))
                 {
                     CLog.Error("Video \"" + kvp.Key + "\": (" + sk.FileName + ") not found!");

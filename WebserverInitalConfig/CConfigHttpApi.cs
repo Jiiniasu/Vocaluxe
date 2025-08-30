@@ -15,17 +15,17 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using System.Security.Authentication;
-using System.Security.Principal;
-using System.Windows.Forms;
+using NetFwTypeLib;
 using Security.Cryptography;
 using Security.Cryptography.X509Certificates;
 using System;
 using System.Linq;
 using System.Net;
+using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using NetFwTypeLib;
+using System.Security.Principal;
+using System.Windows.Forms;
 
 namespace WebserverInitalConfig
 {
@@ -117,12 +117,12 @@ namespace WebserverInitalConfig
         private X509Certificate2 _GetSelfSignedCert(string subjectName)
         {
             var keyParam = new CngKeyCreationParameters
-                {
-                    ExportPolicy = CngExportPolicies.AllowExport,
-                    KeyCreationOptions = CngKeyCreationOptions.MachineKey | CngKeyCreationOptions.OverwriteExistingKey,
-                    KeyUsage = CngKeyUsages.AllUsages,
-                    Provider = CngProvider.MicrosoftSoftwareKeyStorageProvider,
-                };
+            {
+                ExportPolicy = CngExportPolicies.AllowExport,
+                KeyCreationOptions = CngKeyCreationOptions.MachineKey | CngKeyCreationOptions.OverwriteExistingKey,
+                KeyUsage = CngKeyUsages.AllUsages,
+                Provider = CngProvider.MicrosoftSoftwareKeyStorageProvider,
+            };
 
             keyParam.Parameters.Add(new CngProperty("Length", BitConverter.GetBytes(2048), CngPropertyOptions.None));
 
@@ -144,12 +144,12 @@ namespace WebserverInitalConfig
             }
 
             X509CertificateCreationParameters param = new X509CertificateCreationParameters(new X500DistinguishedName(subjectName))
-                {
-                    SubjectName = new X500DistinguishedName(subjectName),
-                    EndTime = DateTime.Today.AddYears(20) //,SignatureAlgorithm = X509CertificateSignatureAlgorithm.RsaSha512
-                };
+            {
+                SubjectName = new X500DistinguishedName(subjectName),
+                EndTime = DateTime.Today.AddYears(20) //,SignatureAlgorithm = X509CertificateSignatureAlgorithm.RsaSha512
+            };
 
-            OidCollection oc = new OidCollection {new Oid("1.3.6.1.5.5.7.3.1")};
+            OidCollection oc = new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") };
             X509Extension eku = new X509EnhancedKeyUsageExtension(oc, true);
             param.Extensions.Add(eku);
 
@@ -157,9 +157,9 @@ namespace WebserverInitalConfig
 
             byte[] rawData = key.CreateSelfSignedCertificate(param).Export(X509ContentType.Pfx, "");
             var cert = new X509Certificate2(rawData, "", X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet)
-                {
-                    FriendlyName = _RuleName + " Server Certificate"
-                };
+            {
+                FriendlyName = _RuleName + " Server Certificate"
+            };
             return cert;
         }
 

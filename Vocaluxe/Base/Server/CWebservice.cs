@@ -49,14 +49,14 @@ namespace Vocaluxe.Base.Server
                 return;
 
 
-            CVocaluxeServer.DoTask(CVocaluxeServer.SendKeyEvent,key);
+            CVocaluxeServer.DoTask(CVocaluxeServer.SendKeyEvent, key);
         }
 
         public void SendKeyStringEvent(string keyString, bool isShiftPressed = false, bool isAltPressed = false, bool isCtrlPressed = false)
         {
             if (!_CheckRight(EUserRights.UseKeyboard))
                 return;
-           
+
             CVocaluxeServer.DoTask(CVocaluxeServer.SendKeyStringEvent, keyString, isShiftPressed, isAltPressed, isCtrlPressed);
         }
 
@@ -109,7 +109,7 @@ namespace Vocaluxe.Base.Server
                                    CSessionControl.GetUserIdFromSession(sessionKey) != profileId);
 
 
-                return CVocaluxeServer.DoTask(CVocaluxeServer.GetProfileData,profileId, isReadonly);
+                return CVocaluxeServer.DoTask(CVocaluxeServer.GetProfileData, profileId, isReadonly);
             }
             return new SProfileData();
         }
@@ -154,7 +154,7 @@ namespace Vocaluxe.Base.Server
             if (WebOperationContext.Current != null)
                 WebOperationContext.Current.OutgoingResponse.ContentType = "text/html";
 
-            return new MemoryStream(CVocaluxeServer.DoTask(CVocaluxeServer.GetSiteFile,"index.html"));
+            return new MemoryStream(CVocaluxeServer.DoTask(CVocaluxeServer.GetSiteFile, "index.html"));
         }
 
         public Stream GetJsFile(string filename)
@@ -303,12 +303,12 @@ namespace Vocaluxe.Base.Server
             }
 
 
-            String path = CVocaluxeServer.DoTask(CVocaluxeServer.GetMp3Path,songId);
+            String path = CVocaluxeServer.DoTask(CVocaluxeServer.GetMp3Path, songId);
             path = path.Replace("..", "");
 
 
-            if (!File.Exists(path) 
-                || !(path.EndsWith(".mp3", StringComparison.InvariantCulture) 
+            if (!File.Exists(path)
+                || !(path.EndsWith(".mp3", StringComparison.InvariantCulture)
                         || path.EndsWith(".ogg", StringComparison.InvariantCulture)
                         || path.EndsWith(".wav", StringComparison.InvariantCulture)
                         || path.EndsWith(".webm", StringComparison.InvariantCulture)))
@@ -364,7 +364,7 @@ namespace Vocaluxe.Base.Server
 
                 return new SPlaylistData();
             }
-           
+
         }
 
         public void AddSongToPlaylist(int songId, int playlistId, bool allowDuplicates)
@@ -481,7 +481,7 @@ namespace Vocaluxe.Base.Server
         public int AddPlaylist(string playlistName)
         {
             if (!_CheckRight(EUserRights.CreatePlaylists))
-            return -1;
+                return -1;
 
             try
             {

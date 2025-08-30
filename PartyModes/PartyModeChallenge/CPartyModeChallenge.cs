@@ -69,7 +69,7 @@ namespace VocaluxeLib.PartyModes.Challenge
 
     // ReSharper disable ClassNeverInstantiated.Global
     public sealed class CPartyModeChallenge : CPartyMode
-        // ReSharper restore ClassNeverInstantiated.Global
+    // ReSharper restore ClassNeverInstantiated.Global
     {
         public override int MinMics
         {
@@ -158,8 +158,8 @@ namespace VocaluxeLib.PartyModes.Challenge
             _ScreenSongOptions.Selection.RandomOnly = false;
             _ScreenSongOptions.Selection.PartyMode = true;
             _ScreenSongOptions.Selection.CategoryChangeAllowed = true;
-            _ScreenSongOptions.Selection.NumJokers = new int[] {5, 5};
-            _ScreenSongOptions.Selection.TeamNames = new string[] {"foo", "bar"};
+            _ScreenSongOptions.Selection.NumJokers = new int[] { 5, 5 };
+            _ScreenSongOptions.Selection.TeamNames = new string[] { "foo", "bar" };
 
             _ScreenSongOptions.Sorting.SearchString = String.Empty;
             _ScreenSongOptions.Sorting.SearchActive = false;
@@ -383,7 +383,7 @@ namespace VocaluxeLib.PartyModes.Challenge
         public override void LeavingHighscore()
         {
             //Remember sung songs, so they don't will be selected a second time
-            for(int i = 0; i < CBase.Game.GetNumSongs(); i++)
+            for (int i = 0; i < CBase.Game.GetNumSongs(); i++)
                 CBase.Songs.AddPartySongSung(CBase.Game.GetSong(i).ID);
 
             GameData.CurrentRoundNr++;
@@ -497,9 +497,9 @@ namespace VocaluxeLib.PartyModes.Challenge
         {
             int[] jokers = new int[GameData.NumPlayerAtOnce];
             if (GameData.RefillJokers)
-            {                
+            {
                 for (int i = 0; i < jokers.Length; i++)
-                    jokers[i] = GameData.NumJokers;                
+                    jokers[i] = GameData.NumJokers;
             }
             else
             {
@@ -524,7 +524,7 @@ namespace VocaluxeLib.PartyModes.Challenge
         {
             if (GameData.NumPlayerAtOnce < 1 || GameData.ProfileIDs.Count < GameData.NumPlayerAtOnce)
             {
-                _ScreenSongOptions.Selection.TeamNames = new string[] {"foo", "bar"};
+                _ScreenSongOptions.Selection.TeamNames = new string[] { "foo", "bar" };
                 return;
             }
 
@@ -563,7 +563,7 @@ namespace VocaluxeLib.PartyModes.Challenge
                 case ESongSource.TR_SONGSOURCE_CATEGORY:
                     //Save old sorting to roll it back after getting songs for configured category
                     ESongSorting oldSorting = CBase.Config.GetSongSorting();
-                    CBase.Songs.SortSongs(GameData.Sorting, EOffOn.TR_CONFIG_ON, CBase.Config.GetIgnoreArticles() ,String.Empty, EDuetOptions.NoDuets, -1);
+                    CBase.Songs.SortSongs(GameData.Sorting, EOffOn.TR_CONFIG_ON, CBase.Config.GetIgnoreArticles(), String.Empty, EDuetOptions.NoDuets, -1);
 
                     CBase.Songs.SetCategory(GameData.CategoryIndex);
                     avSongs = CBase.Songs.GetVisibleSongs();
@@ -674,7 +674,7 @@ namespace VocaluxeLib.PartyModes.Challenge
             var result = new List<SStats>();
             for (int i = 0; i < GameData.NumPlayerAtOnce; i++)
             {
-                var stat = new SStats {ProfileID = results[i].ProfileID, SingPoints = (int)Math.Round(results[i].Points), Won = 0, GamePoints = 0};
+                var stat = new SStats { ProfileID = results[i].ProfileID, SingPoints = (int)Math.Round(results[i].Points), Won = 0, GamePoints = 0 };
                 result.Add(stat);
             }
 

@@ -31,14 +31,14 @@ namespace Vocaluxe.Base.Server
         static CSessionControl()
         {
             _ActiveSessions = new Dictionary<Guid, CSession>();
-            Timer timer = new Timer(_UserTimeoutCheckIntervall) {AutoReset = true, Enabled = true};
+            Timer timer = new Timer(_UserTimeoutCheckIntervall) { AutoReset = true, Enabled = true };
             timer.Elapsed += _CheckForUserTimeouts;
             timer.Start();
         }
 
         private static void _CheckForUserTimeouts(object sender, ElapsedEventArgs e)
         {
-            var sessionIdsToRemove = _ActiveSessions.Where(pair => (DateTime.Now-pair.Value.LastSeen).TotalMilliseconds > _UserTimeout)
+            var sessionIdsToRemove = _ActiveSessions.Where(pair => (DateTime.Now - pair.Value.LastSeen).TotalMilliseconds > _UserTimeout)
                          .Select(pair => pair.Key)
                          .ToList();
 

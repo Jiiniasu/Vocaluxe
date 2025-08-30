@@ -136,7 +136,7 @@ namespace Vocaluxe.Base
 
         public static int NewPlaylist(string name = "New Playlist")
         {
-            CPlaylistFile pl = new CPlaylistFile {Name = name};
+            CPlaylistFile pl = new CPlaylistFile { Name = name };
             _Playlists.Add(pl);
             return pl.Id;
         }

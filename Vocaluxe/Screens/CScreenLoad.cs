@@ -36,7 +36,7 @@ namespace Vocaluxe.Screens
         private const string _TextStatus = "TextStatus";
         private const string _TextProgramName = "TextProgramName";
 
-        private readonly string[] _IntroVideo = new string[] {"IntroIn", "IntroMid", "IntroOut"};
+        private readonly string[] _IntroVideo = new string[] { "IntroIn", "IntroMid", "IntroOut" };
 
         private Thread _SongLoaderThread;
         private bool _SkipIntro;
@@ -50,7 +50,7 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            _ThemeTexts = new string[] {_TextStatus, _TextProgramName};
+            _ThemeTexts = new string[] { _TextStatus, _TextProgramName };
             _Intros = new CVideoPlayer[_IntroVideo.Length];
             for (int i = 0; i < _Intros.Length; i++)
                 _Intros[i] = new CVideoPlayer();
@@ -60,7 +60,7 @@ namespace Vocaluxe.Screens
         {
             base.HandleInput(keyEvent);
 
-            if (keyEvent.KeyPressed) {}
+            if (keyEvent.KeyPressed) { }
             else
             {
                 switch (keyEvent.Key)
@@ -126,10 +126,10 @@ namespace Vocaluxe.Screens
                 foreach (CVideoPlayer videoPlayer in _Intros)
                     videoPlayer.PreLoad();
             }
-            
+
             _TimerLoadSongsFull = CBenchmark.Time("Loaded Songs Full");
-            
-            _SongLoaderThread = new Thread(CSongs.LoadSongs) {Name = "SongLoader", IsBackground = true};
+
+            _SongLoaderThread = new Thread(CSongs.LoadSongs) { Name = "SongLoader", IsBackground = true };
             _SongLoaderThread.Start();
             CBackgroundMusic.OwnSongsAvailable = false;
 

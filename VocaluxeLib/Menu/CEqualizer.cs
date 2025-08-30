@@ -199,7 +199,7 @@ namespace VocaluxeLib.Menu
             }
         }
 
-        public void UnloadSkin() {}
+        public void UnloadSkin() { }
 
         public void LoadSkin()
         {

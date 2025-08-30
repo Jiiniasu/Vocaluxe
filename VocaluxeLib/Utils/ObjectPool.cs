@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace VocaluxeLib.Utils
 {
@@ -52,7 +48,7 @@ namespace VocaluxeLib.Utils
         /// <param name="item">The object instance that is given back to the pool.</param>
         public void PutObject(T item)
         {
-            if(_Objects.Count < _Poolsize)
+            if (_Objects.Count < _Poolsize)
                 _Objects.Add(item);
             else
                 (item as IDisposable)?.Dispose();

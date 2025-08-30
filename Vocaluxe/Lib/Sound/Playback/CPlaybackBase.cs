@@ -65,7 +65,7 @@ namespace Vocaluxe.Lib.Sound.Playback
 
         public int GetGlobalVolume()
         {
-            return (_Initialized) ? (int) Math.Round(_GlobalVolume * 100) : 100;
+            return (_Initialized) ? (int)Math.Round(_GlobalVolume * 100) : 100;
         }
 
         public void SetGlobalVolume(int volume)
@@ -74,7 +74,7 @@ namespace Vocaluxe.Lib.Sound.Playback
                 return;
             float volumeF = volume.Clamp(0, 100) / 100f;
             foreach (IAudioStream stream in _Streams)
-                if(!stream.IsFading)
+                if (!stream.IsFading)
                     stream.VolumeMax = volumeF;
             _GlobalVolume = volumeF;
         }
