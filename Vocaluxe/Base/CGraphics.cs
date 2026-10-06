@@ -612,14 +612,24 @@ namespace Vocaluxe.Base
             return CurrentScreen.UpdateGame();
         }
 
-        // Screen-independent overlay: shows a small banner whenever cloud is enabled but we are
-        // not currently connected, so players can see that cloud/online features are unavailable.
+        // Screen-independent overlay: shows a small banner whenever there is something the player
+        // should notice about the cloud - a score that is queued (not yet uploaded), or that the
+        // connection is currently down.
         private static void _DrawCloudStatusOverlay()
         {
-            if (!CConfig.UseCloudServer || CCloud.IsConnected)
+            if (!CConfig.UseCloudServer)
                 return;
 
-            string message = "Cloud connection lost";
+            bool connected = CCloud.IsConnected;
+            int pending = CCloud.PendingUploads;
+
+            string message;
+            if (pending > 0)
+                message = pending == 1 ? "1 score not uploaded yet" : pending + " scores not uploaded yet";
+            else if (!connected)
+                message = "Cloud connection lost";
+            else
+                return;
 
             CFont font = new CFont("Normal", EStyle.Normal, 24);
             float textWidth = CFonts.GetTextWidth(message, font);
