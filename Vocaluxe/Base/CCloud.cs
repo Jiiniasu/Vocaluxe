@@ -68,6 +68,16 @@ namespace Vocaluxe.Base
         // in-flight ConnectAsync/ReceiveAsync and to stop the reconnect loop.
         private static readonly CancellationTokenSource _ShutdownCts = new CancellationTokenSource();
         private static int _ShutdownRequested;
+        private static volatile bool _Connected;
+
+        /// <summary>
+        /// True while the WebSocket to the cloud server is open; false while it is down,
+        /// reconnecting, or before the first successful connection.
+        /// </summary>
+        public static bool IsConnected
+        {
+            get { return _Connected; }
+        }
         private static readonly JsonSerializerSettings _JsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
         private static string _State = "loading_game";
         // Written by the WebSocket dispatch, read via isUpdated(). Both run on the UI thread, so
@@ -178,6 +188,8 @@ namespace Vocaluxe.Base
                 oldSocket = _WebSocket;
                 _WebSocket = newSocket;
             }
+            _Connected = newSocket != null && newSocket.State == WebSocketState.Open;
+
             if (oldSocket != null)
             {
                 try { oldSocket.Dispose(); } catch { /* best-effort teardown of the replaced socket */ }
@@ -334,6 +346,9 @@ namespace Vocaluxe.Base
 
                         // Read and dispatch until the connection drops; then reconnect below.
                         await ReadLoop();
+
+                        // Reaching this point only happens once the socket has dropped.
+                        _Connected = false;
                     }
                     catch (Exception e)
                     {

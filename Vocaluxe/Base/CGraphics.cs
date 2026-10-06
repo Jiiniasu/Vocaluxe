@@ -267,6 +267,7 @@ namespace Vocaluxe.Base
                 popup.Draw();
 
             _Cursor.Draw();
+            _DrawCloudStatusOverlay();
             _DrawDebugInfos();
 
             return true;
@@ -609,6 +610,28 @@ namespace Vocaluxe.Base
             if (_CurrentPopupScreen != EPopupScreens.NoPopup)
                 _PopupScreens[(int)_CurrentPopupScreen].UpdateGame();
             return CurrentScreen.UpdateGame();
+        }
+
+        // Screen-independent overlay: shows a small banner whenever cloud is enabled but we are
+        // not currently connected, so players can see that cloud/online features are unavailable.
+        private static void _DrawCloudStatusOverlay()
+        {
+            if (!CConfig.UseCloudServer || CCloud.IsConnected)
+                return;
+
+            string message = "Cloud connection lost";
+
+            CFont font = new CFont("Normal", EStyle.Normal, 24);
+            float textWidth = CFonts.GetTextWidth(message, font);
+            float textHeight = CFonts.GetTextHeight(message, font);
+            const float pad = 16f;
+            float width = textWidth + pad * 2f;
+            float height = textHeight + pad;
+            float x = (CSettings.RenderW - width) / 2f;
+            float y = 14f;
+
+            CDraw.DrawRect(new SColorF(0.10f, 0.12f, 0.18f, 0.82f), new SRectF(x, y, width, height, CSettings.ZNear));
+            CFonts.DrawText(message, font, x + pad, y + pad / 2f, CSettings.ZNear, new SColorF(1f, 1f, 1f, 1f));
         }
 
         private static void _DrawDebugInfos()
