@@ -64,6 +64,10 @@ namespace Vocaluxe.Base
         });
         private static readonly object _WebSocketLock = new object();
         private static ClientWebSocket _WebSocket;
+        // One-shot cancellation for the whole cloud subsystem: Shutdown() cancels it to abort any
+        // in-flight ConnectAsync/ReceiveAsync and to stop the reconnect loop.
+        private static readonly CancellationTokenSource _ShutdownCts = new CancellationTokenSource();
+        private static int _ShutdownRequested;
         private static readonly JsonSerializerSettings _JsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
         private static string _State = "loading_game";
         // Written by the WebSocket dispatch, read via isUpdated(). Both run on the UI thread, so
@@ -180,6 +184,54 @@ namespace Vocaluxe.Base
             }
         }
 
+        private static bool IsShuttingDown()
+        {
+            return _ShutdownCts.IsCancellationRequested;
+        }
+
+        /// <summary>
+        /// Cleanly tears down the cloud connection: notifies the peer, aborts any in-flight I/O,
+        /// stops the reconnect loop and disposes the socket. Safe to call more than once.
+        /// </summary>
+        public static void Shutdown()
+        {
+            // First caller drives the teardown; any subsequent call is a no-op.
+            if (Interlocked.Exchange(ref _ShutdownRequested, 1) == 1)
+                return;
+
+            CLog.CCloudLog.Information("Shutting down cloud connection...");
+
+            // Notify the peer, entirely on the thread pool so that awaiting the send cannot deadlock
+            // the UI thread's message pump, then wait (bounded) for it to be delivered.
+            try
+            {
+                Task.Run(delegate
+                {
+                    try
+                    {
+                        Task sendState = setState("shutting_down");
+                        // Give the message a moment to reach the peer before we tear the socket down.
+                        sendState.Wait(TimeSpan.FromMilliseconds(500));
+                    }
+                    catch
+                    {
+                        // Best effort: a failed notification must not block shutdown.
+                    }
+                }).GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                CLog.CCloudLog.Error(e, "Could not send 'shutting_down' state: {msg}", CLog.Params(e.Message));
+            }
+
+            // Abort any in-flight ConnectAsync/ReceiveAsync (which unwinds the reconnect loop) and
+            // release the socket.
+            try { _ShutdownCts.Cancel(); } catch { /* ignore */ }
+            PublishWebSocket(null);
+
+            CLog.CCloudLog.Information("Cloud connection closed");
+        }
+
         // Sends one text frame. Never faults: a send that cannot go through (socket closed,
         // mid-reconnect, ...) is logged and swallowed, so callers may ignore the returned Task
         // without producing an unobserved-task exception.
@@ -232,7 +284,7 @@ namespace Vocaluxe.Base
                 WebSocketReceiveResult result;
                 do
                 {
-                    result = await ws.ReceiveAsync(segment, CancellationToken.None);
+                    result = await ws.ReceiveAsync(segment, _ShutdownCts.Token);
                     ms.Write(segment.Array, segment.Offset, result.Count);
                     if (ms.Length > MaxMessageBytes)
                         throw new InvalidOperationException("Incoming websocket message exceeds the allowed size.");
@@ -255,31 +307,50 @@ namespace Vocaluxe.Base
             {
                 while (true)
                 {
+                    if (IsShuttingDown())
+                        break;
+
                     try
                     {
                         if (!await TryConnect())
                         {
+                            if (IsShuttingDown())
+                                break;
                             // Server not reachable: back off briefly, then try again. The game keeps
                             // running locally in the meantime.
-                            await Task.Delay(TimeSpan.FromSeconds(5));
+                            await Task.Delay(TimeSpan.FromSeconds(5), _ShutdownCts.Token);
                             continue;
                         }
+
+                        if (IsShuttingDown())
+                            break;
 
                         await SubscribeToChannel("game-control");
                         await SubscribeToChannel("game-state");
                         await setState(_State);
+
+                        if (IsShuttingDown())
+                            break;
 
                         // Read and dispatch until the connection drops; then reconnect below.
                         await ReadLoop();
                     }
                     catch (Exception e)
                     {
+                        if (IsShuttingDown())
+                            break;
                         CLog.CCloudLog.Error(e, "Cloud connection error, will reconnect: {msg}", CLog.Params(e.Message));
                     }
 
+                    if (IsShuttingDown())
+                        break;
+
                     CLog.CCloudLog.Warning("Connection to websocket closed; reconnecting...");
-                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await Task.Delay(TimeSpan.FromSeconds(1), _ShutdownCts.Token);
                 }
+
+                // The only way out of the loop is being asked to shut down.
+                CLog.CCloudLog.Information("Cloud service stopped (shutting down)");
             }
             catch (Exception e)
             {
@@ -298,11 +369,12 @@ namespace Vocaluxe.Base
                 await _WSRetryPolicy.ExecuteAsync(async () =>
                 {
                     ClientWebSocket ws = new ClientWebSocket();
-                    using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10)))
+                    using (var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(10)))
+                    using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_ShutdownCts.Token, timeoutCts.Token))
                     {
                         try
                         {
-                            await ws.ConnectAsync(new Uri(uri), cts.Token);
+                            await ws.ConnectAsync(new Uri(uri), linkedCts.Token);
                             newSocket = ws;
                         }
                         catch

@@ -316,7 +316,7 @@ namespace Vocaluxe
         {
             if (CConfig.UseCloudServer)
             {
-                CCloud.setState("shutting_down");
+                CCloud.Shutdown();
             }
             // Unloading in reverse order
             try
