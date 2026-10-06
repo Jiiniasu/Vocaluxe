@@ -27,6 +27,10 @@ namespace Vocaluxe.Base
             // Disabling it only skips the handshake; the body is sent with the headers,
             // which is all the server expects.
             System.Net.ServicePointManager.Expect100Continue = false;
+
+            // Never let an unobserved task fault (e.g. a screen ignoring a fire-and-forget cloud
+            // send) bring the whole process down - log it instead.
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
         }
 
         private static readonly HttpClient _Client = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
@@ -50,15 +54,22 @@ namespace Vocaluxe.Base
                 CLog.CCloudLog.Information("HTTP retry attempt {attempt}...", CLog.Params(retryAttempt));
                 return TimeSpan.FromSeconds(Math.Min(6, Math.Pow(2, retryAttempt)));
             });
-        private static readonly AsyncRetryPolicy _WSRetryPolicy = Policy.Handle<WebSocketException>().WaitAndRetryAsync(6, retryAttempt =>
+        // Broad handling: any connect failure (WebSocketException, auth, socket, timeout, bad URI)
+        // is retried with capped backoff, after which Init() gives up for the round and retries
+        // gently. This keeps a down server from ever crashing the game.
+        private static readonly AsyncRetryPolicy _WSRetryPolicy = Policy.Handle<Exception>().WaitAndRetryAsync(4, retryAttempt =>
         {
-            CLog.CCloudLog.Information("Retry attempt {attempt}...", CLog.Params(retryAttempt));
-            return TimeSpan.FromSeconds(Math.Pow(2, retryAttempt));
+            CLog.CCloudLog.Information("WS retry attempt {attempt}...", CLog.Params(retryAttempt));
+            return TimeSpan.FromSeconds(Math.Min(4, Math.Pow(2, retryAttempt)));
         });
+        private static readonly object _WebSocketLock = new object();
         private static ClientWebSocket _WebSocket;
         private static readonly JsonSerializerSettings _JsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
         private static string _State = "loading_game";
+        // Written by the WebSocket dispatch, read via isUpdated(). Both run on the UI thread, so
+        // no extra synchronization is required.
         private static DateTime _LastPlayerChange = DateTime.Now;
+        // Set by the WebSocket dispatch (UI thread) and read by the game loop (UI thread).
         public static bool PauseSong;
         public static bool StopSong;
         public static bool RestartSong;
@@ -147,15 +158,55 @@ namespace Vocaluxe.Base
             }
         }
 
-        private static Task sendString(ClientWebSocket ws, String data, CancellationToken cancellation)
+        private static ClientWebSocket GetWebSocket()
         {
-            var encoded = Encoding.UTF8.GetBytes(data);
-            var buffer = new ArraySegment<Byte>(encoded, 0, encoded.Length);
-            CLog.CCloudLog.Information("Sending Websocket message: {data}", CLog.Params(data));
-            return ws.SendAsync(buffer, WebSocketMessageType.Text, true, cancellation);
+            lock (_WebSocketLock)
+            {
+                return _WebSocket;
+            }
         }
 
-        private static Task subscribeToChannel(string channel)
+        private static void PublishWebSocket(ClientWebSocket newSocket)
+        {
+            ClientWebSocket oldSocket;
+            lock (_WebSocketLock)
+            {
+                oldSocket = _WebSocket;
+                _WebSocket = newSocket;
+            }
+            if (oldSocket != null)
+            {
+                try { oldSocket.Dispose(); } catch { /* best-effort teardown of the replaced socket */ }
+            }
+        }
+
+        // Sends one text frame. Never faults: a send that cannot go through (socket closed,
+        // mid-reconnect, ...) is logged and swallowed, so callers may ignore the returned Task
+        // without producing an unobserved-task exception.
+        private static async Task SendToSocket(string data)
+        {
+            ClientWebSocket ws = GetWebSocket();
+            if (ws == null || ws.State != WebSocketState.Open)
+            {
+                CLog.CCloudLog.Warning("Websocket send skipped (no open socket), {len} bytes", CLog.Params(data != null ? data.Length : 0));
+                return;
+            }
+
+            byte[] encoded = Encoding.UTF8.GetBytes(data);
+            var segment = new ArraySegment<Byte>(encoded, 0, encoded.Length);
+            CLog.CCloudLog.Information("Sending Websocket message: {data}", CLog.Params(data));
+
+            try
+            {
+                await ws.SendAsync(segment, WebSocketMessageType.Text, true, CancellationToken.None);
+            }
+            catch (Exception e)
+            {
+                CLog.CCloudLog.Error(e, "Websocket send failed: {msg}", CLog.Params(e.Message));
+            }
+        }
+
+        private static Task SubscribeToChannel(string channel)
         {
             string message = JsonConvert.SerializeObject(new
             {
@@ -167,21 +218,24 @@ namespace Vocaluxe.Base
                 }
             });
 
-            return sendString(_WebSocket, message, CancellationToken.None);
+            return SendToSocket(message);
         }
 
-        private static async Task<String> readString(ClientWebSocket ws)
+        // Bounded receive into a MemoryStream so a large (or hostile) frame cannot OOM the client.
+        private static async Task<string> ReadFromSocket(ClientWebSocket ws)
         {
-            ArraySegment<Byte> buffer = new ArraySegment<byte>(new Byte[8192]);
-
-            WebSocketReceiveResult result = null;
+            const int MaxMessageBytes = 8 * 1024 * 1024;
 
             using (var ms = new MemoryStream())
             {
+                var segment = new ArraySegment<Byte>(new Byte[8192]);
+                WebSocketReceiveResult result;
                 do
                 {
-                    result = await ws.ReceiveAsync(buffer, CancellationToken.None);
-                    ms.Write(buffer.Array, buffer.Offset, result.Count);
+                    result = await ws.ReceiveAsync(segment, CancellationToken.None);
+                    ms.Write(segment.Array, segment.Offset, result.Count);
+                    if (ms.Length > MaxMessageBytes)
+                        throw new InvalidOperationException("Incoming websocket message exceeds the allowed size.");
                 }
                 while (!result.EndOfMessage);
 
@@ -194,86 +248,242 @@ namespace Vocaluxe.Base
 
         public static async void Init()
         {
-            while (true)
+            // async void: an exception escaping this method would be raised on the UI
+            // SynchronizationContext and terminate the process. This top-level catch guarantees the
+            // cloud service can only ever stop trying, never crash the game.
+            try
             {
-                CLog.CCloudLog.Information("Connecting to websocket: {uri}", CLog.Params(CConfig.CloudServerWebsocketURI));
-                await _WSRetryPolicy.ExecuteAsync(async () =>
+                while (true)
                 {
-                    _WebSocket = new ClientWebSocket();
-                    await _WebSocket.ConnectAsync(new Uri(CConfig.CloudServerWebsocketURI), CancellationToken.None);
-                });
-                CLog.CCloudLog.Information("Websocket status: {status}", CLog.Params(_WebSocket.State.ToString()));
-                await subscribeToChannel("game-control");
-                await subscribeToChannel("game-state");
-                await setState(_State);
-                while (_WebSocket.State == WebSocketState.Open)
-                {
-                    EventMessage message;
                     try
                     {
-                        string incoming = await readString(_WebSocket);
-                        CLog.CCloudLog.Information("Received message: {data}", CLog.Params(incoming));
-                        message = JsonConvert.DeserializeObject<EventMessage>(incoming);
+                        if (!await TryConnect())
+                        {
+                            // Server not reachable: back off briefly, then try again. The game keeps
+                            // running locally in the meantime.
+                            await Task.Delay(TimeSpan.FromSeconds(5));
+                            continue;
+                        }
+
+                        await SubscribeToChannel("game-control");
+                        await SubscribeToChannel("game-state");
+                        await setState(_State);
+
+                        // Read and dispatch until the connection drops; then reconnect below.
+                        await ReadLoop();
                     }
                     catch (Exception e)
                     {
-                        CLog.CCloudLog.Error(e, "Websocket error: {ExceptionMessage}", CLog.Params(e.Message));
-                        break;
+                        CLog.CCloudLog.Error(e, "Cloud connection error, will reconnect: {msg}", CLog.Params(e.Message));
                     }
-                    CLog.CCloudLog.Information("Event \"{eventName}\" received with data: {data}", CLog.Params(message.eventName, message.data));
-                    switch (message.eventName)
+
+                    CLog.CCloudLog.Warning("Connection to websocket closed; reconnecting...");
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                }
+            }
+            catch (Exception e)
+            {
+                CLog.CCloudLog.Error(e, "Cloud service stopped: {msg}", CLog.Params(e.Message));
+            }
+        }
+
+        private static async Task<bool> TryConnect()
+        {
+            string uri = CConfig.CloudServerWebsocketURI;
+            CLog.CCloudLog.Information("Connecting to websocket: {uri}", CLog.Params(uri));
+
+            ClientWebSocket newSocket = null;
+            try
+            {
+                await _WSRetryPolicy.ExecuteAsync(async () =>
+                {
+                    ClientWebSocket ws = new ClientWebSocket();
+                    using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10)))
                     {
-                        case "previewSong":
-                            if (CGraphics.CurrentScreen.GetType() == typeof(Screens.CScreenSong))
-                                PreviewSong(JsonConvert.DeserializeObject<EventData>(message.data).id);
-                            break;
-                        case "startSong":
-                            if (CGraphics.CurrentScreen.GetType() == typeof(Screens.CScreenSong))
-                            {
-                                int songId = JsonConvert.DeserializeObject<EventData>(message.data).id;
-                                await setState("preparing_song", songId);
-                                StopSong = false;
-                                StartSong(songId);
-                            }
-                            break;
-                        case "togglePause":
-                            PauseSong = !PauseSong;
-                            break;
-                        case "stopSong":
-                            StopSong = true;
-                            break;
-                        case "restartSong":
-                            RestartSong = true;
-                            break;
-                        case "PlayerUpdated":
-                            CloudPlayer player = JsonConvert.DeserializeObject<CloudPlayer>(message.data);
-                            CGame.Players[player.Id - 1].ProfileID = player.ProfileGuid;
-                            CGame.Players[player.Id - 1].Difficulty = player.Difficulty;
-                            CGame.Players[player.Id - 1].ToneHelperText = player.ToneHelperText;
-                            CGame.Players[player.Id - 1].VoiceNr = player.Voice;
-                            _LastPlayerChange = DateTime.Now;
-                            break;
-                        default:
-                            break;
+                        try
+                        {
+                            await ws.ConnectAsync(new Uri(uri), cts.Token);
+                            newSocket = ws;
+                        }
+                        catch
+                        {
+                            ws.Dispose();
+                            throw;
+                        }
+                    }
+                });
+            }
+            catch (Exception e)
+            {
+                CLog.CCloudLog.Error(e, "Websocket connect failed: {msg}", CLog.Params(e.Message));
+                return false;
+            }
+
+            if (newSocket == null || newSocket.State != WebSocketState.Open)
+            {
+                CLog.CCloudLog.Warning("Websocket connect did not reach Open state");
+                return false;
+            }
+
+            CLog.CCloudLog.Information("Websocket connected");
+            PublishWebSocket(newSocket);
+            return true;
+        }
+
+        private static async Task ReadLoop()
+        {
+            while (true)
+            {
+                ClientWebSocket ws = GetWebSocket();
+                if (ws == null || ws.State != WebSocketState.Open)
+                    return;
+
+                EventMessage message = null;
+                try
+                {
+                    string incoming = await ReadFromSocket(ws);
+                    CLog.CCloudLog.Information("Received message: {data}", CLog.Params(incoming));
+                    message = JsonConvert.DeserializeObject<EventMessage>(incoming);
+                }
+                catch (Exception e)
+                {
+                    // A transport or parse problem ends this connection; Init() reconnects.
+                    CLog.CCloudLog.Error(e, "Websocket read error: {msg}", CLog.Params(e.Message));
+                    return;
+                }
+
+                // Dispatch is isolated so one malformed event cannot tear down the whole connection.
+                if (message != null)
+                {
+                    CLog.CCloudLog.Information("Event \"{eventName}\" received with data: {data}", CLog.Params(message.eventName, message.data));
+                    try
+                    {
+                        await DispatchEvent(message);
+                    }
+                    catch (Exception e)
+                    {
+                        CLog.CCloudLog.Error(e, "Error handling event: {msg}", CLog.Params(e.Message));
                     }
                 }
-                CLog.CCloudLog.Warning("Connection to websocket closed!");
             }
-            ;
+        }
+
+        private static async Task DispatchEvent(EventMessage message)
+        {
+            if (message == null || string.IsNullOrEmpty(message.eventName))
+                return;
+
+            switch (message.eventName)
+            {
+                case "previewSong":
+                    if (CGraphics.CurrentScreen.GetType() == typeof(Screens.CScreenSong))
+                        PreviewSong(ExtractIdFromEvent(message));
+                    break;
+
+                case "startSong":
+                    if (CGraphics.CurrentScreen.GetType() == typeof(Screens.CScreenSong))
+                    {
+                        int songId = ExtractIdFromEvent(message);
+                        StopSong = false;
+                        await setState("preparing_song", songId);
+                        StartSong(songId);
+                    }
+                    break;
+
+                case "togglePause":
+                    PauseSong = !PauseSong;
+                    break;
+
+                case "stopSong":
+                    StopSong = true;
+                    break;
+
+                case "restartSong":
+                    RestartSong = true;
+                    break;
+
+                case "PlayerUpdated":
+                    HandlePlayerUpdated(message);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        // Safely extracts the song id from an event, returning -1 (handled as "none") on bad input.
+        private static int ExtractIdFromEvent(EventMessage message)
+        {
+            try
+            {
+                EventData data = JsonConvert.DeserializeObject<EventData>(message.data);
+                return data != null ? data.id : -1;
+            }
+            catch
+            {
+                return -1;
+            }
+        }
+
+        private static void HandlePlayerUpdated(EventMessage message)
+        {
+            try
+            {
+                CloudPlayer player = JsonConvert.DeserializeObject<CloudPlayer>(message.data);
+                if (player == null)
+                    return;
+
+                int index = player.Id - 1;
+                if (index < 0 || index >= CGame.NumPlayers)
+                {
+                    CLog.CCloudLog.Warning("PlayerUpdated ignored: player id {id} out of range", CLog.Params(player.Id));
+                    return;
+                }
+
+                CGame.Players[index].ProfileID = player.ProfileGuid;
+                CGame.Players[index].Difficulty = player.Difficulty;
+                CGame.Players[index].ToneHelperText = player.ToneHelperText;
+                CGame.Players[index].VoiceNr = player.Voice;
+                _LastPlayerChange = DateTime.Now;
+            }
+            catch (Exception e)
+            {
+                CLog.CCloudLog.Error(e, "PlayerUpdated handling failed: {msg}", CLog.Params(e.Message));
+            }
+        }
+
+        // Log (and mark observed) any task fault that no caller awaited, so nothing crashes the app.
+        private static void OnUnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+        {
+            try
+            {
+                foreach (Exception ex in e.Exception.InnerExceptions)
+                {
+                    CLog.CCloudLog.Error(ex, "Unobserved task exception: {msg}", CLog.Params(ex.Message));
+                }
+            }
+            catch
+            {
+                // Never let the handler itself take the process down.
+            }
+            finally
+            {
+                e.SetObserved();
+            }
         }
 
         public static Task setState(string state)
         {
-            string message = JsonConvert.SerializeObject(new GameStateMessage(new GameState(state)), _JsonSerializerSettings);
             _State = state;
-            return sendString(_WebSocket, message, CancellationToken.None);
+            string message = JsonConvert.SerializeObject(new GameStateMessage(new GameState(state)), _JsonSerializerSettings);
+            return SendToSocket(message);
         }
 
         public static Task setState(string state, int songId)
         {
-            string message = JsonConvert.SerializeObject(new GameStateMessage(new GameState(state, songId)), _JsonSerializerSettings);
             _State = state;
-            return sendString(_WebSocket, message, CancellationToken.None);
+            string message = JsonConvert.SerializeObject(new GameStateMessage(new GameState(state, songId)), _JsonSerializerSettings);
+            return SendToSocket(message);
         }
 
         public static bool isUpdated(DateTime lastCheck)
