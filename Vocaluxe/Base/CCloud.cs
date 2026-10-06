@@ -104,9 +104,11 @@ namespace Vocaluxe.Base
         {
             public bool Success;
             // Only meaningful when Success == false.
-            // true  -> transient: no HTTP response at all (network down), safe to retry later.
-            // false -> the server did reply but with an error status (4xx/5xx); with no server-side
-            //          dedupe, blindly retrying risks a double record, so let the caller decide.
+            // true  -> transient, safe to retry later: either no HTTP response at all (network down), or
+            //          the server signalled "wait and retry" (throttle 429 / unavailable 503 / 408). On
+            //          this server a 429 is raised before the round is written, so it cannot duplicate.
+            // false -> the server replied with a permanent or ambiguous error (400/401/403/404, 500/502/
+            //          504); with no server-side dedup, retrying risks a double record, so callers drop it.
             public bool Transient;
             public byte[] Body;      // present only when Success
             public int StatusCode;  // 0 when there was no HTTP response at all
@@ -153,11 +155,17 @@ namespace Vocaluxe.Base
                         CLog.CCloudLog.Information("Status code: {code}", CLog.Params(statusCode));
                         if (statusCode < 200 || statusCode >= 300)
                         {
-                            // The server answered but rejected the request (4xx/5xx). Without server-side
-                            // deduplication, blindly resending risks recording the same score twice, so
-                            // report it as not transient and let the caller decide whether to queue it.
+                            // The server answered but did not succeed.
+                            // 408 / 429 / 503 are the "temporary, not processed, wait and retry" signals:
+                            // our server's throttle throws 429 *before* the controller runs, so the round
+                            // was never written and retrying cannot duplicate. Treat those as transient so
+                            // they are queued and retried later.
+                            // Any other 4xx/5xx (400/401/403/404, 500/502/504) is permanent or ambiguous
+                            // (a 5xx may already have recorded the round), and with no server-side dedup we
+                            // report it as not-retryable so the caller drops it rather than risk a double
+                            // entry.
                             CLog.CCloudLog.Warning("Non-success status {code} from {uri}", CLog.Params(statusCode, uri));
-                            return new CloudPost { Success = false, Transient = false, StatusCode = statusCode };
+                            return new CloudPost { Success = false, Transient = IsRetryableStatus(statusCode), StatusCode = statusCode };
                         }
                         try
                         {
@@ -183,6 +191,15 @@ namespace Vocaluxe.Base
                 CLog.CCloudLog.Error(e, "Unexpected error contacting {uri}: {msg}", CLog.Params(uri, e.Message));
                 return new CloudPost { Success = false, Transient = true, StatusCode = 0 };
             }
+        }
+
+        // "Wait and retry" statuses: transient by definition, and guaranteed not to have been applied
+        // by the server (a 429 is raised before the round is written), so retrying them is safe even
+        // without server-side deduplication. Permanent client errors (4xx) and ambiguous server errors
+        // (500/502/504) are deliberately excluded.
+        private static bool IsRetryableStatus(int statusCode)
+        {
+            return statusCode == 408 || statusCode == 429 || statusCode == 503;
         }
 
         // Convenience wrapper for the read paths (loadSongs, getHighScores, getProfiles, getAvatar),
@@ -728,9 +745,10 @@ namespace Vocaluxe.Base
             }
             else
             {
-                // The server answered with an error status (4xx/5xx). Without server-side deduplication
-                // we cannot retry it safely (a 5xx may already have recorded the score), so drop it and
-                // log clearly rather than risk a double submission.
+                // A permanent or ambiguous error (the safe 429/503/408 cases are handled by the
+                // transient branch above, which queues them). Since a 5xx may already have recorded the
+                // round and we have no server-side deduplication, drop it and log clearly rather than
+                // risk a double entry.
                 CLog.CCloudLog.Warning("putRound was refused by the server (HTTP {code}) and dropped to avoid a double record", CLog.Params(result.StatusCode));
             }
             return new List<int>();
@@ -784,7 +802,9 @@ namespace Vocaluxe.Base
                         break;
                     }
 
-                    // Permanent (4xx/5xx): not safe to retry without server-side deduplication.
+                    // Not a "wait and retry" status (a safe 429/503/408 is kept above for retry), so it
+                    // is a permanent/ambiguous error; with no server dedup, drop it rather than risk a
+                    // duplicate.
                     COutbox.Drop(entry.Id);
                     CLog.CCloudLog.Warning("Dropping queued {ep} (HTTP {code}) - not safe to retry without server dedupe", CLog.Params(entry.Endpoint, result.StatusCode));
                     processed++;
