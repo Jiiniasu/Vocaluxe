@@ -288,6 +288,12 @@ namespace Vocaluxe
                         {
                             CCloud.Init();
                         }
+
+                        // Retry any rounds that were queued for a later upload (e.g. from a previous
+                        // session, or made while offline). Fire-and-forget, off the UI thread - the
+                        // reconnect path in CCloud also triggers a flush, so this only speeds up the
+                        // first chance to deliver them.
+                        System.Threading.Tasks.Task.Run(new Action(CCloud.FlushUploadQueue));
                     }
 
                     //Only reasonable point to call GC.Collect() because initialization may cause lots of garbage
