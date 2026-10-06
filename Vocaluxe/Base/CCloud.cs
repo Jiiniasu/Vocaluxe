@@ -19,12 +19,37 @@ namespace Vocaluxe.Base
 {
     static class CCloud
     {
-        private static readonly HttpClient _Client = new HttpClient();
-        private static readonly AsyncRetryPolicy _HTTPRetryPolicy = Policy.Handle<HttpRequestException>().WaitAndRetryAsync(6, retryAttempt =>
+        static CCloud()
         {
-            CLog.CCloudLog.Information("Retry attempt {attempt}...", CLog.Params(retryAttempt));
-            return TimeSpan.FromSeconds(Math.Pow(2, retryAttempt));
-        });
+            // .NET Framework's HTTP transport automatically appends "Expect: 100-continue"
+            // to POST/PUT requests (default of ServicePointManager.Expect100Continue is true).
+            // The Apache front of our cloud server answers that header with a 400.
+            // Disabling it only skips the handshake; the body is sent with the headers,
+            // which is all the server expects.
+            System.Net.ServicePointManager.Expect100Continue = false;
+        }
+
+        private static readonly HttpClient _Client = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        // Connection-level (HttpRequestException) failures are retried with capped backoff.
+        // 4xx / 5xx responses are deliberately NOT retried: 4xx are permanent client errors, and for
+        // non-idempotent PUTs (e.g. putRound) a 5xx can mean the round was already recorded -
+        // re-sending could duplicate it.
+        private static readonly AsyncRetryPolicy _HTTPRetryPolicy = Policy
+            .Handle<HttpRequestException>()
+            .WaitAndRetryAsync(4, retryAttempt =>
+            {
+                CLog.CCloudLog.Information("HTTP retry attempt {attempt}...", CLog.Params(retryAttempt));
+                return TimeSpan.FromSeconds(Math.Min(8, Math.Pow(2, retryAttempt)));
+            });
+        // Non-idempotent calls (e.g. putRound): same connection-level handling, but with fewer
+        // attempts to further minimize the window in which a duplicate could occur.
+        private static readonly AsyncRetryPolicy _HTTPRetryPolicyNonIdempotent = Policy
+            .Handle<HttpRequestException>()
+            .WaitAndRetryAsync(3, retryAttempt =>
+            {
+                CLog.CCloudLog.Information("HTTP retry attempt {attempt}...", CLog.Params(retryAttempt));
+                return TimeSpan.FromSeconds(Math.Min(6, Math.Pow(2, retryAttempt)));
+            });
         private static readonly AsyncRetryPolicy _WSRetryPolicy = Policy.Handle<WebSocketException>().WaitAndRetryAsync(6, retryAttempt =>
         {
             CLog.CCloudLog.Information("Retry attempt {attempt}...", CLog.Params(retryAttempt));
@@ -38,19 +63,88 @@ namespace Vocaluxe.Base
         public static bool StopSong;
         public static bool RestartSong;
 
-        private static async Task<HttpResponseMessage> SendToCloud(string url, string payload, string info = "")
+        // Sends a JSON payload to the cloud API and returns the raw response body bytes (or null,
+        // with a log entry, if the request fails after retries or returns an error status).
+        //
+        // The whole request runs on the thread pool (Task.Run). This detaches the completion path
+        // from the UI thread's SynchronizationContext, so a synchronous caller (a WinForms screen,
+        // on the UI thread) can block on the result below WITHOUT deadlocking - Polly + HttpClient
+        // would otherwise marshal their continuations back to the very UI thread we are blocked on.
+        private static byte[] PostBytesToCloud(string url, string payload, AsyncRetryPolicy policy)
         {
-            HttpResponseMessage response;
-            CLog.CCloudLog.Information("POST to {uri}...", CLog.Params(url));
-            CLog.CCloudLog.Information("Payload: {payload}...", CLog.Params(payload));
-            return await _HTTPRetryPolicy.ExecuteAsync(async () =>
+            string uri = CConfig.CloudServerURL + url;
+            int payloadLength = payload != null ? payload.Length : 0;
+            CLog.CCloudLog.Information("POST to {uri} (payload {len} bytes)", CLog.Params(uri, payloadLength));
+
+            try
             {
-                var content = new StringContent(payload, Encoding.UTF8, "application/json");
-                response = await _Client.PostAsync(CConfig.CloudServerURL + url, content);
-                CLog.CCloudLog.Information("Status code: {code}", CLog.Params(response.StatusCode));
-                response.EnsureSuccessStatusCode();
-                return response;
-            });
+                return Task.Run(delegate
+                {
+                    HttpResponseMessage response;
+                    try
+                    {
+                        response = policy.ExecuteAsync(async () =>
+                        {
+                            using (var content = new StringContent(payload ?? string.Empty, Encoding.UTF8, "application/json"))
+                                return await _Client.PostAsync(uri, content);
+                        }).GetAwaiter().GetResult();
+                    }
+                    catch (Exception e)
+                    {
+                        CLog.CCloudLog.Error(e, "HTTP request to {uri} failed: {msg}", CLog.Params(uri, e.Message));
+                        return null;
+                    }
+
+                    using (response)
+                    {
+                        int statusCode = (int)response.StatusCode;
+                        CLog.CCloudLog.Information("Status code: {code}", CLog.Params(statusCode));
+                        if (statusCode < 200 || statusCode >= 300)
+                        {
+                            CLog.CCloudLog.Warning("Non-success status {code} from {uri}", CLog.Params(statusCode, uri));
+                            return null;
+                        }
+                        try
+                        {
+                            return response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult();
+                        }
+                        catch (Exception e)
+                        {
+                            CLog.CCloudLog.Error(e, "Reading response body from {uri} failed: {msg}", CLog.Params(uri, e.Message));
+                            return null;
+                        }
+                    }
+                }).GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                // Last-resort guard: nothing from the HTTP layer may ever reach the UI thread.
+                CLog.CCloudLog.Error(e, "Unexpected error contacting {uri}: {msg}", CLog.Params(uri, e.Message));
+                return null;
+            }
+        }
+
+        private static string PostStringToCloud(string url, string payload, AsyncRetryPolicy policy)
+        {
+            byte[] data = PostBytesToCloud(url, payload, policy);
+            return data == null ? null : Encoding.UTF8.GetString(data);
+        }
+
+        // Deserializes a JSON response into T, returning the CLR default on any failure instead of
+        // throwing out through a UI-thread caller.
+        private static T SafeDeserialize<T>(string json)
+        {
+            if (string.IsNullOrEmpty(json))
+                return default(T);
+            try
+            {
+                return JsonConvert.DeserializeObject<T>(json);
+            }
+            catch (Exception e)
+            {
+                CLog.CCloudLog.Error(e, "JSON deserialization failed: {msg}", CLog.Params(e.Message));
+                return default(T);
+            }
         }
 
         private static Task sendString(ClientWebSocket ws, String data, CancellationToken cancellation)
@@ -190,51 +284,75 @@ namespace Vocaluxe.Base
         public static CloudSong[] loadSongs(List<CloudSong> songs)
         {
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, Data = songs });
-            var response = SendToCloud("/api/loadSongs", json).Result.Content;
-            string responseString = response.ReadAsStringAsync().Result;
-            return JsonConvert.DeserializeObject<CloudSong[]>(responseString);
+            CloudSong[] result = SafeDeserialize<CloudSong[]>(PostStringToCloud("/api/loadSongs", json, _HTTPRetryPolicy));
+            return result ?? new CloudSong[0];
         }
         public static CProfile[] getProfiles()
         {
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey });
-
-            var response = SendToCloud("/api/getProfiles", json).Result.Content;
-            string responseString = response.ReadAsStringAsync().Result;
-            return JsonConvert.DeserializeObject<CProfile[]>(responseString);
+            CProfile[] result = SafeDeserialize<CProfile[]>(PostStringToCloud("/api/getProfiles", json, _HTTPRetryPolicy));
+            return result ?? new CProfile[0];
         }
 
         public static Image getAvatar(string fileName)
         {
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, FileName = fileName });
 
-            var response = SendToCloud("/api/getAvatar", json).Result.Content;
-            byte[] responseString = response.ReadAsByteArrayAsync().Result;
+            byte[] data = PostBytesToCloud("/api/getAvatar", json, _HTTPRetryPolicy);
+            if (data == null || data.Length == 0)
+                return null;
 
-            return Image.FromStream(new MemoryStream(responseString));
+            try
+            {
+                // Copy into a Bitmap so the returned image is fully loaded and independent of any
+                // underlying stream's lifetime.
+                using (var ms = new MemoryStream(data))
+                using (var img = Image.FromStream(ms))
+                {
+                    return new Bitmap(img);
+                }
+            }
+            catch (Exception e)
+            {
+                CLog.CCloudLog.Error(e, "Failed to decode cloud avatar: {msg}", CLog.Params(e.Message));
+                return null;
+            }
         }
 
         public static SDBScoreEntry[] getHighScores(int databaseSongId, EGameMode gameMode, EHighscoreStyle highscoreStyle)
         {
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = databaseSongId, GameMode = gameMode, Style = highscoreStyle });
-
-            var response = SendToCloud("/api/getHighScores", json).Result.Content;
-            string responseString = response.ReadAsStringAsync().Result;
-            return JsonConvert.DeserializeObject<SDBScoreEntry[]>(responseString);
+            SDBScoreEntry[] result = SafeDeserialize<SDBScoreEntry[]>(PostStringToCloud("/api/getHighScores", json, _HTTPRetryPolicy));
+            return result ?? new SDBScoreEntry[0];
         }
         public static void putCover(int databaseSongId, string data, string format)
         {
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = databaseSongId, Data = data, Format = format });
-
-            var response = SendToCloud("/api/putCover", json).Result.Content;
+            // Upload is fire-and-forget from the caller's perspective; failures are logged in PostBytesToCloud.
+            PostStringToCloud("/api/putCover", json, _HTTPRetryPolicy);
         }
 
         public static List<int> putRound(SPlayer[] players)
         {
-            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = CSongs.GetSong(players[0].SongID).DataBaseSongID, SongFinished = players[0].SongFinished, Scores = players });
+            if (players == null || players.Length == 0)
+            {
+                CLog.CCloudLog.Warning("putRound skipped: no players in round");
+                return new List<int>();
+            }
 
-            var response = SendToCloud("/api/putRound", json).Result.Content;
-            string responseString = response.ReadAsStringAsync().Result;
-            return JsonConvert.DeserializeObject<List<int>>(responseString);
+            CSong song = CSongs.GetSong(players[0].SongID);
+            if (song == null || song.DataBaseSongID < 0)
+            {
+                CLog.CCloudLog.Warning("putRound skipped: no valid cloud song for the round");
+                return new List<int>();
+            }
+
+            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = song.DataBaseSongID, SongFinished = players[0].SongFinished, Scores = players });
+
+            // Non-idempotent: use the conservative policy (connection failures only) to avoid
+            // submitting the same round twice if the server already accepted it.
+            List<int> result = SafeDeserialize<List<int>>(PostStringToCloud("/api/putRound", json, _HTTPRetryPolicyNonIdempotent));
+            return result ?? new List<int>();
         }
 
         public static void AssignPlayersFromCloud()
@@ -242,12 +360,12 @@ namespace Vocaluxe.Base
             CProfiles.LoadProfiles();
 
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey });
-            var response = SendToCloud("/api/getPlayers", json).Result.Content;
-            string responseString = response.ReadAsStringAsync().Result;
+            CloudPlayer[] cloudPlayers = SafeDeserialize<CloudPlayer[]>(PostStringToCloud("/api/getPlayers", json, _HTTPRetryPolicy));
+            if (cloudPlayers == null)
+                return;
 
-            CloudPlayer[] cloudPlayers = JsonConvert.DeserializeObject<CloudPlayer[]>(responseString);
-
-            for (int i = 0; i < CGame.NumPlayers; i++)
+            int count = Math.Min(CGame.NumPlayers, cloudPlayers.Length);
+            for (int i = 0; i < count; i++)
             {
                 CGame.Players[i].ProfileID = cloudPlayers[i].ProfileGuid;
                 CGame.Players[i].Difficulty = cloudPlayers[i].Difficulty;
