@@ -112,6 +112,9 @@ namespace Vocaluxe.Base
             public bool Transient;
             public byte[] Body;      // present only when Success
             public int StatusCode;  // 0 when there was no HTTP response at all
+            // Seconds the server asked us to wait before retrying (Retry-After header), or 0 if it
+            // did not tell us. Only set on a throttled/unavailable (transient) response.
+            public int RetryAfterSeconds;
         }
 
         // Sends a JSON payload to the cloud API and reports the outcome (see CloudPost above).
@@ -165,7 +168,8 @@ namespace Vocaluxe.Base
                             // report it as not-retryable so the caller drops it rather than risk a double
                             // entry.
                             CLog.CCloudLog.Warning("Non-success status {code} from {uri}", CLog.Params(statusCode, uri));
-                            return new CloudPost { Success = false, Transient = IsRetryableStatus(statusCode), StatusCode = statusCode };
+                            int retryAfter = ParseRetryAfter(response);
+                            return new CloudPost { Success = false, Transient = IsRetryableStatus(statusCode), StatusCode = statusCode, RetryAfterSeconds = retryAfter };
                         }
                         try
                         {
@@ -200,6 +204,23 @@ namespace Vocaluxe.Base
         private static bool IsRetryableStatus(int statusCode)
         {
             return statusCode == 408 || statusCode == 429 || statusCode == 503;
+        }
+
+        // Reads the Retry-After header as a number of seconds (0 if absent or not a non-negative
+        // integer). Laravel's throttle sends a plain integer of seconds, but be defensive.
+        private static int ParseRetryAfter(HttpResponseMessage response)
+        {
+            IEnumerable<string> values;
+            if (response.Headers.TryGetValues("Retry-After", out values))
+            {
+                foreach (string v in values)
+                {
+                    int seconds;
+                    if (int.TryParse(v, out seconds) && seconds >= 0)
+                        return seconds;
+                }
+            }
+            return 0;
         }
 
         // Convenience wrapper for the read paths (loadSongs, getHighScores, getProfiles, getAvatar),
@@ -737,11 +758,15 @@ namespace Vocaluxe.Base
             // The round was NOT recorded server-side.
             if (result.Transient)
             {
-                // No HTTP response was ever received, so the server almost certainly did not store
-                // the round. Queue it so it can be retried later (on reconnect / startup) - even with
-                // no server-side deduplication, retrying after "no reply" is the safe case.
+                // Safe to retry: either no response at all, or a "wait and retry" throttle (429/503)
+                // that the server rejected *before* writing the round. We never got an application of
+                // it, so queueing it cannot produce a duplicate even with no server-side dedup.
                 COutbox.Enqueue(Endpoint, json, Guid.NewGuid().ToString());
                 CLog.CCloudLog.Warning("putRound could not be delivered now - queued for a later upload ({n} pending)", CLog.Params(COutbox.Count));
+
+                // Ask the background flush to retry it promptly. It honors the server's Retry-After
+                // (when this was a throttle) off the UI thread, so this screen doesn't block.
+                FlushOnNextConnection();
             }
             else
             {
@@ -766,7 +791,11 @@ namespace Vocaluxe.Base
             lock (_FlushLock)
             {
                 const int MaxPerPass = 5;
+                const int MaxRetryAfterSeconds = 120;
                 int processed = 0;
+                // At most one server-directed wait per pass, so a persistent throttle cannot turn this
+                // pass into an endless wait/retry loop (across passes it still backs off via MaxAttempts).
+                bool honoredRetryAfter = false;
 
                 while (processed < MaxPerPass)
                 {
@@ -795,9 +824,24 @@ namespace Vocaluxe.Base
 
                     if (result.Transient)
                     {
-                        // Connection is still down: keep the record for the next opportunity, and stop
-                        // this pass (FIFO order preserved, no server hammering).
+                        // Keep the record for a later pass (FIFO order preserved, no hammering).
                         COutbox.BumpAttempt(entry.Id);
+
+                        // If the server throttled us (a 429/503) and told us when to try again, honor
+                        // that wait (capped) and give one more attempt right away - this is the
+                        // cooperative back-off that spaces us out under load. Otherwise (just no
+                        // connection, or we already honored the server this pass) stop this pass and
+                        // let the record be retried at the next opportunity (reconnect / start-up /
+                        // shutdown).
+                        if (result.RetryAfterSeconds > 0 && !honoredRetryAfter)
+                        {
+                            int waitSeconds = Math.Min(result.RetryAfterSeconds, MaxRetryAfterSeconds);
+                            CLog.CCloudLog.Warning("Throttled (HTTP {code}); waiting {s}s before one more try ({n} queued)", CLog.Params(result.StatusCode, waitSeconds, COutbox.Count));
+                            Task.Delay(TimeSpan.FromSeconds(waitSeconds)).GetAwaiter().GetResult();
+                            honoredRetryAfter = true;
+                            continue;   // the same oldest round is now eligible again - attempt it once more
+                        }
+
                         CLog.CCloudLog.Warning("Flush paused: no cloud connection ({n} queued)", CLog.Params(COutbox.Count));
                         break;
                     }
