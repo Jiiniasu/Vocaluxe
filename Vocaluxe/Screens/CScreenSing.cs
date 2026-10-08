@@ -1121,6 +1121,17 @@ namespace Vocaluxe.Screens
                 return;
             }
 
+            // Commit point for the player settings: from here on, difficulty and voice are
+            // frozen for as long as this song plays, so a late console update can no longer
+            // flip the scoring voice of an already starting song (a mid-song flip would
+            // score one part of the song against one voice and the rest against another).
+            for (int p = 0; p < CGame.NumPlayers; p++)
+            {
+                if (!CNotes.IsVoiceIndexValidIn(song.Notes, CGame.Players[p].VoiceNr))
+                    CGame.Players[p].VoiceNr = 0;
+            }
+            CCloud.PlayerSettingsCommitted = true;
+
             string songname = song.Artist + " - " + song.Title;
             int rounds = CGame.GetNumSongs();
             if (rounds > 1)

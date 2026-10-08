@@ -87,6 +87,23 @@ namespace VocaluxeLib.Songs
             get { return _Voices.Count; }
         }
 
+        /// <summary>
+        ///     Checks whether a player-assigned voice index is valid for a song, so a stale or
+        ///     out-of-range index (e.g. left over from a different multi-voice song) can be
+        ///     detected and fallen back to the default (index 0) instead of being scored
+        ///     against the wrong voice.
+        /// </summary>
+        public static bool IsVoiceIndexValidIn(CNotes notes, int index)
+        {
+            if (notes == null)
+                return index == 0;
+
+            if (index < 0)
+                return false;
+
+            return index < notes.VoiceCount;
+        }
+
         public CVoice GetVoice(int index, bool add = false)
         {
             if (add)

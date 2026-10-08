@@ -97,6 +97,13 @@ namespace Vocaluxe.Base
         public static bool PauseSong;
         public static bool StopSong;
         public static bool RestartSong;
+        // True from the moment the sing screen commits to a song (CScreenSing._LoadCurrentSong)
+        // until the next song starts (startSong event). While committed, scoring settings from
+        // player updates (difficulty and voice) must NOT be applied any more, otherwise a
+        // console update that arrives late would flip the voice of an already playing song,
+        // scoring one part of it against one voice and the rest against another. Profile
+        // identity and the tone helper keep applying, as they do not affect the score.
+        public static bool PlayerSettingsCommitted;
 
         // Result of a cloud POST, so a caller (like putRound) can tell a successful request apart
         // from a retryable "the server never answered" failure and a permanent HTTP error status.
@@ -574,6 +581,9 @@ namespace Vocaluxe.Base
                     {
                         int songId = ExtractIdFromEvent(message);
                         StopSong = false;
+                        // A new song starts: the prepare window is open again, so player
+                        // settings (voice and difficulty) apply live until the song commits.
+                        PlayerSettingsCommitted = false;
                         await setState("preparing_song", songId);
                         StartSong(songId);
                     }
@@ -630,9 +640,23 @@ namespace Vocaluxe.Base
                 }
 
                 CGame.Players[index].ProfileID = player.ProfileGuid;
-                CGame.Players[index].Difficulty = player.Difficulty;
                 CGame.Players[index].ToneHelperText = player.ToneHelperText;
-                CGame.Players[index].VoiceNr = player.Voice;
+
+                if (PlayerSettingsCommitted)
+                {
+                    // The current song is already committed: applying a difficulty or voice
+                    // change here would rewrite the scoring of a song that is being evaluated
+                    // mid-way. The change is kept server-side and therefore takes effect for
+                    // the next song, where the prepare window applies it again.
+                    CLog.CCloudLog.Warning("PlayerUpdated: ignoring difficulty {difficulty} and voice {voice} of player {id}, the current song is committed",
+                        CLog.Params((int)player.Difficulty, player.Voice, player.Id));
+                }
+                else
+                {
+                    CGame.Players[index].Difficulty = player.Difficulty;
+                    CGame.Players[index].VoiceNr = player.Voice;
+                }
+
                 _LastPlayerChange = DateTime.Now;
             }
             catch (Exception e)
