@@ -66,6 +66,7 @@ namespace VocaluxeLib
         void AddSongMenuListener(OnSongMenuChanged onSongMenuChanged);
         void RemoveSongMenuListener(OnSongMenuChanged onSongMenuChanged);
         int GetJudgementDistance();
+        float GetNoteSpeed();
     }
 
     public interface ISettings

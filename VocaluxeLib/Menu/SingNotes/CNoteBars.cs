@@ -40,22 +40,65 @@ namespace VocaluxeLib.Menu.SingNotes
         private CText _CurrentToneText = new CText(0, 0, 0, 14, 50, EAlignment.Right, EStyle.Bold, "Outline", new SColorF(Color.White), String.Empty);
 
         /// <summary>
-        ///     Height of one tone
+        ///     Base (home) span of the pitch window in semi-tones
         /// </summary>
-        private readonly float _ToneHeight;
+        private float _HomeSpan;
         /// <summary>
-        ///     Height of one semi-tone
+        ///     Base (home) center of the pitch window in semi-tones
         /// </summary>
-        private readonly float _SemiToneHeight;
+        private float _HomeCenter;
+        /// <summary>
+        ///     Planned transitions of the pitch window, in beat order (empty list = static window)
+        /// </summary>
+        private readonly List<SViewTransition> _ViewPlan = new List<SViewTransition>();
+
+        private struct SViewTransition
+        {
+            public float BeatFrom;
+            public float BeatTo;
+            public float SpanFrom;
+            public float SpanTo;
+            public float CenterFrom;
+            public float CenterTo;
+        }
+
+        private struct SLineWindow
+        {
+            public float StartBeat;
+            public float EndBeat;
+            public float MinTone;
+            public float MaxTone;
+        }
+
         /// <summary>
         ///     Additional height of a note according to selected difficulty
         /// </summary>
-        private readonly float _AddNoteHeight;
+        private readonly int _Difficulty;
+
+        /// <summary>
+        ///     Top (highest semi-tone) of the pitch window
+        /// </summary>
+        private float _ViewTop;
+        /// <summary>
+        ///     Bottom (lowest semi-tone) of the pitch window
+        /// </summary>
+        private float _ViewBottom;
+        /// <summary>
+        ///     Pixels per semi-tone of the pitch window
+        /// </summary>
+        private float _SemiToneHeight;
+        /// <summary>
+        ///     Pixels per tone (2 semi-tones) of the pitch window
+        /// </summary>
+        private float _ToneHeight;
+        /// <summary>
+        ///     Additional height of a note according to selected difficulty
+        /// </summary>
+        private float _AddNoteHeight;
 
         private readonly float _NoteWidth;
 
-        private readonly int _NumNoteLines;
-        private readonly int _RangeSemiToneCount = 18;
+        private readonly int _RangeSemiToneCount;
         private readonly int _RangeSemiToneMax = CBase.Settings.GetToneMin();
         private readonly int _RangeSemiToneMin = CBase.Settings.GetToneMax();
 
@@ -124,7 +167,6 @@ namespace VocaluxeLib.Menu.SingNotes
 
             SPlayer playerData = CBase.Game.GetPlayers()[player];
             CSong Song = CBase.Game.GetSong();
-            _RangeSemiToneCount = Math.Max(Song.MaxNoteRange + 4, _RangeSemiToneCount);
 
             _Lines = Song.Notes.GetVoice(playerData.VoiceNr).Lines;
 
@@ -136,12 +178,24 @@ namespace VocaluxeLib.Menu.SingNotes
                                       .Select(line => line.MaxNote)
                                       .DefaultIfEmpty(0)
                                       .Max() + 2;
+            _RangeSemiToneCount = _RangeSemiToneMax - _RangeSemiToneMin;
 
-            _NumNoteLines = (_RangeSemiToneCount + 1) / 2;
-            _ToneHeight = Rect.H / _NumNoteLines;
-            _SemiToneHeight = _ToneHeight / 2;
-            _NoteWidth = _ToneHeight * 2f;
-            _AddNoteHeight = _ToneHeight / 2f * (2f - (int)playerData.Difficulty);
+            _Difficulty = (int)playerData.Difficulty;
+
+            // Fixed scroll speed (pixels per beat), independent of the voice range of the song.
+            // The reference is the tone height of the default 11 note-lines bar.
+            float refToneHeight = Rect.H / CBase.Settings.GetNumNoteLines();
+            _NoteWidth = refToneHeight * 2f * CBase.Config.GetNoteSpeed();
+
+            // Home window: the whole voice if the song fits within two octaves,
+            // otherwise the preferred two-octave window (never under one octave)
+            _HomeSpan = Math.Max(12f, Math.Min(24f, _RangeSemiToneMax - _RangeSemiToneMin));
+            _HomeCenter = (_RangeSemiToneMin + _RangeSemiToneMax) / 2f;
+
+            //Songs spanning more than two octaves get a plan of gentle
+            //transitions following the sections of the song
+            if (_RangeSemiToneMax - _RangeSemiToneMin > 24f)
+                _BuildViewPlan();
 
             if (playerData.ToneHelperText == EOffOn.TR_CONFIG_ON)
             {
@@ -161,6 +215,8 @@ namespace VocaluxeLib.Menu.SingNotes
 
         public void Draw()
         {
+            _ApplyView(CBase.Game.GetCurrentBeatF());
+
             _DrawJudgeLine(new SColorF(_NoteLinesColor, _NoteLinesColor.A));
 
             if (_CurrentLine == -1 || _CurrentLine >= _Lines.Length)
@@ -262,6 +318,219 @@ namespace VocaluxeLib.Menu.SingNotes
             _LastBeatF = CBase.Game.GetCurrentBeatF();
         }
 
+        /// <summary>
+        ///     Plans the pitch window of a song that spans more than two octaves:
+        ///     the window follows the sections of the song (1-2 octaves at a time),
+        ///     moves gently when the register changes, and expands only when the
+        ///     material on the lane itself spans more than two octaves
+        /// </summary>
+        private void _BuildViewPlan()
+        {
+            const float BandMinSemi = 12f;       //floor: one octave
+            const float BandMaxSemi = 24f;       //soft ceiling: two octaves
+            const float MoveSemi = 4f;           //dead zone: the window stays still for smaller changes
+            const float GlideSemiPerSec = 4f;    //glide speed of transitions (~2 note lines per second)
+            const float GlideMinSec = 0.5f;
+            const float GlideMaxSec = 4f;
+            const float HeadroomSemi = 4f;       //2 semis of breathing room on each side
+
+            float voiceSpan = Math.Max(_RangeSemiToneMax - _RangeSemiToneMin, 2f);
+            float voiceCenter = (_RangeSemiToneMin + _RangeSemiToneMax) / 2f;
+            float bpm = Math.Max(CBase.Game.GetSong().BPM, 1f);
+            float horizon = Rect.W / _NoteWidth;         //beats from the play line to the far edge
+            float behind = _JudgementLine / _NoteWidth;  //beats a note stays on the lane after being played
+
+            List<SLineWindow> lines = new List<SLineWindow>();
+            foreach (CSongLine line in _Lines)
+            {
+                if (line.NoteCount == 0 || line.MinNote == int.MaxValue)
+                    continue;
+                lines.Add(new SLineWindow
+                {
+                    StartBeat = line.StartBeat,
+                    EndBeat = line.EndBeat,
+                    MinTone = line.MinNote,
+                    MaxTone = line.MaxNote
+                });
+            }
+
+            if (lines.Count == 0)
+                return;
+
+            //Events: a line entering (needing room) or leaving (freeing room) the lane
+            var events = new List<KeyValuePair<float, int>>();
+            for (int i = 0; i < lines.Count; i++)
+            {
+                events.Add(new KeyValuePair<float, int>(lines[i].StartBeat - horizon, i << 1));
+                events.Add(new KeyValuePair<float, int>(lines[i].EndBeat + behind, (i << 1) | 1));
+            }
+            events.Sort((a, b) => a.Key.CompareTo(b.Key));
+
+            //Sweep and sample what is on the lane at every event
+            bool[] active = new bool[lines.Count];
+            int activeCount = 0;
+            List<float> times = new List<float>();
+            List<float> los = new List<float>();
+            List<float> his = new List<float>();
+            List<bool> entryFlags = new List<bool>();
+            for (int i = 0; i < events.Count; )
+            {
+                float beat = events[i].Key;
+                int j = i;
+                bool hasEntry = false;
+                while (j < events.Count && events[j].Key == beat)
+                {
+                    int idx = events[j].Value >> 1;
+                    if ((events[j].Value & 1) == 0)
+                    {
+                        hasEntry = true;
+                        if (!active[idx])
+                        {
+                            active[idx] = true;
+                            activeCount++;
+                        }
+                    }
+                    else
+                    {
+                        if (active[idx])
+                        {
+                            active[idx] = false;
+                            activeCount--;
+                        }
+                    }
+                    j++;
+                }
+                i = j;
+
+                if (activeCount == 0)
+                    continue; //the lane is empty: nothing to frame
+
+                float lo = float.MaxValue;
+                float hi = float.MinValue;
+                for (int k = 0; k < lines.Count; k++)
+                {
+                    if (!active[k])
+                        continue;
+                    if (lines[k].MinTone < lo)
+                        lo = lines[k].MinTone;
+                    if (lines[k].MaxTone > hi)
+                        hi = lines[k].MaxTone;
+                }
+                times.Add(beat);
+                los.Add(lo);
+                his.Add(hi);
+                entryFlags.Add(hasEntry);
+            }
+
+            if (times.Count == 0)
+                return;
+
+            //Plan a transition for every material change of the active span
+            float curSpan = _HomeSpan;
+            float curCenter = _HomeCenter;
+            float prevEnd = float.NegativeInfinity;
+
+            for (int i = 0; i < times.Count; i++)
+            {
+                float raw = his[i] - los[i] + HeadroomSemi;
+                float span = (raw <= BandMaxSemi)
+                    ? Math.Max(BandMinSemi, raw)
+                    : Math.Min(raw, voiceSpan);
+                float center = (los[i] + his[i]) / 2f;
+                if (span >= voiceSpan)
+                    center = voiceCenter;
+
+                //The dead zone keeps the window still for small changes, but a hold
+                //is only legal while the current window still covers the active notes
+                //(otherwise content could sit past the window edge)
+                float curBottom = curCenter - curSpan / 2f;
+                float curTop = curCenter + curSpan / 2f;
+                if (los[i] >= curBottom && his[i] <= curTop
+                    && Math.Abs(span - curSpan) < MoveSemi && Math.Abs(center - curCenter) < MoveSemi)
+                    continue;
+
+                float distance = Math.Abs(span - curSpan) + Math.Abs(center - curCenter);
+                float duration = Math.Min(Math.Max(distance / GlideSemiPerSec, GlideMinSec), GlideMaxSec);
+                float durationBeats = duration * bpm / 60f;
+
+                float start;
+                if (entryFlags[i])
+                {
+                    //New notes need the room: the window must be ready when they appear
+                    start = times[i] - durationBeats;
+                    if (start < prevEnd)
+                        start = prevEnd;
+                    if (start >= times[i])
+                        start = times[i]; //no room to glide: settle instantly
+                    float end = times[i];
+                    _ViewPlan.Add(new SViewTransition
+                    {
+                        BeatFrom = start,
+                        BeatTo = end,
+                        SpanFrom = curSpan,
+                        SpanTo = span,
+                        CenterFrom = curCenter,
+                        CenterTo = center
+                    });
+                    prevEnd = end;
+                }
+                else
+                {
+                    //The material just left the lane: relax once it is gone
+                    start = Math.Max(times[i], prevEnd);
+                    float end = start + durationBeats;
+                    _ViewPlan.Add(new SViewTransition
+                    {
+                        BeatFrom = start,
+                        BeatTo = end,
+                        SpanFrom = curSpan,
+                        SpanTo = span,
+                        CenterFrom = curCenter,
+                        CenterTo = center
+                    });
+                    prevEnd = end;
+                }
+
+                curSpan = span;
+                curCenter = center;
+            }
+        }
+
+        /// <summary>
+        ///     Applies the planned pitch window for the current beat (home window,
+        ///     or one of the planned transitions)
+        /// </summary>
+        private void _ApplyView(float beat)
+        {
+            float span = _HomeSpan;
+            float center = _HomeCenter;
+
+            foreach (SViewTransition transition in _ViewPlan)
+            {
+                if (beat <= transition.BeatFrom)
+                    break;
+                float progress = (transition.BeatTo - transition.BeatFrom) > 0.001f
+                    ? (beat - transition.BeatFrom) / (transition.BeatTo - transition.BeatFrom)
+                    : 1f;
+                if (progress < 0f)
+                    progress = 0f;
+                if (progress > 1f)
+                    progress = 1f;
+                //Cosine ease: zero velocity at both ends, smooth middle
+                float ease = 0.5f * (1f - (float)Math.Cos(Math.PI * progress));
+                span = transition.SpanFrom + (transition.SpanTo - transition.SpanFrom) * ease;
+                center = transition.CenterFrom + (transition.CenterTo - transition.CenterFrom) * ease;
+                if (beat < transition.BeatTo)
+                    break;
+            }
+
+            _ViewTop = center + span / 2f;
+            _ViewBottom = center - span / 2f;
+            _SemiToneHeight = Rect.H / span;
+            _ToneHeight = _SemiToneHeight * 2f;
+            _AddNoteHeight = _ToneHeight / 2f * (2f - _Difficulty);
+        }
+
         private void _DrawNotes(SColorF color)
         {
             for (int i = _CurrentLine > 0 ? _CurrentLine - 1 : 0; i < _Lines.Count(); i++)
@@ -296,7 +565,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
             var noteRect = new SRectF(
                 Rect.X + (note.StartBeat - CBase.Game.GetCurrentBeatF()) * _NoteWidth + _JudgementLine,
-                Rect.Y + (_RangeSemiToneCount - (note.Tone - _RangeSemiToneMin)) * _SemiToneHeight - (_AddNoteHeight / 2),
+                Rect.Y + (_ViewTop - note.Tone) * _SemiToneHeight - (_AddNoteHeight / 2),
                 width,
                 _ToneHeight + _AddNoteHeight,
                 Rect.Z
@@ -328,12 +597,12 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _DrawOctaveLines(SColorF octaveColor)
         {
-            int note = _RangeSemiToneMin;
+            int note = (int)Math.Floor(_ViewBottom);
 
             note += 11 - (note % 12);
 
             SRectF octaveRect = Rect;
-            octaveRect.Y = Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (note - _RangeSemiToneMin) + 1)) - (_SemiToneHeight / 2);
+            octaveRect.Y = Rect.Y + (_SemiToneHeight * (_ViewTop - note + 1)) - (_SemiToneHeight / 2);
 
             do
             {
@@ -358,11 +627,11 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _DrawScaleLines(SColorF accidentalsColor)
         {
-            int note = _RangeSemiToneMin;
+            int note = (int)Math.Floor(_ViewBottom);
 
             SRectF accidentalsRect = Rect;
             accidentalsRect.H = _SemiToneHeight;
-            accidentalsRect.Y = Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (note - _RangeSemiToneMin) + 1)) - (_SemiToneHeight / 2);
+            accidentalsRect.Y = Rect.Y + (_SemiToneHeight * (_ViewTop - note + 1)) - (_SemiToneHeight / 2);
 
             do
             {
@@ -408,7 +677,8 @@ namespace VocaluxeLib.Menu.SingNotes
                 _ToneHelperTimer.Reset();
             }
 
-            float toneHeight = (Rect.H / CBase.Settings.GetNumNoteLines());
+            //The tone helper has a fixed size and must not scale with the window
+            float toneHeight = Rect.H / CBase.Settings.GetNumNoteLines();
 
             float toneHelperHeight = toneHeight * 2;
 
@@ -441,7 +711,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
             var drawRect = new SRectF(
                 Rect.X + _JudgementLine - toneHelper.Rect.W,
-                Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (absTonePlayer - _RangeSemiToneMin) + 1)) - (toneHelper.Rect.H / 2),
+                Rect.Y + (_SemiToneHeight * (_ViewTop - absTonePlayer + 1)) - (toneHelper.Rect.H / 2),
                 toneHelper.Rect.W,
                 toneHelper.Rect.H,
                 Rect.Z
@@ -470,7 +740,7 @@ namespace VocaluxeLib.Menu.SingNotes
                 var heightvariance = toneHeight / 6;
                 var voiceTrailRect = new SRectF(
                     Rect.X + _JudgementLine - toneHeight / 2,
-                    (Rect.Y + (_SemiToneHeight * (_RangeSemiToneCount - (absTonePlayer - _RangeSemiToneMin) + 1)) - (size / 2)) + (-heightvariance + (CBase.Game.GetRandom((int)heightvariance * 200) / 100)),
+                    (Rect.Y + (_SemiToneHeight * (_ViewTop - absTonePlayer + 1)) - (size / 2)) + (-heightvariance + (CBase.Game.GetRandom((int)heightvariance * 200) / 100)),
                     size,
                     size,
                     Rect.Z);

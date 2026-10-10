@@ -131,6 +131,11 @@ namespace Vocaluxe.Base
             return CConfig.Config.Game.JudgementDistance;
         }
 
+        public float GetNoteSpeed()
+        {
+            return Math.Max(0.5f, CConfig.Config.Game.NoteSpeed);
+        }
+
         public IEnumerable<string> GetSongFolders()
         {
             return CConfig.SongFolders;
