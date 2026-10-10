@@ -42,24 +42,7 @@ namespace Vocaluxe.Lib.Sound.Record.PortAudio
             try
             {
                 _PaHandle = new CPortAudioHandle();
-
-                int hostAPI = _PaHandle.GetHostApi();
-                int numDevices = PortAudioSharp.PortAudio.Pa_GetDeviceCount();
-                for (int i = 0; i < numDevices; i++)
-                {
-                    PortAudioSharp.PortAudio.PaDeviceInfo info = PortAudioSharp.PortAudio.Pa_GetDeviceInfo(i);
-                    if (info.hostApi == hostAPI && info.maxInputChannels > 0)
-                    {
-                        var dev = new CRecordDevice(i, info.name, info.name + i, info.maxInputChannels);
-
-                        for (int ch = 0; ch < dev.Channels; ++ch)
-                        {
-                            dev.PlayerChannel[ch] = CConfig.GetPlayerFromMicConfig(dev.Name, dev.Driver, ch + 1);
-                        }
-
-                        _Devices.Add(dev);
-                    }
-                }
+                _EnumerateDevices();
 
                 _RecHandle = new IntPtr[_Devices.Count];
                 _MyRecProc = _MyPaStreamCallback;
@@ -74,6 +57,74 @@ namespace Vocaluxe.Lib.Sound.Record.PortAudio
             }
 
             return true;
+        }
+
+        /// <summary>
+        ///     Re-enumerate the record devices (e.g. to pick up a mic that was plugged in during the session)
+        ///     and restart any running streams with the new device list
+        /// </summary>
+        /// <returns>true if success</returns>
+        public bool Rescan()
+        {
+            if (!_Initialized)
+                return false;
+
+            bool wasRunning = _IsRunning();
+            Stop();
+
+            _Devices.Clear();
+            try
+            {
+                _EnumerateDevices();
+            }
+            catch (Exception e)
+            {
+                CLog.Error("Error re-enumerating PortAudio devices: " + e.Message);
+                return false;
+            }
+
+            _RecHandle = new IntPtr[_Devices.Count];
+            if (wasRunning)
+                return Start();
+
+            return true;
+        }
+
+        private void _EnumerateDevices()
+        {
+            int hostAPI = _PaHandle.GetHostApi();
+            int numDevices = PortAudioSharp.PortAudio.Pa_GetDeviceCount();
+            for (int i = 0; i < numDevices; i++)
+            {
+                PortAudioSharp.PortAudio.PaDeviceInfo info = PortAudioSharp.PortAudio.Pa_GetDeviceInfo(i);
+                if (info.hostApi == hostAPI && info.maxInputChannels > 0)
+                {
+                    var dev = new CRecordDevice(i, info.name, info.name + i, info.maxInputChannels);
+
+                    for (int ch = 0; ch < dev.Channels; ++ch)
+                    {
+                        dev.PlayerChannel[ch] = CConfig.GetPlayerFromMicConfig(dev.Name, dev.Driver, ch + 1);
+                    }
+
+                    _Devices.Add(dev);
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Checks if at least one stream is currently open
+        /// </summary>
+        private bool _IsRunning()
+        {
+            if (_RecHandle == null)
+                return false;
+
+            foreach (IntPtr handle in _RecHandle)
+            {
+                if (handle != IntPtr.Zero)
+                    return true;
+            }
+            return false;
         }
 
         /// <summary>

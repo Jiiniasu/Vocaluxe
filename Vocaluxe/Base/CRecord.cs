@@ -68,6 +68,13 @@ namespace Vocaluxe.Base
             return _Record.Stop();
         }
 
+        public static bool Rescan()
+        {
+            if (_Record == null)
+                return false;
+            return _Record.Rescan();
+        }
+
         public static void AnalyzeBuffer(int player)
         {
             _Record.AnalyzeBuffer(player);

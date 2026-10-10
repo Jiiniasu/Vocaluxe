@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PartyModeChallenge\CPartyModeChallangeTest.cs" />
+    <Compile Include="Vocaluxe\CConfigTest.cs" />
     <Content Include="VocaluxeLib\Log\CLogTest.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>CLogTest.cs</LastGenOutput>

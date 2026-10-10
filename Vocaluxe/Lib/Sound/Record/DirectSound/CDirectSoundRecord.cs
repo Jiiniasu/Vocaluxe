@@ -18,6 +18,7 @@
 using SlimDX.DirectSound;
 using System.Collections.Generic;
 using System.Linq;
+using Vocaluxe.Base;
 
 namespace Vocaluxe.Lib.Sound.Record.DirectSound
 {
@@ -33,6 +34,33 @@ namespace Vocaluxe.Lib.Sound.Record.DirectSound
                 return false;
 
             _Sources = new List<CSoundCardSource>();
+            _EnumerateDevices();
+
+            _Initialized = true;
+
+            return true;
+        }
+
+        public bool Rescan()
+        {
+            if (!_Initialized)
+                return false;
+
+            bool wasRunning = _Sources != null && _Sources.Count > 0;
+            Stop();
+            _Sources = new List<CSoundCardSource>();
+
+            _EnumerateDevices();
+
+            if (wasRunning)
+                return Start();
+
+            return true;
+        }
+
+        private void _EnumerateDevices()
+        {
+            _Devices.Clear();
 
             DeviceCollection devices = DirectSoundCapture.GetDevices();
 
@@ -42,13 +70,12 @@ namespace Vocaluxe.Lib.Sound.Record.DirectSound
                 {
                     var device = new CRecordDevice(_Devices.Count, dev.DriverGuid.ToString(), dev.Description, ds.Capabilities.Channels);
 
+                    for (int ch = 0; ch < device.Channels; ++ch)
+                        device.PlayerChannel[ch] = CConfig.GetPlayerFromMicConfig(device.Name, device.Driver, ch + 1);
+
                     _Devices.Add(device);
                 }
             }
-
-            _Initialized = true;
-
-            return true;
         }
 
         public override void Close()

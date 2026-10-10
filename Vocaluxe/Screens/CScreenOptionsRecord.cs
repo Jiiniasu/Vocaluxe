@@ -276,6 +276,10 @@ namespace Vocaluxe.Screens
             for (int i = 0; i < _ChannelEnergy.Length; i++)
                 _ChannelEnergy[i] = 0f;
 
+            //Pick up devices that were plugged or unplugged during the session,
+            //so a mic can resume its configuration without restarting the game
+            CRecord.Rescan();
+
             _UpdateDevices();
 
             for (int p = 0; p < CSettings.MaxNumPlayer; ++p)
@@ -362,26 +366,64 @@ namespace Vocaluxe.Screens
 
         private void _UpdatePlayerTexts()
         {
+            var assigned = new bool[CSettings.MaxNumPlayer];
+
             for (int p = 0; p < CSettings.MaxNumPlayer; ++p)
             {
+                assigned[p] = false;
                 _Texts[_TextChannelPlayer[p]].Text = "–";
                 _Texts[_TextChannelPlayer[p]].Selected = _Buttons[_ButtonsPlayer[p]].Selected;
                 _Texts[_TextDevicePlayer[p]].Text = CLanguage.Translate("TR_SCREENORECORD_PRESS_TO_CONFIGURE");
                 _Texts[_TextDevicePlayer[p]].Selected = _Buttons[_ButtonsPlayer[p]].Selected;
-
             }
 
-            foreach (CRecordDevice device in _Devices)
+            if (_Devices != null)
             {
-                for (int c = 0; c < device.Channels; c++)
+                foreach (CRecordDevice device in _Devices)
                 {
-                    if (device.PlayerChannel[c] > 0)
+                    for (int c = 0; c < device.Channels; c++)
                     {
-                        _Texts[_TextChannelPlayer[device.PlayerChannel[c] - 1]].Text = CConfig.Config.Record.MicConfig[device.PlayerChannel[c] - 1].Channel.ToString();
-                        _Texts[_TextDevicePlayer[device.PlayerChannel[c] - 1]].Text = CConfig.Config.Record.MicConfig[device.PlayerChannel[c] - 1].DeviceName;
+                        if (device.PlayerChannel[c] > 0)
+                        {
+                            int player = device.PlayerChannel[c] - 1;
+                            assigned[player] = true;
+                            _Texts[_TextChannelPlayer[player]].Text = CConfig.Config.Record.MicConfig[player].Channel.ToString();
+                            _Texts[_TextDevicePlayer[player]].Text = CConfig.Config.Record.MicConfig[player].DeviceName;
+                        }
                     }
                 }
             }
+
+            //Show the saved configuration for devices that are not currently present,
+            //so the user can see the configuration will resume when the device is back
+            for (int p = 0; p < CSettings.MaxNumPlayer; ++p)
+            {
+                if (assigned[p])
+                    continue;
+
+                SMicConfig savedConfig = CConfig.Config.Record.MicConfig[p];
+                if (savedConfig.Channel > 0 && !string.IsNullOrEmpty(savedConfig.DeviceName) && !_IsDevicePresent(savedConfig.DeviceName, savedConfig.DeviceDriver))
+                {
+                    _Texts[_TextChannelPlayer[p]].Text = savedConfig.Channel.ToString();
+                    _Texts[_TextDevicePlayer[p]].Text = savedConfig.DeviceName + " (" + CLanguage.Translate("TR_SCREENORECORD_DEVICE_OFFLINE") + ")";
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Checks if a saved device is currently present
+        /// </summary>
+        private bool _IsDevicePresent(string deviceName, string deviceDriver)
+        {
+            if (_Devices == null)
+                return false;
+
+            foreach (CRecordDevice device in _Devices)
+            {
+                if (device.Name == deviceName || device.Driver == deviceDriver)
+                    return true;
+            }
+            return false;
         }
 
         private void _SetEditVisibility(bool b)
@@ -508,7 +550,14 @@ namespace Vocaluxe.Screens
             if (_CheckMicConfig())
             {
                 for (int p = 0; p < CConfig.Config.Record.MicConfig.Length; p++)
+                {
+                    //Leave the configuration of devices that are not currently present untouched,
+                    //so it can resume when the device is available again
+                    if (CConfig.Config.Record.MicConfig[p].Channel != 0 && !_IsDevicePresent(CConfig.Config.Record.MicConfig[p].DeviceName, CConfig.Config.Record.MicConfig[p].DeviceDriver))
+                        continue;
+
                     CConfig.Config.Record.MicConfig[p].Channel = 0;
+                }
 
                 foreach (CRecordDevice device in _Devices)
                 {

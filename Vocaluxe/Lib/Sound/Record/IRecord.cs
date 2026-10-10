@@ -81,6 +81,14 @@ namespace Vocaluxe.Lib.Sound.Record
         bool Stop();
 
         /// <summary>
+        ///     Re-enumerates the record devices, so devices that were plugged or unplugged during the session
+        ///     are picked up (player assignments from the mic-config are applied to the new device list)
+        ///     Any running streams are stopped and started again with the new device list
+        /// </summary>
+        /// <returns>True on success, false on error or not initialized</returns>
+        bool Rescan();
+
+        /// <summary>
         ///     Analyzes the buffer for the given player
         /// </summary>
         /// <param name="player"></param>

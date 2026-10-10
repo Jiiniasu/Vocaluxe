@@ -176,6 +176,7 @@ namespace Vocaluxe.Base
             [XmlAltName("AutoplayPreviewDelay"), DefaultValue(500)] public int AutoplayPreviewDelay;
             [DefaultValue(ELyricsPosition.TR_CONFIG_LYRICSPOSITION_BOTTOM)] public ELyricsPosition LyricsPosition;
             [DefaultValue(0.1f)] public float MinLineBreakTime; //Minimum time to show the text before it is (to be) sung (if possible)
+            [XmlRanged(0, 2), DefaultValue(1.0f)] public float NoteSpeed; //Scroll speed of the notebars
             [DefaultValue(EOffOn.TR_CONFIG_OFF)] public EOffOn UseCloudServer;
             public string CloudServerURL;
             public string CloudServerWebsocketURI;
@@ -548,6 +549,8 @@ namespace Vocaluxe.Base
                     return "Position if lyrics on screen: " + CHelper.ListStrings(Enum.GetNames(typeof(ELyricsPosition)));
                 case "MinLineBreakTime":
                     return "MinLineBreakTime: Value >= 0 in s. Minimum time the text is shown before it is to be sung";
+                case "NoteSpeed":
+                    return "NoteSpeed: Scroll speed of the notebars, value from 0.5 to 2 (default: 1)";
                 case "UseCloudServer":
                     return "Use cloud server for player and high score data: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
                 case "CloudServerURL":
@@ -662,14 +665,9 @@ namespace Vocaluxe.Base
                     //Check if there is one or more channels
                     if (device.Channels >= 2)
                     {
-                        //Set this device to player 1
-                        Config.Record.MicConfig[0].DeviceName = device.Name;
-                        Config.Record.MicConfig[0].DeviceDriver = device.Driver;
-                        Config.Record.MicConfig[0].Channel = 1;
-                        //Set this device to player 2
-                        Config.Record.MicConfig[1].DeviceName = device.Name;
-                        Config.Record.MicConfig[1].DeviceDriver = device.Driver;
-                        Config.Record.MicConfig[1].Channel = 2;
+                        //Set this device to player 1 and 2
+                        _AutoAssignMic(0, device, 1);
+                        _AutoAssignMic(1, device, 2);
 
                         return true;
                     }
@@ -685,16 +683,12 @@ namespace Vocaluxe.Base
                     if (device.Channels >= 1)
                     {
                         //Set this device to player 1
-                        Config.Record.MicConfig[0].DeviceName = device.Name;
-                        Config.Record.MicConfig[0].DeviceDriver = device.Driver;
-                        Config.Record.MicConfig[0].Channel = 1;
+                        _AutoAssignMic(0, device, 1);
 
                         if (device.Channels >= 2)
                         {
                             //Set this device to player 2
-                            Config.Record.MicConfig[1].DeviceName = device.Name;
-                            Config.Record.MicConfig[1].DeviceDriver = device.Driver;
-                            Config.Record.MicConfig[1].Channel = 2;
+                            _AutoAssignMic(1, device, 2);
 
                             return true;
                         }
@@ -706,15 +700,34 @@ namespace Vocaluxe.Base
         }
 
         /// <summary>
+        ///     Assigns a player to a device
+        ///     Players that already have a saved mic-configuration are left untouched, this keeps
+        ///     configurations for devices that are currently not present, so they can resume when the device is back
+        /// </summary>
+        private static void _AutoAssignMic(int player, CRecordDevice device, int channel)
+        {
+            SMicConfig saved = CConfig.Config.Record.MicConfig[player];
+            if (saved.Channel > 0 || !string.IsNullOrEmpty(saved.DeviceName))
+                return;
+
+            CConfig.Config.Record.MicConfig[player].DeviceName = device.Name;
+            CConfig.Config.Record.MicConfig[player].DeviceDriver = device.Driver;
+            CConfig.Config.Record.MicConfig[player].Channel = channel;
+        }
+
+        /// <summary>
         ///     Get assigned player on channel from mic-config for device
+        ///     A device can be matched by its name or its driver (whichever is stable depends on the audio library),
+        ///     combined with the channel. This allows a config to resume when a device comes back with a
+        ///     different index/driver (e.g. PortAudio indices change when devices are added or removed)
         /// </summary>
         public static int GetPlayerFromMicConfig(string device, string devicedriver, int channel)
         {
             for (int p = 0; p < CSettings.MaxNumPlayer; p++)
             {
-                if (CConfig.Config.Record.MicConfig[p].DeviceName == device &&
-                    CConfig.Config.Record.MicConfig[p].DeviceDriver == devicedriver &&
-                    CConfig.Config.Record.MicConfig[p].Channel == channel)
+                if (CConfig.Config.Record.MicConfig[p].Channel == channel &&
+                    (CConfig.Config.Record.MicConfig[p].DeviceName == device ||
+                     CConfig.Config.Record.MicConfig[p].DeviceDriver == devicedriver))
                     return p + 1;
             }
             return 0;
