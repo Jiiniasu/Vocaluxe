@@ -6,8 +6,8 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
-// Vocaluxe is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// Vocaluxe is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 // 
@@ -21,17 +21,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.ExceptionServices;
 using System.Threading;
-using System.Windows.Forms;
 using Vocaluxe.Base;
 using Vocaluxe.Base.Fonts;
-using Vocaluxe.Base.Server;
 using Vocaluxe.Base.ThemeSystem;
-using Vocaluxe.Reporting;
 using VocaluxeLib.Log;
-
-[assembly: InternalsVisibleTo("VocaluxeTests")]
 
 namespace Vocaluxe
 {
@@ -43,19 +37,20 @@ namespace Vocaluxe
 
     static class CMainProgram
     {
-
-
-        private static CSplashScreen _SplashScreen;
-
-        [STAThread, HandleProcessCorruptedStateExceptions]
+        [STAThread]
         // ReSharper disable InconsistentNaming
         private static void Main(string[] args)
-        // ReSharper restore InconsistentNaming
+            // ReSharper restore InconsistentNaming
         {
+            // Run from the executable's directory so the relative data paths (Themes, Languages,
+            // Fonts, ...) resolve regardless of the launch working directory.
+            Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
+
 #if !DEBUG
             AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
 #endif
             AppDomain.CurrentDomain.AssemblyResolve += _AssemblyResolver;
+#if WIN
             COSFunctions.AddEnvironmentPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libs\\unmanaged\\"));
 #if ARCH_X86
             COSFunctions.AddEnvironmentPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libs\\unmanaged\\x86\\"));
@@ -63,7 +58,7 @@ namespace Vocaluxe
 #if ARCH_X64
             COSFunctions.AddEnvironmentPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libs\\unmanaged\\x64\\"));
 #endif
-
+#endif
 
             // Close program if there is another instance running
             if (!_EnsureSingleInstance())
@@ -85,8 +80,6 @@ namespace Vocaluxe
 
         private static void _Run(string[] args)
         {
-            Application.DoEvents();
-
             try
             {
                 // Create data folder
@@ -99,7 +92,7 @@ namespace Vocaluxe
                     CSettings.FileNameCloudLog,
                     CSettings.FileNameCrashMarker,
                     CSettings.GetFullVersionText(),
-                    CReporter.ShowReporterFunc,
+                    null, // CReporter (WinForms) removed; crash dialogs are logged only
                     ELogLevel.Information);
 
                 if (!CProgrammHelper.CheckRequirements())
@@ -109,7 +102,6 @@ namespace Vocaluxe
                 using (CBenchmark.Time("Init Program"))
                 {
                     CMain.Init();
-                    Application.DoEvents();
 
                     // Init Language
                     using (CBenchmark.Time("Init Language"))
@@ -117,8 +109,6 @@ namespace Vocaluxe
                         if (!CLanguage.Init())
                             throw new CLoadingException("Language");
                     }
-
-                    Application.DoEvents();
 
                     // load config
                     using (CBenchmark.Time("Init Config"))
@@ -132,17 +122,12 @@ namespace Vocaluxe
                     // Create folders
                     CSettings.CreateFolders();
 
-                    _SplashScreen = new CSplashScreen();
-                    Application.DoEvents();
-
                     // Init Draw
                     using (CBenchmark.Time("Init Draw"))
                     {
                         if (!CDraw.Init())
                             throw new CLoadingException("drawing");
                     }
-
-                    Application.DoEvents();
 
                     // Init Playback
                     using (CBenchmark.Time("Init Playback"))
@@ -151,8 +136,6 @@ namespace Vocaluxe
                             throw new CLoadingException("playback");
                     }
 
-                    Application.DoEvents();
-
                     // Init Record
                     using (CBenchmark.Time("Init Record"))
                     {
@@ -160,16 +143,12 @@ namespace Vocaluxe
                             throw new CLoadingException("record");
                     }
 
-                    Application.DoEvents();
-
                     // Init VideoDecoder
-                    using (CBenchmark.Time("Init Videodecoder"))
+                    using (CBenchmark.Time("Init VideoDecoder"))
                     {
                         if (!CVideo.Init())
                             throw new CLoadingException("video");
                     }
-
-                    Application.DoEvents();
 
                     // Init Database
                     using (CBenchmark.Time("Init Database"))
@@ -178,8 +157,6 @@ namespace Vocaluxe
                             throw new CLoadingException("database");
                     }
 
-                    Application.DoEvents();
-
                     //Init Webcam
                     using (CBenchmark.Time("Init Webcam"))
                     {
@@ -187,15 +164,11 @@ namespace Vocaluxe
                             throw new CLoadingException("webcam");
                     }
 
-                    Application.DoEvents();
-
                     // Init Background Music
                     using (CBenchmark.Time("Init Background Music"))
                     {
                         CBackgroundMusic.Init();
                     }
-
-                    Application.DoEvents();
 
                     // Init Profiles
                     using (CBenchmark.Time("Init Profiles"))
@@ -203,16 +176,12 @@ namespace Vocaluxe
                         CProfiles.Init();
                     }
 
-                    Application.DoEvents();
-
                     // Init Fonts
                     using (CBenchmark.Time("Init Fonts"))
                     {
                         if (!CFonts.Init())
                             throw new CLoadingException("fonts");
                     }
-
-                    Application.DoEvents();
 
                     // Theme System
                     using (CBenchmark.Time("Init Theme"))
@@ -226,8 +195,6 @@ namespace Vocaluxe
                         CThemes.Load();
                     }
 
-                    Application.DoEvents();
-
                     // Load Cover
                     using (CBenchmark.Time("Init Cover"))
                     {
@@ -235,32 +202,11 @@ namespace Vocaluxe
                             throw new CLoadingException("covertheme");
                     }
 
-                    Application.DoEvents();
-
                     // Init Screens
                     using (CBenchmark.Time("Init Screens"))
                     {
                         CGraphics.Init();
                     }
-
-                    Application.DoEvents();
-
-                    // Init Server
-                    using (CBenchmark.Time("Init Server"))
-                    {
-                        CVocaluxeServer.Init();
-                    }
-
-                    Application.DoEvents();
-
-                    // Init Input
-                    using (CBenchmark.Time("Init Input"))
-                    {
-                        CController.Init();
-                        CController.Connect();
-                    }
-
-                    Application.DoEvents();
 
                     // Init Game
                     using (CBenchmark.Time("Init Game"))
@@ -270,18 +216,14 @@ namespace Vocaluxe
                         CConfig.UsePlayers();
                     }
 
-                    Application.DoEvents();
-
-                    // Init Party Modes
+                    // Init Party Modes (Normal singing mode)
                     using (CBenchmark.Time("Init Party Modes"))
                     {
                         if (!CParty.Init())
                             throw new CLoadingException("Party Modes");
                     }
 
-                    Application.DoEvents();
-
-                    // Init Cloud Communication
+                    // Init Cloud Communication (SSIS-Remote cloud sync)
                     if (CConfig.UseCloudServer)
                     {
                         using (CBenchmark.Time("Init Cloud Communication"))
@@ -304,17 +246,11 @@ namespace Vocaluxe
             catch (Exception e)
             {
                 CLog.Error(e, "Error on start up: {ExceptionMessage}", CLog.Params(e.Message), show: true);
-                if (_SplashScreen != null)
-                    _SplashScreen.Close();
                 _CloseProgram();
                 return;
             }
-            Application.DoEvents();
 
             // Start Main Loop
-            if (_SplashScreen != null)
-                _SplashScreen.Close();
-
             CDraw.MainLoop();
         }
 
@@ -325,24 +261,6 @@ namespace Vocaluxe
                 CCloud.Shutdown();
             }
             // Unloading in reverse order
-            try
-            {
-                CController.Close();
-            }
-            catch (Exception e)
-            {
-                CLog.Error(e, "Error during shutdown! (CController)");
-            }
-
-            try
-            {
-                CVocaluxeServer.Close();
-            }
-            catch (Exception e)
-            {
-                CLog.Error(e, "Error during shutdown! (CVocaluxeServer)");
-            }
-
             try
             {
                 CGraphics.Close();
@@ -452,7 +370,6 @@ namespace Vocaluxe
         }
 
 #if !DEBUG
-        [HandleProcessCorruptedStateExceptions]
         private static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs args)
         {
             var e = (Exception)args.ExceptionObject;
@@ -475,7 +392,7 @@ namespace Vocaluxe
 #endif
 
 #if ARCH_X64
-                string path = "x64";
+                path = "x64";
 #endif
                 path = Path.Combine(CSettings.ProgramFolder, path, arr[0] + ".dll");
                 try
@@ -491,7 +408,7 @@ namespace Vocaluxe
                     }
                     catch (Exception e)
                     {
-                        CLog.Error("Cannot load assembly " + args.Name + " from " + path + ": " + e + "\r\nOuter Error: " + e1);
+                        CLog.Error("Cannot load assembly " + args.Name + " from " + path + ": " + e);
                     }
                 }
 #if LINUX
@@ -501,15 +418,14 @@ namespace Vocaluxe
             return assembly;
         }
 
-        private static readonly Mutex _Mutex = new Mutex(false, Application.ProductName + "-SingleInstanceMutex");
+        private static readonly Mutex _Mutex = new Mutex(false, "Vocaluxe-SingleInstanceMutex");
 
         private static bool _EnsureSingleInstance()
         {
             // wait a few seconds in case that the instance is just shutting down
             if (!_Mutex.WaitOne(TimeSpan.FromSeconds(2), false))
             {
-                //TODO: put it into language file
-                MessageBox.Show("Another Instance of Vocaluxe is already runnning!");
+                CLog.Error("Another instance of Vocaluxe is already running!");
 #if WIN
                 Process currentProcess = Process.GetCurrentProcess();
                 Process[] processes = Process.GetProcessesByName(currentProcess.ProcessName);

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Community.CsharpSqlite/Community.CsharpSqlite.csproj" />
+  <Project Path="Tests/Tests.csproj" />
+  <Project Path="Vocaluxe/Vocaluxe.csproj" />
+  <Project Path="VocaluxeLib/VocaluxeLib.csproj" />
+</Solution>

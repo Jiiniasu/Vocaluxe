@@ -17,7 +17,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Windows.Forms;
 using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Menu;
@@ -52,7 +51,7 @@ namespace Vocaluxe.Screens
         private bool _ProfilesChanged;
         private bool _AvatarsChanged;
         private bool _CursorBlink;
-        private static Timer _Timer;
+        private static System.Threading.Timer _Timer;
 
         private EEditMode _EditMode;
 
@@ -69,14 +68,11 @@ namespace Vocaluxe.Screens
             _ProfilesChanged = false;
             _AvatarsChanged = false;
             _CursorBlink = false;
-            _Timer = new Timer();
-            _Timer.Tick += new EventHandler(_TimerEvent);
-            _Timer.Interval = 400;
-            _Timer.Start();
+            _Timer = new System.Threading.Timer(_TimerEvent, null, 400, 400);
             CProfiles.AddProfileChangedCallback(_OnProfileChanged);
         }
 
-        private void _TimerEvent(Object sender, EventArgs e)
+        private void _TimerEvent(object state)
         {
             _CursorBlink = !_CursorBlink;
         }

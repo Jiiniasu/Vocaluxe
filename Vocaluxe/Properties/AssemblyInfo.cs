@@ -23,7 +23,9 @@ using System.Runtime.InteropServices;
 // Attribute gesteuert. Ändern Sie diese Attributwerte, um die Informationen zu ändern,
 // die mit einer Assembly verknüpft sind.
 
-[assembly: AssemblyTitle("Vocaluxe 2023 (x64) (2023-02-18-5-ge510776d)")]
+// AssemblyTitle / AssemblyVersion / AssemblyFileVersion / AssemblyInformationalVersion are generated
+// at build time from `git describe` by the _StampGitVersion target in Vocaluxe.csproj (replacing the old
+// winPreBuild.ps1 MSBuild build event that the SDK project no longer runs).
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
@@ -31,10 +33,6 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCopyright("Copyright © 2023")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-
-[assembly: AssemblyVersion("2023")]
-[assembly: AssemblyFileVersion("2023")]
-[assembly: AssemblyInformationalVersion("2023-02-18-5-ge510776d")]
 
 // Durch Festlegen von ComVisible auf "false" werden die Typen in dieser Assembly unsichtbar 
 // für COM-Komponenten. Wenn Sie auf einen Typ in dieser Assembly von 

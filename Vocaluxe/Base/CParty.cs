@@ -6,8 +6,8 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
-// Vocaluxe is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// Vocaluxe is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 // 
@@ -16,26 +16,17 @@
 #endregion
 
 using System;
-using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Reflection;
-using Vocaluxe.Base.ThemeSystem;
 using VocaluxeLib;
-using VocaluxeLib.Log;
 using VocaluxeLib.Menu;
 using VocaluxeLib.PartyModes;
-using VocaluxeLib.Xml;
 
 namespace Vocaluxe.Base
 {
     static class CParty
     {
-        private const int _PartyModeSystemVersion = 2;
-
         private static readonly Dictionary<int, SPartyMode> _PartyModes = new Dictionary<int, SPartyMode>();
-        private static int _NextID;
         private static IPartyMode _CurrentPartyMode;
 
         #region public stuff
@@ -47,15 +38,12 @@ namespace Vocaluxe.Base
             {
                 Info = new SPartyModeInfos { Author = "Vocaluxe Team", Description = "Normal game", Name = "Normal", TargetAudience = "Just a normal game for everyone" },
                 PartyMode = new CPartyModeNormal(-1),
-                PartyModeSystemVersion = _PartyModeSystemVersion,
+                PartyModeSystemVersion = 2,
                 ScreenFiles = new List<string>()
             };
             _PartyModes.Add(-1, pm);
             _CurrentPartyMode = pm.PartyMode;
             Debug.Assert(_CurrentPartyMode != null && _CurrentPartyMode.ID == -1);
-
-            //load other party modes
-            _LoadPartyModes();
             return _CurrentPartyMode.Init();
         }
 
@@ -184,161 +172,5 @@ namespace Vocaluxe.Base
             _CurrentPartyMode.LeavingHighscore();
         }
         #endregion Interface
-
-        #region private stuff
-        private static void _LoadPartyModes()
-        {
-            var files = new List<string>();
-            files.AddRange(CHelper.ListFiles(CSettings.FolderNamePartyModes, "*.xml", false, true));
-
-            foreach (string file in files)
-            {
-                SPartyMode pm;
-                if (_LoadPartyMode(file, out pm))
-                    _PartyModes.Add(pm.PartyMode.ID, pm);
-            }
-        }
-
-        private static bool _LoadPartyMode(string filePath, out SPartyMode pm)
-        {
-            CXmlDeserializer deser = new CXmlDeserializer();
-            try
-            {
-                pm = deser.Deserialize<SPartyMode>(filePath);
-                if (pm.PartyModeSystemVersion != _PartyModeSystemVersion)
-                    throw new Exception("Wrong PartyModeSystemVersion " + pm.PartyModeSystemVersion + " expected: " + _PartyModeSystemVersion);
-
-                if (pm.ScreenFiles.Count == 0)
-                    throw new Exception("No ScreenFiles found");
-            }
-            catch (Exception e)
-            {
-                pm = new SPartyMode();
-                CLog.Error("Error loading PartyMode file " + filePath + ": " + e.Message);
-                return false;
-            }
-
-            string pathToPm = Path.Combine(CSettings.ProgramFolder, CSettings.FolderNamePartyModes, pm.Info.Folder);
-            string pathToCode = Path.Combine(pathToPm, CSettings.FolderNamePartyModeCode);
-
-            var filesToCompile = new List<string>();
-            filesToCompile.AddRange(CHelper.ListFiles(pathToCode, "*.cs", false, true));
-
-            Assembly output = _CompileFiles(filesToCompile.ToArray());
-            if (output == null)
-                return false;
-
-            object instance = output.CreateInstance(typeof(IPartyMode).Namespace + "." + pm.Info.Folder + "." + pm.Info.PartyModeFile, false,
-                                                    BindingFlags.Public | BindingFlags.Instance, null, new object[] { _NextID++ }, null, null);
-            if (instance == null)
-            {
-                CLog.Error("Error creating Instance of PartyMode file: " + filePath);
-                return false;
-            }
-
-            try
-            {
-                pm.PartyMode = (IPartyMode)instance;
-            }
-            catch (Exception e)
-            {
-                CLog.Error("Error casting PartyMode file: " + filePath + "; " + e.Message);
-                return false;
-            }
-
-            if (!CLanguage.LoadPartyLanguageFiles(pm.PartyMode.ID, Path.Combine(pathToPm, CSettings.FolderNamePartyModeLanguages)))
-            {
-                CLog.Error("Error loading language files for PartyMode: " + filePath);
-                return false;
-            }
-
-            if (!CThemes.ReadThemesFromFolder(Path.Combine(pathToPm, CSettings.FolderNameThemes), pm.PartyMode.ID))
-                return false;
-
-            if (!CThemes.LoadPartymodeTheme(pm.PartyMode.ID))
-                return false;
-
-            foreach (string screenfile in pm.ScreenFiles)
-            {
-                CMenuParty screen = _GetPartyScreenInstance(output, screenfile, pm.Info.Folder);
-
-                if (screen != null)
-                {
-                    screen.AssignPartyMode(pm.PartyMode);
-                    pm.PartyMode.AddScreen(screen, screenfile);
-                }
-                else
-                    return false;
-            }
-            pm.PartyMode.LoadTheme();
-            pm.Info.ExtInfo = pm.PartyMode;
-            return true;
-        }
-
-        private static Assembly _CompileFiles(string[] files)
-        {
-            if (files == null || files.Length == 0)
-                return null;
-
-            var compilerParams = new CompilerParameters();
-
-            compilerParams.ReferencedAssemblies.Add("System.Windows.Forms.dll");
-            compilerParams.ReferencedAssemblies.Add("System.dll");
-            compilerParams.ReferencedAssemblies.Add("System.Core.dll");
-            compilerParams.ReferencedAssemblies.Add(Path.Combine("libs", "managed", "VocaluxeLib.dll"));
-            compilerParams.GenerateInMemory = true;
-#if DEBUG
-            compilerParams.IncludeDebugInformation = true;
-#endif
-
-            using (CodeDomProvider cdp = CodeDomProvider.CreateProvider("CSharp"))
-            {
-                CompilerResults compileResult;
-
-                try
-                {
-                    compileResult = cdp.CompileAssemblyFromFile(compilerParams, files);
-                }
-                catch (Exception e)
-                {
-                    CLog.Error("Error Compiling Source (" + CHelper.ListStrings(files) + "): " + e.Message);
-                    return null;
-                }
-
-                if (compileResult.Errors.Count > 0)
-                {
-                    foreach (CompilerError e in compileResult.Errors)
-                        CLog.Error("Error Compiling Source (" + CHelper.ListStrings(files) + "): " + e.ErrorText + " in '" + e.FileName + "' (" + e.Line + ")");
-                    return null;
-                }
-                return compileResult.CompiledAssembly;
-            }
-        }
-
-        private static CMenuParty _GetPartyScreenInstance(Assembly assembly, string screenName, string partyModeName)
-        {
-            if (assembly == null)
-                return null;
-
-            object instance = assembly.CreateInstance(typeof(IPartyMode).Namespace + "." + partyModeName + "." + screenName);
-            if (instance == null)
-            {
-                CLog.Error("Error creating Instance of PartyScreen: " + screenName);
-                return null;
-            }
-
-            CMenuParty screen;
-            try
-            {
-                screen = (CMenuParty)instance;
-            }
-            catch (Exception e)
-            {
-                CLog.Error("Error casting PartyScreen: " + screenName + "; " + e.Message);
-                return null;
-            }
-            return screen;
-        }
-        #endregion private stuff
     }
 }

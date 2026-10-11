@@ -19,7 +19,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Windows.Forms;
 using Vocaluxe.Base.Fonts;
 using Vocaluxe.Base.ThemeSystem;
 using Vocaluxe.Screens;
@@ -191,7 +190,6 @@ namespace Vocaluxe.Base
             CVideo.Update();
             CSound.Update();
             CBackgroundMusic.Update();
-            CController.Update();
             CProfiles.Update();
 
             if (CSettings.ProgramState != EProgramState.EditTheme)
@@ -358,8 +356,6 @@ namespace Vocaluxe.Base
         {
             SKeyEvent keyEvent = new SKeyEvent();
             SMouseEvent mouseEvent = new SMouseEvent();
-            SKeyEvent inputKeyEvent = new SKeyEvent();
-            SMouseEvent inputMouseEvent = new SMouseEvent();
 
             bool popupPlayerControlAllowed = CurrentScreen.CurrentMusicType == EMusicType.Background;
             bool popupVolumeControlAllowed = CurrentScreen.CurrentMusicType != EMusicType.None;
@@ -368,14 +364,9 @@ namespace Vocaluxe.Base
                 popupVolumeControlAllowed = false;
 
             bool resume = true;
-            bool eventsAvailable;
-            bool inputEventsAvailable = CController.PollKeyEvent(ref inputKeyEvent);
 
-            while ((eventsAvailable = keys.PollEvent(ref keyEvent)) || inputEventsAvailable)
+            while (keys.PollEvent(ref keyEvent))
             {
-                if (!eventsAvailable)
-                    keyEvent = inputKeyEvent;
-
                 if (keyEvent.IsArrowKey() || keyEvent.Key == Keys.NumPad0 || keyEvent.Key == Keys.D0 || keyEvent.Key == Keys.Add)
                 {
                     _Cursor.Deactivate();
@@ -496,18 +487,10 @@ namespace Vocaluxe.Base
                             resume &= CurrentScreen.HandleInput(keyEvent);
                     }
                 }
-
-                if (!eventsAvailable)
-                    inputEventsAvailable = CController.PollKeyEvent(ref inputKeyEvent);
             }
 
-            inputEventsAvailable = CController.PollMouseEvent(ref inputMouseEvent);
-
-            while ((eventsAvailable = mouse.PollEvent(ref mouseEvent)) || inputEventsAvailable)
+            while (mouse.PollEvent(ref mouseEvent))
             {
-                if (!eventsAvailable)
-                    mouseEvent = inputMouseEvent;
-
                 if (mouseEvent.Wheel != 0)
                     _Cursor.Activate();
 
@@ -551,9 +534,6 @@ namespace Vocaluxe.Base
 
                 if (!handled && _Fading == null && (_Cursor.IsActive || mouseEvent.LB || mouseEvent.RB || mouseEvent.MB))
                     resume &= CurrentScreen.HandleMouse(mouseEvent);
-
-                if (!eventsAvailable)
-                    inputEventsAvailable = CController.PollMouseEvent(ref inputMouseEvent);
             }
             return resume;
         }

@@ -17,9 +17,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Windows.Forms;
 using Vocaluxe.Base;
-using Vocaluxe.Base.Server;
+
 using VocaluxeLib;
 using VocaluxeLib.Game;
 using VocaluxeLib.Menu;
@@ -631,11 +630,10 @@ namespace Vocaluxe.Screens
 
         private bool _UpdateBackground()
         {
-            string[] photos = CVocaluxeServer.GetPhotosOfThisRound();
+            // The source of these slide-show photos (web-camera photos pushed via the in-game web
+            // server) was removed in the .NET 10 port, so the score screen slides show never runs.
             _SlideShowBG.RemoveSlideShowTextures();
-            foreach (string photo in photos)
-                _SlideShowBG.AddSlideShowTexture(photo);
-            return photos.Length > 0;
+            return false;
         }
 
         private void _LeaveScreen()

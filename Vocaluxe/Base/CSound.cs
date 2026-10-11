@@ -19,8 +19,7 @@ using System.IO;
 using System.Threading;
 using Vocaluxe.Lib.Sound;
 using Vocaluxe.Lib.Sound.Playback;
-using Vocaluxe.Lib.Sound.Playback.GstreamerSharp;
-using Vocaluxe.Lib.Sound.Playback.OpenAL;
+
 using Vocaluxe.Lib.Sound.Playback.PortAudio;
 using VocaluxeLib;
 
@@ -43,18 +42,11 @@ namespace Vocaluxe.Base
             switch (CConfig.Config.Sound.PlayBackLib)
             {
                 case EPlaybackLib.PortAudio:
+                default:
                     _Playback = new CPortAudioPlay();
                     break;
-
-                case EPlaybackLib.OpenAL:
-                    _Playback = new COpenALPlay();
-                    break;
-
-                case EPlaybackLib.GstreamerSharp:
-                    _Playback = new CGstreamerSharpAudio();
-                    break;
-
-                default:
+                // OpenAL and GStreamerSharp backends were removed in the .NET 10 port (net45-era /
+                // OpenTK 1.x dependencies); PortAudio is the single cross-platform playback engine.
                     _Playback = new CPortAudioPlay();
                     break;
             }

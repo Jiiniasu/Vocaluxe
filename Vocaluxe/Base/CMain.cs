@@ -995,7 +995,6 @@ namespace Vocaluxe.Base
     {
         public void SetRumble(float duration)
         {
-            CController.SetRumble(duration);
         }
     }
 

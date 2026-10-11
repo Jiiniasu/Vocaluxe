@@ -19,7 +19,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using Vocaluxe.Base;
-using Vocaluxe.Base.Server;
+
 using VocaluxeLib;
 using VocaluxeLib.Draw;
 
@@ -382,7 +382,8 @@ namespace Vocaluxe.Lib.Draw
             while (_Run)
             {
                 _CheckQueue();
-                CVocaluxeServer.ProcessServerTasks();
+                // The in-game web server (CVocaluxeServer) was removed in the .NET 10 port; nothing
+                // else to process per frame here.
 
                 //We want to begin drawing
                 _OnBeforeDraw();
