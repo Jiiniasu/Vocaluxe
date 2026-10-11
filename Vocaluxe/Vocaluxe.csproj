@@ -20,6 +20,10 @@
     <!-- The legacy SSIS-Remote layout: the app builds into the repo's Output/ folder, right next to the
          game data (Themes, Languages, Fonts, ...) that already lives there - same as the net48 build. -->
     <OutputPath>$(MSBuildThisFileDirectory)..\Output\</OutputPath>
+    <!-- Land the exe + managed + native assemblies directly in Output/ (not Output/net10.0/), next to
+         the game data (Themes, Fonts, Languages, Config.xml, libs/unmanaged) that lives at the Output/
+         root. ProgramFolder = AppDomain.BaseDirectory, so the app resolves data relative to the exe. -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <!-- One cross-platform codebase: OpenGL everywhere (OpenTK 4) + PortAudio, no WinForms/Direct3D.
          The WIN/LINUX symbol is chosen per build OS so the same sources compile correctly on each
          platform. ARCH_X64 selects the 64-bit native-interop paths. -->
