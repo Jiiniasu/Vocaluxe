@@ -15,7 +15,7 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using SkiaSharp;
+using System.Drawing;
 using Vocaluxe.Lib.Webcam;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
@@ -68,7 +68,7 @@ namespace Vocaluxe.Base
             return _Webcam != null && _Webcam.GetFrame(ref tex);
         }
 
-        public static SKBitmap GetBitmap()
+        public static Bitmap GetBitmap()
         {
             return _Webcam == null ? null : _Webcam.GetBitmap();
         }

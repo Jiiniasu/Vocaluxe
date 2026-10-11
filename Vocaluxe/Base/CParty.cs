@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using VocaluxeLib;
+using VocaluxeLib.Log;
 using VocaluxeLib.Menu;
 using VocaluxeLib.PartyModes;
 

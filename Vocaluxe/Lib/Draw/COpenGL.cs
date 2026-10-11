@@ -15,25 +15,25 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using OpenTK;
-using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL;
 using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Windows.Forms;
+using OpenTK.Graphics.OpenGL;
+using OpenTK.Mathematics;
+using OpenTK.Windowing.Common;
+using OpenTK.Windowing.Desktop;
+using OpenTK.Windowing.GraphicsLibraryFramework;
 using Vocaluxe.Base;
+using VocaluxeLib.Log;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
-using BlendingFactorDest = OpenTK.Graphics.OpenGL.BlendingFactorDest;
-using BlendingFactorSrc = OpenTK.Graphics.OpenGL.BlendingFactorSrc;
 using ClearBufferMask = OpenTK.Graphics.OpenGL.ClearBufferMask;
 using DepthFunction = OpenTK.Graphics.OpenGL.DepthFunction;
 using EnableCap = OpenTK.Graphics.OpenGL.EnableCap;
-using GenerateMipmapTarget = OpenTK.Graphics.OpenGL.GenerateMipmapTarget;
 using GL = OpenTK.Graphics.OpenGL.GL;
+using GenerateMipmapTarget = OpenTK.Graphics.OpenGL.GenerateMipmapTarget;
 using MatrixMode = OpenTK.Graphics.OpenGL.MatrixMode;
 using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
 using PixelInternalFormat = OpenTK.Graphics.OpenGL.PixelInternalFormat;
@@ -46,17 +46,6 @@ using TextureTarget = OpenTK.Graphics.OpenGL.TextureTarget;
 
 namespace Vocaluxe.Lib.Draw
 {
-    class CFormHook : Form, IFormHook
-    {
-        public MessageEventHandler OnMessage { private get; set; }
-
-        protected override void WndProc(ref Message m)
-        {
-            if (OnMessage == null || OnMessage(ref m))
-                base.WndProc(ref m);
-        }
-    }
-
     class COGLTexture : CTextureBase
     {
         //The texture "name" according to the specs
@@ -71,8 +60,8 @@ namespace Vocaluxe.Lib.Draw
 
             GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, texWidth, texHeight, 0, PixelFormat.Bgra, PixelType.UnsignedByte, IntPtr.Zero);
 
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)OpenTK.Graphics.TextureWrapMode.ClampToEdge);
-            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)OpenTK.Graphics.TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)TextureWrapMode.ClampToEdge);
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)TextureWrapMode.ClampToEdge);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, (int)TextureMagFilter.Linear);
             GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
 
@@ -92,90 +81,42 @@ namespace Vocaluxe.Lib.Draw
         }
     }
 
-    class COpenGL : CDrawBaseWindows<COGLTexture>, IDraw
+    class COpenGL : CDrawBaseGlfw<COGLTexture>, IDraw
     {
-        private readonly GLControl _Control;
         private int _FBO;
 
         public COpenGL()
         {
-            _Form = new CFormHook { ClientSize = new Size(CConfig.Config.Graphics.ScreenW * CConfig.Config.Graphics.NumScreens, CConfig.Config.Graphics.ScreenH) };
-            //OpenGL needs that here but D3D needs it in the constructor, so do NOT unify!
+            int w = CConfig.Config.Graphics.ScreenW * CConfig.Config.Graphics.NumScreens;
+            int h = CConfig.Config.Graphics.ScreenH;
 
-            //Check AA Mode
-            CConfig.Config.Graphics.AAMode = (EAntiAliasingModes)_CheckAntiAliasingMode((int)CConfig.Config.Graphics.AAMode);
-
-            bool ok = false;
-            try
+            var settings = new NativeWindowSettings
             {
-#if WIN
-                var gm = new GraphicsMode(32, 24, 0, (int)CConfig.Config.Graphics.AAMode);
-#else
-                var gm = new GraphicsMode(24, 24, 0, (int)CConfig.Config.Graphics.AAMode);
-#endif
-                _Control = new GLControl(gm, 2, 1, GraphicsContextFlags.Default);
-                if (_Control.GraphicsMode != null)
-                    ok = true;
-            }
-            catch (Exception)
-            {
-                ok = false;
-            }
+                ClientSize = new Vector2i(w, h),
+                Title = CSettings.GetFullVersionText(),
+                // GL 2.1 with ContextProfile.Any -> a legacy/compatibility context that keeps the
+                // fixed-function pipeline (immediate mode) the renderer relies on. GLFW only allows an
+                // explicit Core/Compatibility profile for GL >= 3.2, so we must not set one here.
+                Profile = ContextProfile.Any,
+                APIVersion = new Version(2, 1),
+                Flags = ContextFlags.Default,
+                NumberOfSamples = (int)CConfig.Config.Graphics.AAMode,
+                StartVisible = false,
+                Vsync = CConfig.Config.Graphics.VSync == EOffOn.TR_CONFIG_ON ? VSyncMode.On : VSyncMode.Off
+            };
 
-            if (!ok)
-                _Control = new GLControl();
+            // OpenTK's default GLFW error handler turns EVERY GLFW error into an exception -
+            // including harmless "feature not available on this platform" reports. On Wayland,
+            // querying the window position is such a case (the protocol deliberately does not
+            // expose it to clients), which killed startup during "Init Draw". Log instead of throw.
+            GLFWProvider.SetErrorCallback((errorCode, description) =>
+                CLog.Error("GLFW: {ErrorCode} - {Description}",
+                    CLog.Params(errorCode, description)));
 
-            _Control.MakeCurrent();
-            _Control.VSync = CConfig.Config.Graphics.VSync == EOffOn.TR_CONFIG_ON;
-
-            _Form.Controls.Add(_Control);
-            _Control.ClientSize = _Form.ClientSize;
-
-            _Control.KeyDown += _OnKeyDown;
-            _Control.PreviewKeyDown += _OnPreviewKeyDown;
-            _Control.KeyPress += _OnKeyPress;
-            _Control.KeyUp += _OnKeyUp;
-
-            _Control.MouseMove += _OnMouseMove;
-            _Control.MouseWheel += _OnMouseWheel;
-            _Control.MouseDown += _OnMouseDown;
-            _Control.MouseUp += _OnMouseUp;
-            _Control.MouseLeave += _OnMouseLeave;
-            _Control.MouseEnter += _OnMouseEnter;
+            _Window = new NativeWindow(settings);
+            _Window.MakeCurrent();
 
             _NonPowerOf2TextureSupported = false;
-        }
-
-        private static int _CheckAntiAliasingMode(int setValue)
-        {
-            int samples = 0;
-
-            if (setValue > 32)
-                setValue = 32;
-
-            while (samples <= setValue)
-            {
-                GraphicsMode mode;
-                try
-                {
-                    mode = new GraphicsMode(16, 0, 0, samples);
-                }
-                catch (Exception)
-                {
-                    break;
-                }
-
-                if (mode.Samples != samples)
-                    break;
-                if (samples == 0)
-                    samples = 2;
-                else
-                    samples *= 2;
-            }
-
-            if (samples == 2)
-                return 0;
-            return samples / 2;
         }
 
         /*
@@ -206,16 +147,10 @@ namespace Vocaluxe.Lib.Draw
         }
 */
 
-        protected override void _OnResize(object sender, EventArgs e)
-        {
-            _Control.ClientSize = _Form.ClientSize;
-            base._OnResize(sender, e);
-        }
-
         protected override void _DoResize()
         {
-            _H = _Control.Height;
-            _W = _Control.Width;
+            _H = _Window.ClientSize.Y;
+            _W = _Window.ClientSize.X;
             _CurrentAlignment = CConfig.Config.Graphics.ScreenAlignment;
 
             if (CConfig.Config.Graphics.Stretch != EOffOn.TR_CONFIG_ON)
@@ -235,13 +170,13 @@ namespace Vocaluxe.Lib.Draw
             // Init Texturing
             GL.Enable(EnableCap.Texture2D);
 
-            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+            GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
             GL.PixelStore(PixelStoreParameter.UnpackAlignment, 1);
 
             GL.DepthRange(CSettings.ZFar, CSettings.ZNear);
             GL.DepthFunc(DepthFunction.Lequal);
             GL.Enable(EnableCap.DepthTest);
-            GL.ClearColor(Color.Black);
+            GL.ClearColor(0f, 0f, 0f, 1f);
 
             GL.GenFramebuffers(1, out _FBO);
 
@@ -261,18 +196,24 @@ namespace Vocaluxe.Lib.Draw
 
         protected override void _OnAfterDraw()
         {
-            _Control.SwapBuffers();
-            Application.DoEvents();
+            _Window.Context.SwapBuffers();
+            NativeWindow.ProcessWindowEvents(false);
+            // Reliably end the main loop when the user closes the window. The Closing event alone
+            // is not dependable with a manually-driven OpenTK 4 NativeWindow, so also poll the GLFW
+            // "should close" flag every frame. Once _Run is false, CDraw.MainLoop returns and
+            // Program._CloseProgram shuts everything down (Environment.Exit).
+            if (_Window.IsExiting)
+                _Run = false;
         }
 
         public int GetScreenWidth()
         {
-            return _Control.Width;
+            return _Window.ClientSize.X;
         }
 
         public int GetScreenHeight()
         {
-            return _Control.Height;
+            return _Window.ClientSize.Y;
         }
 
         protected override void _ClearScreen()
@@ -302,6 +243,7 @@ namespace Vocaluxe.Lib.Draw
                 GL.ReadPixels(0, 0, width, height, PixelFormat.Bgra, PixelType.UnsignedByte, bmpData.Scan0);
                 screen.UnlockBits(bmpData);
 
+                // OpenGL's origin is bottom-left, so flip vertically before saving.
                 screen.RotateFlip(RotateFlipType.RotateNoneFlipY);
                 screen.Save(file, ImageFormat.Png);
             }
@@ -339,7 +281,10 @@ namespace Vocaluxe.Lib.Draw
 
         public void DrawRect(SColorF color, SRectF rect, bool allMonitors = true)
         {
-            for (int i = 0; i < (allMonitors ? CConfig.Config.Graphics.NumScreens : 1); i++)
+            int loops = 1;
+            if (allMonitors)
+                loops = CConfig.Config.Graphics.NumScreens;
+            for (int i = 0; i < loops; i++)
             {
                 SRectF newrect = rect;
                 newrect.X += CSettings.RenderW * i;
@@ -393,7 +338,6 @@ namespace Vocaluxe.Lib.Draw
                 if (ry2 > newrect.Y + newrect.H + space + height)
                     ry2 = newrect.Y + newrect.H + space + height;
 
-
                 GL.Enable(EnableCap.Blend);
                 GL.MatrixMode(MatrixMode.Color);
                 GL.PushMatrix();
@@ -435,13 +379,13 @@ namespace Vocaluxe.Lib.Draw
         {
             if (texture.DataSize.Equals(texture.Size))
                 return;
-            GL.BindFramebuffer(OpenTK.Graphics.OpenGL.FramebufferTarget.Framebuffer, _FBO);
-            GL.FramebufferTexture2D(OpenTK.Graphics.OpenGL.FramebufferTarget.Framebuffer, OpenTK.Graphics.OpenGL.FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D,
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, _FBO);
+            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D,
                                     texture.Name, 0);
-            GL.ClearColor(Color.FromArgb(0));
+            GL.ClearColor(0f, 0f, 0f, 0f);
             GL.Clear(ClearBufferMask.ColorBufferBit);
-            GL.ClearColor(Color.Black);
-            GL.BindFramebuffer(OpenTK.Graphics.OpenGL.FramebufferTarget.Framebuffer, 0);
+            GL.ClearColor(0f, 0f, 0f, 1f);
+            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
         }
 
         protected override void _WriteDataToTexture(COGLTexture texture, byte[] data)
@@ -451,7 +395,7 @@ namespace Vocaluxe.Lib.Draw
             GL.BindTexture(TextureTarget.Texture2D, texture.Name);
 
             GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, texture.DataSize.Width, texture.DataSize.Height, PixelFormat.Bgra, PixelType.UnsignedByte, data);
-            GL.Ext.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 
             GL.BindTexture(TextureTarget.Texture2D, 0);
         }
@@ -463,7 +407,7 @@ namespace Vocaluxe.Lib.Draw
             GL.BindTexture(TextureTarget.Texture2D, texture.Name);
 
             GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, texture.DataSize.Width, texture.DataSize.Height, PixelFormat.Bgra, PixelType.UnsignedByte, data);
-            GL.Ext.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+            GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 
             GL.BindTexture(TextureTarget.Texture2D, 0);
         }

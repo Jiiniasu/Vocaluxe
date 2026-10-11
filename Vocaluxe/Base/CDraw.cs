@@ -38,11 +38,11 @@ namespace Vocaluxe.Base
                 return false;
             switch (CConfig.Config.Graphics.Renderer)
             {
-                case ERenderer.TR_CONFIG_SOFTWARE:
-                    _Draw = new CDrawWinForm();
-                    break;
-
+                // The software (WinForms) renderer was dropped in the .NET 10 port; OpenGL is
+                // the single rendering engine on all platforms.
                 case ERenderer.TR_CONFIG_OPENGL:
+                case ERenderer.TR_CONFIG_SOFTWARE:
+                default:
                     try
                     {
                         _Draw = new COpenGL();
@@ -53,27 +53,27 @@ namespace Vocaluxe.Base
                         return false;
                     }
                     break;
-
-#if WIN
-                case ERenderer.TR_CONFIG_DIRECT3D:
-                    try
-                    {
-                        _Draw = new CDirect3D();
-                    }
-                    catch (Exception e)
-                    {
-                        CLog.Fatal(e, "Error in initializing of Direct3D. Please check if your DirectX redistributables and graphic card drivers are up to date. You can " +
-                                      "download the DirectX runtimes at http://www.microsoft.com/download/en/details.aspx?id=8109");
-                        return false;
-                    }
-                    break;
-#endif
-
-                default:
-                    _Draw = new CDrawWinForm();
-                    break;
             }
             return _Draw.Init();
+        }
+
+        /// <summary>
+        ///     Shows the startup splash (program logo) in the render window so the user sees branding
+        ///     immediately while the remaining initialization runs. Call once after <see cref="Init" />.
+        /// </summary>
+        public static void ShowSplash()
+        {
+            _Draw.ShowSplash();
+        }
+
+        /// <summary>
+        ///     Updates the startup splash progress bar and status text.
+        /// </summary>
+        /// <param name="progress">Progress from 0 to 1</param>
+        /// <param name="status">Optional status text shown below the progress bar</param>
+        public static void UpdateSplash(float progress, string status = null)
+        {
+            _Draw.UpdateSplash(progress, status);
         }
 
         /// <summary>

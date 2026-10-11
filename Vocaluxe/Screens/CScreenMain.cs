@@ -92,9 +92,6 @@ namespace Vocaluxe.Screens
                             CGraphics.FadeTo(EScreen.Song);
                         }
 
-                        if (_Buttons[_ButtonParty].Selected)
-                            CGraphics.FadeTo(EScreen.Party);
-
                         if (_Buttons[_ButtonOptions].Selected)
                             CGraphics.FadeTo(EScreen.Options);
 
@@ -125,9 +122,6 @@ namespace Vocaluxe.Screens
                     CParty.SetNormalGameMode();
                     CGraphics.FadeTo(EScreen.Song);
                 }
-
-                if (_Buttons[_ButtonParty].Selected)
-                    CGraphics.FadeTo(EScreen.Party);
 
                 if (_Buttons[_ButtonOptions].Selected)
                     CGraphics.FadeTo(EScreen.Options);

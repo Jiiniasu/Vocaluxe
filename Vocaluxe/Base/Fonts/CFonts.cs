@@ -36,12 +36,19 @@ namespace Vocaluxe.Base.Fonts
 
         public static int PartyModeID { get; set; }
 
+        public static bool IsInitialized
+        {
+            get { return _IsInitialized; }
+        }
+
         public static bool Init()
         {
             if (_IsInitialized)
                 return false;
             PartyModeID = -1;
-            return _LoadDefaultFonts();
+            bool ok = _LoadDefaultFonts();
+            _IsInitialized = ok;
+            return ok;
         }
 
         public static void Close()

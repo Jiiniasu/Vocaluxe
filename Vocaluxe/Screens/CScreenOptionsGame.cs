@@ -89,8 +89,6 @@ namespace Vocaluxe.Screens
                             _SaveConfig();
                             CGraphics.FadeTo(EScreen.Options);
                         }
-                        else if (_Buttons[_ButtonServer].Selected)
-                            CGraphics.ShowPopup(EPopupScreens.PopupServerQR);
                         break;
 
                     case Keys.Left:
@@ -122,8 +120,6 @@ namespace Vocaluxe.Screens
                     CGraphics.FadeTo(EScreen.Options);
                     _SaveConfig();
                 }
-                else if (_Buttons[_ButtonServer].Selected)
-                    CGraphics.ShowPopup(EPopupScreens.PopupServerQR);
             }
             return true;
         }

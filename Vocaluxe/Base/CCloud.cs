@@ -21,12 +21,10 @@ namespace Vocaluxe.Base
     {
         static CCloud()
         {
-            // .NET Framework's HTTP transport automatically appends "Expect: 100-continue"
-            // to POST/PUT requests (default of ServicePointManager.Expect100Continue is true).
-            // The Apache front of our cloud server answers that header with a 400.
-            // Disabling it only skips the handshake; the body is sent with the headers,
-            // which is all the server expects.
-            System.Net.ServicePointManager.Expect100Continue = false;
+            // Note: the old .NET Framework transport (HttpWebRequest/ServicePointManager) auto-appended
+            // "Expect: 100-continue" to POST/PUT, which the Apache front of the cloud server answered with
+            // a 400. The net10 HttpClient (SocketsHttpHandler) never sends that header, so no opt-out is
+            // needed here any more.
 
             // Never let an unobserved task fault (e.g. a screen ignoring a fire-and-forget cloud
             // send) bring the whole process down - log it instead.

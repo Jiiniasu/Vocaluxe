@@ -82,13 +82,11 @@ namespace Vocaluxe.Base
             _Screens.Add(new CScreenNames());
             _Screens.Add(new CScreenPrepare());
             _Screens.Add(new CScreenCredits());
-            _Screens.Add(new CScreenParty());
 
             Debug.Assert(_Screens.Count == (int)EScreen.CountEntry, "Screen list and screens enum do not match");
 
             _PopupScreens.Add(new CPopupScreenPlayerControl());
             _PopupScreens.Add(new CPopupScreenVolumeControl());
-            _PopupScreens.Add(new CPopupScreenServerQR());
             _PopupScreens.Add(new CPopupScreenNewPlayer());
 
             CurrentScreen = _Screens[(int)EScreen.Load];
@@ -422,14 +420,6 @@ namespace Vocaluxe.Base
                         CConfig.SaveConfig();
                         break;
                     }
-                }
-
-                if (keyEvent.Key == Keys.F11)
-                {
-                    if (_CurrentPopupScreen == EPopupScreens.NoPopup)
-                        ShowPopup(EPopupScreens.PopupServerQR);
-                    else
-                        HidePopup(EPopupScreens.PopupServerQR);
                 }
 
                 if (keyEvent.Key == Keys.F8)

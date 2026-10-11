@@ -374,7 +374,10 @@ namespace Tests.VocaluxeLib.XML
         [Test]
         public void TestRealFiles([Values(typeof(SThemeCover), typeof(CConfig.SConfig), /*typeof(SThemeScreen),*/ typeof(SDefaultFonts), typeof(SSkin), typeof(STheme), typeof(Dictionary<string, string>))] Type type)
         {
-            string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "VocaluxeLib", "XML", "TestFiles");
+            // Test data is copied next to the test assembly (Tests.csproj None/CopyToOutputDirectory),
+            // so resolve it relative to the output base directory - the old "../.." walked to the source
+            // tree and only resolved under the net48 bin\Debug layout.
+            string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "VocaluxeLib", "XML", "TestFiles");
 
             string xmlPath = Path.Combine(filePath, type.Name + ".xml");
             var deser = new CXmlDeserializer();

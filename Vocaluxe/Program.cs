@@ -129,6 +129,10 @@ namespace Vocaluxe
                             throw new CLoadingException("drawing");
                     }
 
+                    // Show the logo splash right away so the user sees branding while the rest of the
+                    // (multi-second) init runs, instead of a blank screen / no window.
+                    CDraw.ShowSplash();
+
                     // Init Playback
                     using (CBenchmark.Time("Init Playback"))
                     {
@@ -156,6 +160,7 @@ namespace Vocaluxe
                         if (!CDataBase.Init())
                             throw new CLoadingException("database");
                     }
+                    CDraw.UpdateSplash(0.15f);
 
                     //Init Webcam
                     using (CBenchmark.Time("Init Webcam"))
@@ -194,6 +199,7 @@ namespace Vocaluxe
                     {
                         CThemes.Load();
                     }
+                    CDraw.UpdateSplash(0.4f);
 
                     // Load Cover
                     using (CBenchmark.Time("Init Cover"))
@@ -215,6 +221,7 @@ namespace Vocaluxe
                         CProfiles.Update();
                         CConfig.UsePlayers();
                     }
+                    CDraw.UpdateSplash(0.55f);
 
                     // Init Party Modes (Normal singing mode)
                     using (CBenchmark.Time("Init Party Modes"))
@@ -222,6 +229,7 @@ namespace Vocaluxe
                         if (!CParty.Init())
                             throw new CLoadingException("Party Modes");
                     }
+                    CDraw.UpdateSplash(0.8f);
 
                     // Init Cloud Communication (SSIS-Remote cloud sync)
                     if (CConfig.UseCloudServer)
@@ -237,6 +245,8 @@ namespace Vocaluxe
                         // first chance to deliver them.
                         System.Threading.Tasks.Task.Run(new Action(CCloud.FlushUploadQueue));
                     }
+
+                    CDraw.UpdateSplash(1f, "Starting.");
 
                     //Only reasonable point to call GC.Collect() because initialization may cause lots of garbage
                     //Rely on GC doing its job afterwards and call Dispose methods where appropriate
@@ -388,13 +398,11 @@ namespace Vocaluxe
             if (arr.Length > 0)
             {
 #if ARCH_X86
-                string path = "x86";
+                string arch = "x86";
+#else
+                string arch = "x64";
 #endif
-
-#if ARCH_X64
-                path = "x64";
-#endif
-                path = Path.Combine(CSettings.ProgramFolder, path, arr[0] + ".dll");
+                string path = Path.Combine(CSettings.ProgramFolder, arch, arr[0] + ".dll");
                 try
                 {
                     assembly = Assembly.LoadFrom(path);
@@ -408,7 +416,7 @@ namespace Vocaluxe
                     }
                     catch (Exception e)
                     {
-                        CLog.Error("Cannot load assembly " + args.Name + " from " + path + ": " + e);
+                        CLog.Error("Cannot load assembly " + args.Name + " from " + path + ": " + e + " (outer error: " + e1 + ")");
                     }
                 }
 #if LINUX

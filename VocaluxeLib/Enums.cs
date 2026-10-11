@@ -404,7 +404,6 @@ namespace VocaluxeLib
         Names,
         Prepare,
         Credits,
-        Party,
 
         CountEntry //Leave this as last entry and never use it!
     }
@@ -413,8 +412,7 @@ namespace VocaluxeLib
     {
         PopupPlayerControl = 0,
         PopupVolumeControl = 1,
-        PopupServerQR = 2,
-        PopupNewPlayer = 3,
+        PopupNewPlayer = 2,
 
         NoPopup = -1
     }
