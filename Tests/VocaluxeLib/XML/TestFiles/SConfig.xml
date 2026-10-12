@@ -66,11 +66,17 @@
     <SongSorting>TR_CONFIG_ARTIST</SongSorting>
     <IgnoreArticles>TR_CONFIG_ON</IgnoreArticles>
     <NumPlayers>2</NumPlayers>
+    <JudgementDistance>100</JudgementDistance>
     <Tabs>TR_CONFIG_OFF</Tabs>
     <AutoplayPreviews>TR_CONFIG_OFF</AutoplayPreviews>
     <AutoplayPreviewDelay>500</AutoplayPreviewDelay>
     <LyricsPosition>TR_CONFIG_LYRICSPOSITION_BOTTOM</LyricsPosition>
     <MinLineBreakTime>0.1</MinLineBreakTime>
+    <NoteSpeed>1</NoteSpeed>
+    <UseCloudServer>TR_CONFIG_OFF</UseCloudServer>
+    <CloudServerURL>http://localhost</CloudServerURL>
+    <CloudServerWebsocketURI>ws://localhost:6001/app/vcs</CloudServerWebsocketURI>
+    <CloudServerKey />
     <Players>
       <Player />
       <Player />
