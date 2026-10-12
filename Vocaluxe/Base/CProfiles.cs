@@ -658,9 +658,11 @@ namespace Vocaluxe.Base
             {
                 try
                 {
-                    Image imageData = CCloud.getAvatar(fileName);
+                    byte[] imageData = CCloud.getAvatar(fileName);
+                    if (imageData == null)
+                        return null;
 
-                    imageData.Save(CHelper.GetUniqueFileName(CConfig.ProfileFolders[0], fileName));
+                    File.WriteAllBytes(CHelper.GetUniqueFileName(CConfig.ProfileFolders[0], fileName), imageData);
 
                     int id = NewAvatar(CConfig.ProfileFolders[0] + "\\" + fileName);
 

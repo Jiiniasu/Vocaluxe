@@ -15,25 +15,27 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-//Uncomment to make the font write the glyphs to file
-//#define FONT_DEBUG_OUTPUT
-
 using System;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-using System.Drawing.Text;
-using System.Runtime.InteropServices;
+using System.Drawing; // System.Drawing.Primitives only (SizeF/RectangleF/Rectangle) - cross-platform, no GDI+
+using SkiaSharp;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
 
 namespace Vocaluxe.Base.Fonts
 {
+    /// <summary>
+    ///     Rasterizes a single glyph to an OpenGL texture.
+    ///     Ported from GDI+ (System.Drawing Font/Graphics/GraphicsPath) to SkiaSharp so it works
+    ///     cross-platform. Layout metrics (SizeF/RectangleF) come from System.Drawing.Primitives,
+    ///     which is platform-independent and does not touch GDI+.
+    /// </summary>
     class CGlyph
     {
         private CTextureRef _Texture;
-        private readonly SizeF _BoundingBox;
-        private readonly RectangleF _DrawBounding;
+        private SizeF _BoundingBox;
+        private RectangleF _DrawBounding;
+        private float _BaselineY; // Baseline row, relative to the top of the cropped texture (render pixels)
+        private float _Descent;   // Font descent in render pixels (baseline to descender line)
         public readonly float MaxHeight;
 
         public CGlyph(char chr, CFontStyle fontStyle, float maxHeight)
@@ -42,90 +44,78 @@ namespace Vocaluxe.Base.Fonts
             float outlineSize = fontStyle.Outline * maxHeight;
             string chrString = chr.ToString();
 
-            Font fo = fontStyle.GetSystemFont(maxHeight);
-            SizeF fullSize;
-            Size bmpSize;
-            using (Graphics g = Graphics.FromHwnd(IntPtr.Zero))
+            SKTypeface typeface = fontStyle.GetTypeface();
+            using (var font = new SKFont(typeface, maxHeight))
             {
-                fullSize = g.MeasureString(chrString, fo);
-                if (chr != ' ')
-                {
-                    //Gets exact height and width for drawing more than 1 char. But width is to small to draw char on bitmap as e.g. italic chars will get cropped
-                    //See https://stackoverflow.com/questions/11708621/how-to-measure-width-of-a-string-precisely
-                    StringFormat format = StringFormat.GenericTypographic;
-                    RectangleF rect = new RectangleF(0, 0, 1000, 1000);
-                    CharacterRange[] ranges = { new CharacterRange(0, chrString.Length) };
-                    format.SetMeasurableCharacterRanges(ranges);
-                    _BoundingBox = g.MeasureCharacterRanges(chrString, fo, rect, format)[0].GetBounds(g).Size;
+                font.Edging = SKFontEdging.Antialias;
+                font.Subpixel = true;
+                font.Embolden = fontStyle.IsBold;
+                if (fontStyle.IsItalic)
+                    font.SkewX = -0.25f;
 
-                    // ReSharper disable CompareOfFloatsByEqualityOperator
-                    if (_BoundingBox.Height == 0)
-                        // ReSharper restore CompareOfFloatsByEqualityOperator
-                        _BoundingBox.Height = fullSize.Height;
-                    _BoundingBox.Width += outlineSize / 2;
-                    _BoundingBox.Height += outlineSize;
-                    fullSize.Width += outlineSize;
-                    bmpSize = new Size((int)fullSize.Width, (int)Math.Round(_BoundingBox.Height));
-                }
-                else
-                {
-                    _BoundingBox = fullSize;
-                    _BoundingBox.Height += outlineSize;
-                    bmpSize = new Size(1, 1);
-                }
-            }
-            using (var bmp = new Bitmap(bmpSize.Width, bmpSize.Height, PixelFormat.Format32bppArgb))
-            using (Graphics g = Graphics.FromImage(bmp))
-            {
-                g.Clear(Color.Transparent);
+                SKFontMetrics metrics = font.Metrics;
+                float fullHeight = metrics.Descent - metrics.Ascent;
+                _Descent = metrics.Descent; // descent is positive in Skia metrics (below the baseline)
+                SKRect tightBounds;
+                float advance = font.MeasureText(chrString, out tightBounds);
 
                 if (chr == ' ')
                 {
-                    _Texture = CDraw.AddTexture(bmp);
+                    _BoundingBox = new SizeF(advance, fullHeight + outlineSize);
+                    _Texture = CDraw.AddTexture(1, 1, new byte[4]);
                     _DrawBounding = new RectangleF(0, 0, 0, 0);
+                    return;
                 }
-                else
+
+                // The bounding box height must be the full line height (ascent→descent), identical for
+                // EVERY glyph. The draw scale factor is fontHeight / _BoundingBox.Height, so it has to be
+                // the same for all glyphs - otherwise each glyph is scaled differently and sits at its own
+                // height. Using the per-glyph tight ink height here made short glyphs (e.g. '-') get a huge
+                // factor (giant hyphen) and every letter end up at a different size/baseline.
+                _BoundingBox = new SizeF(advance + outlineSize / 2, fullHeight + outlineSize);
+                float fullWidth = advance + outlineSize;
+
+                // Render generously sized; the real ink area is cropped afterwards.
+                int bmpW = Math.Max(1, (int)Math.Ceiling(fullWidth) + 4);
+                int bmpH = Math.Max(1, (int)Math.Ceiling(fullHeight + outlineSize) + 4);
+
+                byte[] bgra;
+                float baselineX = outlineSize / 2;
+                float baselineY = -metrics.Ascent + outlineSize / 2;
+                using (var bmp = new SKBitmap(bmpW, bmpH, SKColorType.Bgra8888, SKAlphaType.Premul))
                 {
-                    g.SmoothingMode = SmoothingMode.AntiAlias;
-                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                    g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
-
-                    var point = new PointF(outlineSize / 2, outlineSize / 4);
-
-                    using (var path = new GraphicsPath())
+                    using (var canvas = new SKCanvas(bmp))
                     {
-                        //Have to use size in em not pixels!
-                        float emSize = fo.Size * fo.FontFamily.GetCellAscent(fo.Style) / fo.FontFamily.GetEmHeight(fo.Style);
-                        path.AddString(chrString, fo.FontFamily, (int)fo.Style, emSize, point, new StringFormat());
+                        canvas.Clear(SKColors.Transparent);
 
-                        using (var pen = new Pen(fontStyle.OutlineColor.AsColor(), outlineSize))
+                        if (outlineSize > 0)
                         {
-                            pen.LineJoin = LineJoin.Round;
-                            g.DrawPath(pen, path);
-                            g.FillPath(Brushes.White, path);
+                            using (var outlinePaint = new SKPaint
+                            {
+                                IsAntialias = true,
+                                Style = SKPaintStyle.Stroke,
+                                StrokeWidth = outlineSize,
+                                StrokeJoin = SKStrokeJoin.Round,
+                                Color = _ToSkColor(fontStyle.OutlineColor)
+                            })
+                                canvas.DrawText(chrString, baselineX, baselineY, font, outlinePaint);
                         }
+
+                        using (var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = SKColors.White })
+                            canvas.DrawText(chrString, baselineX, baselineY, font, fillPaint);
                     }
+
                     _DrawBounding = _GetRealBounds(bmp);
-                    using (Bitmap bmpCropped = bmp.Clone(_DrawBounding, PixelFormat.Format32bppArgb))
-                    {
-                        float dx = (fullSize.Width - _BoundingBox.Width - 1) / 2;
-                        _DrawBounding.X -= dx;
-                        _Texture = CDraw.AddTexture(bmpCropped);
-                        /*_DrawBounding.X *= _Texture.Width / _DrawBounding.Width;
-                        _DrawBounding.Y *= _Texture.Width / _DrawBounding.Width;
-                        _DrawBounding.Width = _Texture.Width;
-                        _DrawBounding.Height = _Texture.Height;*/
-#if FONT_DEBUG_OUTPUT
-                        if (Char.IsLetterOrDigit(chr))
-                        {
-                            if (outline > 0)
-                                bmpCropped.Save("font_" + chr + "o" + CFonts.Style + "2.png", ImageFormat.Png);
-                            else
-                                bmpCropped.Save("font_" + chr + CFonts.Style + "2.png", ImageFormat.Png);
-                        }
-#endif
-                    }
+                    bgra = _CropBgra(bmp, _DrawBounding);
                 }
+
+                // Baseline position (render space, same coordinates as _DrawBounding) - combined with the
+                // font descent it gives the reflection mirror line (see GetMirrorAnchor, CFontStyle).
+                _BaselineY = baselineY - _DrawBounding.Y;
+
+                float dx = (fullWidth - _BoundingBox.Width - 1) / 2;
+                _DrawBounding.X -= dx;
+                _Texture = CDraw.AddTexture((int)_DrawBounding.Width, (int)_DrawBounding.Height, bgra);
             }
         }
 
@@ -149,6 +139,16 @@ namespace Vocaluxe.Base.Fonts
             return _BoundingBox.Height * _GetFactor(fontHeight);
         }
 
+        /// <summary>
+        ///     The reflection mirror line of this glyph: the font descender line (baseline + descent,
+        ///     the line the old GDI+ line boxes ended at), in pixels below the top of the glyph's
+        ///     destination rect at the given font height.
+        /// </summary>
+        public float GetMirrorAnchor(float fontHeight)
+        {
+            return (_BaselineY + _Descent) * _GetFactor(fontHeight);
+        }
+
         public void GetTextureAndRect(float fontHeight, float x, float y, float z, out CTextureRef texture, out SRectF rect)
         {
             texture = _Texture;
@@ -160,77 +160,78 @@ namespace Vocaluxe.Base.Fonts
             rect = new SRectF(x, y, w, h, z);
         }
 
-        private static Rectangle _GetRealBounds(Bitmap bmp)
+        private static SKColor _ToSkColor(SColorF c)
         {
-            int minX = 0, maxX = bmp.Width - 1, minY = 0;
-            BitmapData bmpData = bmp.LockBits(bmp.GetRect(), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-            int values = bmpData.Width * bmp.Height;
-            var rgbValues = new Int32[values];
-            Marshal.Copy(bmpData.Scan0, rgbValues, 0, values);
-            int index = 0;
-            bool found = false;
-            //find from top
-            for (int y = 0; y < bmp.Height && !found; y++)
+            return new SKColor((byte)(c.R * 255), (byte)(c.G * 255), (byte)(c.B * 255), (byte)(c.A * 255));
+        }
+
+        /// <summary>
+        ///     Finds the bounding rectangle of the non-transparent (inked) pixels of the bitmap.
+        ///     Mirrors the former GDI+ LockBits-based scan, working on the SKBitmap's BGRA bytes.
+        /// </summary>
+        private static Rectangle _GetRealBounds(SKBitmap bmp)
+        {
+            int w = bmp.Width;
+            int h = bmp.Height;
+            byte[] data = bmp.Bytes;
+
+            // Scan for the full inked bounding box (all four edges). The previous version returned a
+            // height of (h - minY), i.e. down to the bottom of the bitmap instead of the bottom of the
+            // ink, which left a variable amount of empty space below each glyph.
+            int minX = w, minY = h, maxX = -1, maxY = -1;
+            for (int y = 0; y < h; y++)
             {
-                for (int x = 0; x < bmp.Width; x++)
+                int rowBase = y * w;
+                for (int x = 0; x < w; x++)
                 {
-                    if (rgbValues[index] != 0)
+                    if (data[(rowBase + x) * 4 + 3] != 0)
                     {
-                        minX = x;
-                        maxX = x;
-                        minY = y;
-                        found = true;
-                        break;
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
                     }
-                    index++;
-                }
-            }
-            found = false;
-            //find left
-            for (int x = 0; x < minX && !found; x++)
-            {
-                index = x + minY * bmp.Width;
-                for (int y = minY; y < bmp.Height; y++)
-                {
-                    if (rgbValues[index] != 0)
-                    {
-                        found = true;
-                        minX = x;
-                        break;
-                    }
-                    index += bmp.Width;
-                }
-            }
-            found = false;
-            //find right
-            for (int x = bmp.Width - 1; x > maxX && !found; x--)
-            {
-                index = x + minY * bmp.Width;
-                for (int y = minY; y < bmp.Height; y++)
-                {
-                    if (rgbValues[index] != 0)
-                    {
-                        found = true;
-                        maxX = x;
-                        break;
-                    }
-                    index += bmp.Width;
                 }
             }
 
-            //Add some additional space. Textures need some extra pixel for resizing.
-            const int d = 4;
-            minX = minX - d;
-            if (minX < 0)
-                minX = 0;
-            minY = minY - d;
-            if (minY < 0)
-                minY = 0;
-            maxX = maxX + d;
-            if (maxX > bmp.Width)
-                maxX = bmp.Width;
+            if (maxX < minX || maxY < minY) // nothing inked
+                return new Rectangle(0, 0, 1, 1);
 
-            return new Rectangle(minX, minY, maxX - minX, bmp.Height - minY);
+            // Add some additional space. Textures need some extra pixels for resizing.
+            const int d = 2;
+            minX = Math.Max(0, minX - d);
+            minY = Math.Max(0, minY - d);
+            maxX = Math.Min(w - 1, maxX + d);
+            maxY = Math.Min(h - 1, maxY + d);
+
+            return new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        }
+
+        /// <summary>
+        ///     Extracts the given rectangle of the bitmap as a tightly packed BGRA byte array.
+        /// </summary>
+        private static byte[] _CropBgra(SKBitmap bmp, RectangleF bounds)
+        {
+            int w = bmp.Width;
+            byte[] src = bmp.Bytes;
+
+            int cx = Math.Max(0, (int)bounds.X);
+            int cy = Math.Max(0, (int)bounds.Y);
+            int cw = Math.Max(1, (int)bounds.Width);
+            int ch = Math.Max(1, (int)bounds.Height);
+            if (cx + cw > bmp.Width)
+                cw = bmp.Width - cx;
+            if (cy + ch > bmp.Height)
+                ch = bmp.Height - cy;
+
+            var dst = new byte[cw * ch * 4];
+            for (int row = 0; row < ch; row++)
+            {
+                int srcOffset = ((cy + row) * w + cx) * 4;
+                int dstOffset = row * cw * 4;
+                Buffer.BlockCopy(src, srcOffset, dst, dstOffset, cw * 4);
+            }
+            return dst;
         }
     }
 }

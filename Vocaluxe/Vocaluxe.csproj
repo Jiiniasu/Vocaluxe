@@ -38,9 +38,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Explicit, not just transitive via OpenTK.GLControl: the rendering/imaging code (texture
-         upload paths, screenshots, bitmap helpers) uses System.Drawing types directly. -->
-    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     <PackageReference Include="OpenTK" Version="4.9.4" />
     <PackageReference Include="PortAudioSharp2" Version="1.0.6" />
     <PackageReference Include="SkiaSharp" Version="3.119.4" />

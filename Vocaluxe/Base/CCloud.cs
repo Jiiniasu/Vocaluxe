@@ -3,9 +3,9 @@ using Polly;
 using Polly.Retry;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Net.Http;
+using SkiaSharp;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
@@ -715,7 +715,7 @@ namespace Vocaluxe.Base
             return result ?? new CProfile[0];
         }
 
-        public static Image getAvatar(string fileName)
+        public static byte[] getAvatar(string fileName)
         {
             string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, FileName = fileName });
 
@@ -725,13 +725,14 @@ namespace Vocaluxe.Base
 
             try
             {
-                // Copy into a Bitmap so the returned image is fully loaded and independent of any
-                // underlying stream's lifetime.
-                using (var ms = new MemoryStream(data))
-                using (var img = Image.FromStream(ms))
+                // Validate that the image decodes fully before saving it (equivalent of the former
+                // GDI+ "copy into a Bitmap" load, done with SkiaSharp).
+                using (var bmp = SKBitmap.Decode(data))
                 {
-                    return new Bitmap(img);
+                    if (bmp == null)
+                        return null;
                 }
+                return data;
             }
             catch (Exception e)
             {

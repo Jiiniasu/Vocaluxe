@@ -135,7 +135,11 @@ namespace Vocaluxe.Lib.Draw
         /// <param name="dc">Coordinates to draw on</param>
         /// <param name="color">Color to use</param>
         /// <param name="isReflection">If true, then color is faded out in y direction</param>
-        protected abstract void _DrawTexture(TTextureType texture, SDrawCoords dc, SColorF color, bool isReflection = false);
+        /// <param name="fadeFrom">Relative alpha at the top of a reflection fade (default 1 = full alpha)</param>
+        /// <param name="fadeTo">Relative alpha at the bottom of a reflection fade (default 0 = fully
+        ///     transparent). Together fadeFrom/fadeTo let a reflection sample a shared gradient.
+        ///     Ignored for non-reflections.</param>
+        protected abstract void _DrawTexture(TTextureType texture, SDrawCoords dc, SColorF color, bool isReflection = false, float fadeFrom = 1f, float fadeTo = 0f);
 
         /// <summary>
         ///     Calculates the texture and world coordinates for drawing the texture in the rect cropping at the the bounds
@@ -335,7 +339,18 @@ namespace Vocaluxe.Lib.Draw
         /// <param name="space">The space between the texture and the reflection</param>
         /// <param name="height">The height of the reflection</param>
         /// <param name="allMonitors">Render on all monitors</param>
-        public void DrawTextureReflection(CTextureRef textureRef, SRectF rect, SColorF color, SRectF bounds, float space, float height, bool allMonitors = true)
+        /// <param name="mirrorLine">World Y of a shared mirror line to mirror about (e.g. the
+        ///     line the containing object's reflection mirrors about): every point at distance d
+        ///     above it is drawn at distance d below it.
+        ///     0 (default) keeps the classic behaviour: a strip of <paramref name="height"/> at
+        ///     the rect bottom, fading to transparent.</param>
+        /// <param name="fadeOrigin">World Y where the object's shared fade ramp starts (opacity
+        ///     1), used with <paramref name="mirrorLine"/> &gt; 0. The whole reflection fades
+        ///     1 -> 0 over the span <paramref name="fadeSpan"/> below it, so every element of
+        ///     the object fades uniformly at the same depth.</param>
+        /// <param name="fadeSpan">Length (pixels) of the object's shared fade ramp, used with
+        ///     <paramref name="mirrorLine"/> &gt; 0.</param>
+        public void DrawTextureReflection(CTextureRef textureRef, SRectF rect, SColorF color, SRectF bounds, float space, float height, bool allMonitors = true, float mirrorLine = 0f, float fadeOrigin = 0f, float fadeSpan = 0f)
         {
             Debug.Assert(height >= 0);
 
@@ -355,14 +370,46 @@ namespace Vocaluxe.Lib.Draw
                 if (!_CalcDrawCoords(texture, newrect, newbounds, out dc, true))
                     return;
 
-                if (height > newrect.H)
-                    height = newrect.H;
-
-                dc.Wy1 += newrect.H + space; // Move from start of rect to end of rect with spacing
-                dc.Wy2 += space + height; // Move from end of rect
-                dc.Ty2 += (newrect.H - height) / newrect.H; // Adjust so not all of the start of the texture is drawn (mirrored--> Ty1>Ty2)
-                if (dc.Ty2 < dc.Ty1) // Make sure we actually draw something
-                    _DrawTexture(texture, dc, color, true);
+                if (mirrorLine > 0f)
+                {
+                    // Mirror about the shared mirror line (world Y) - the same line the containing
+                    // object's reflection mirrors about, so text and object share one mirror
+                    // geometry: every point at distance d above the line is drawn at distance d
+                    // below it. If the object defines a fade ramp ([fadeOrigin,
+                    // fadeOrigin + fadeSpan], opacity 1 -> 0), this element is clipped at the
+                    // ramp end and both its edges pick up the ramp value at their final
+                    // position, so it fades exactly like the rest of the object at the same
+                    // depth.
+                    float top = 2f * mirrorLine - newrect.Bottom; // World Y of the mirrored content's top edge
+                    float shown = newrect.H;
+                    float a0 = 1f, a1 = 0f;
+                    if (fadeSpan > 0f)
+                    {
+                        float rampEnd = fadeOrigin + fadeSpan;
+                        if (top >= rampEnd)
+                            continue; // Entirely past the object's fade: nothing visible
+                        if (shown > rampEnd - top)
+                            shown = rampEnd - top; // Clip the visible part at the object's fade end
+                        a0 = Math.Min(1f, 1f - (top - fadeOrigin) / fadeSpan);
+                        a1 = Math.Max(0f, 1f - (top + shown - fadeOrigin) / fadeSpan);
+                    }
+                    dc.Wy1 = top;
+                    dc.Wy2 = top + shown;
+                    dc.Ty2 = (1f - shown / newrect.H) * dc.Ty1; // Mirror coords: Ty1 is the content's bottom row
+                    if (a0 <= 0f)
+                        continue;
+                    _DrawTexture(texture, dc, color, true, a0, a1);
+                }
+                else
+                {
+                    if (height > newrect.H)
+                        height = newrect.H;
+                    dc.Wy1 += newrect.H + space; // Move from start of rect to end of rect with spacing
+                    dc.Wy2 += space + height; // Move from start of rect
+                    dc.Ty2 += (newrect.H - height) / newrect.H; // Adjust so not all of the texture is drawn (mirrored--> Ty1>Ty2)
+                    if (dc.Ty2 < dc.Ty1) // Make sure we actually draw something
+                        _DrawTexture(texture, dc, color, true);
+                }
             }
         }
 

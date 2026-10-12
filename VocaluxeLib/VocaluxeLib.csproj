@@ -22,10 +22,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- TEMPORARY S1 bridge: the local imaging pipeline (CHelper.LoadBitmap, Extensions.Bitmap helpers)
-         still uses System.Drawing types until the S4 SkiaSharp port. Remove this package and the bitmap
-         APIs from CHelper/Extensions when the SkiaSharp migration lands. -->
-    <PackageReference Include="System.Drawing.Common" Version="8.0.0" />
     <PackageReference Include="Serilog" Version="4.2.0" />
     <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />

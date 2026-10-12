@@ -18,9 +18,8 @@
 using System;
 using System.Data;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
-using System.Runtime.InteropServices;
+using SkiaSharp;
 using Vocaluxe.Base;
 using VocaluxeLib.Draw;
 using VocaluxeLib.Log;
@@ -155,25 +154,29 @@ namespace Vocaluxe.Lib.Database
             if (_Connection == null || !File.Exists(imagePath))
                 return false;
 
-            Bitmap origin;
-            try
+            SKBitmap origin;
+            using (var codec = SKCodec.Create(imagePath))
             {
-                origin = new Bitmap(imagePath);
-            }
-            catch (Exception)
-            {
-                CLog.Error("Error loading image: " + imagePath);
-                return false;
+                if (codec == null)
+                {
+                    CLog.Error("Error loading image: " + imagePath);
+                    return false;
+                }
+                var info = new SKImageInfo(codec.Info.Width, codec.Info.Height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+                origin = new SKBitmap(info);
+                SKCodecResult res = codec.GetPixels(info, origin.GetPixels());
+                if (res != SKCodecResult.Success && res != SKCodecResult.IncompleteInput)
+                {
+                    origin.Dispose();
+                    CLog.Error("Error loading image: " + imagePath);
+                    return false;
+                }
             }
             try
             {
                 int w = origin.Width;
                 int h = origin.Height;
-                byte[] data = new byte[w * h * 4];
-
-                BitmapData bmpData = origin.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-                Marshal.Copy(bmpData.Scan0, data, 0, w * h * 4);
-                origin.UnlockBits(bmpData);
+                byte[] data = origin.Bytes;
 
                 using (SQLiteCommand command = new SQLiteCommand(_Connection))
                 {

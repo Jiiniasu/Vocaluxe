@@ -39,14 +39,11 @@ namespace Vocaluxe.Lib.Draw
         void MakeScreenShot();
 
         CTextureRef AddTexture(string texturePath);
-        CTextureRef AddTexture(Bitmap bitmap);
         CTextureRef AddTexture(int w, int h, byte[] data);
-        void UpdateTexture(CTextureRef texture, Bitmap bmp);
         void UpdateTexture(CTextureRef texture, int w, int h, byte[] data);
         CTextureRef EnqueueTexture(string texturePath);
-        CTextureRef EnqueueTexture(Bitmap bmp);
         CTextureRef EnqueueTexture(int w, int h, byte[] data);
-        void EnqueueTextureUpdate(CTextureRef textureRef, Bitmap bmp);
+        void EnqueueTextureUpdate(CTextureRef textureRef, int w, int h, byte[] data);
         CTextureRef CopyTexture(CTextureRef textureRef);
         void RemoveTexture(ref CTextureRef texture);
 
@@ -58,6 +55,6 @@ namespace Vocaluxe.Lib.Draw
         void DrawTexture(CTextureRef texture, SRectF rect, SColorF color, SRectF bounds, bool mirrored = false, bool allMonitors = true);
         void DrawTexture(CTextureRef texture, SRectF rect, SColorF color, float begin, float end, bool allMonitors = true);
 
-        void DrawTextureReflection(CTextureRef texture, SRectF rect, SColorF color, SRectF bounds, float space, float height, bool allMonitors = true);
+        void DrawTextureReflection(CTextureRef texture, SRectF rect, SColorF color, SRectF bounds, float space, float height, bool allMonitors = true, float mirrorLine = 0f, float fadeOrigin = 0f, float fadeSpan = 0f);
     }
 }

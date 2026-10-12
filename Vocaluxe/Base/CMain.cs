@@ -543,9 +543,9 @@ namespace Vocaluxe.Base
             CFonts.DrawText(text, font, x, y, z, color, allMonitors);
         }
 
-        public void DrawTextReflection(string text, CFont font, float x, float y, float z, SColorF color, float reflectionSpace, float reflectionHeight)
+        public void DrawTextReflection(string text, CFont font, float x, float y, float z, SColorF color, float reflectionSpace, float reflectionHeight, float mirrorLine = 0f, float fadeOrigin = 0f, float fadeSpan = 0f)
         {
-            CFonts.DrawTextReflection(text, font, x, y, z, color, reflectionSpace, reflectionHeight);
+            CFonts.DrawTextReflection(text, font, x, y, z, color, reflectionSpace, reflectionHeight, mirrorLine, fadeOrigin, fadeSpan);
         }
 
         public void DrawText(string text, CFont font, float x, float y, float z, SColorF color, float begin, float end)

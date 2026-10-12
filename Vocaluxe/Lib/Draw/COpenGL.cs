@@ -18,13 +18,13 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using SkiaSharp;
 using Vocaluxe.Base;
 using VocaluxeLib.Log;
 using VocaluxeLib;
@@ -236,16 +236,20 @@ namespace Vocaluxe.Lib.Draw
             int width = GetScreenWidth();
             int height = GetScreenHeight();
 
-            using (var screen = new Bitmap(width, height))
+            using (var screen = new SKBitmap(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Unpremul)))
             {
-                BitmapData bmpData = screen.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-
-                GL.ReadPixels(0, 0, width, height, PixelFormat.Bgra, PixelType.UnsignedByte, bmpData.Scan0);
-                screen.UnlockBits(bmpData);
+                GL.ReadPixels(0, 0, width, height, PixelFormat.Bgra, PixelType.UnsignedByte, screen.GetPixels());
 
                 // OpenGL's origin is bottom-left, so flip vertically before saving.
-                screen.RotateFlip(RotateFlipType.RotateNoneFlipY);
-                screen.Save(file, ImageFormat.Png);
+                using (var flipped = new SKBitmap(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Unpremul)))
+                using (var canvas = new SKCanvas(flipped))
+                {
+                    canvas.Translate(0, height);
+                    canvas.Scale(1, -1);
+                    canvas.DrawBitmap(screen, 0, 0);
+                    using (var encoded = SKImage.FromBitmap(flipped).Encode(SKEncodedImageFormat.Png, 100))
+                        File.WriteAllBytes(file, encoded.ToArray());
+                }
             }
         }
 
@@ -412,7 +416,7 @@ namespace Vocaluxe.Lib.Draw
             GL.BindTexture(TextureTarget.Texture2D, 0);
         }
 
-        protected override void _DrawTexture(COGLTexture texture, SDrawCoords dc, SColorF color, bool isReflection = false)
+        protected override void _DrawTexture(COGLTexture texture, SDrawCoords dc, SColorF color, bool isReflection = false, float fadeFrom = 1f, float fadeTo = 0f)
         {
             // Align textures to full pixels to reduce artefacts
             dc.Wx1 = (float)Math.Round(dc.Wx1);
@@ -436,12 +440,12 @@ namespace Vocaluxe.Lib.Draw
 
             GL.Begin(PrimitiveType.Quads);
 
-            GL.Color4(color.R, color.G, color.B, color.A * CGraphics.GlobalAlpha);
+            GL.Color4(color.R, color.G, color.B, color.A * fadeFrom * CGraphics.GlobalAlpha);
             GL.TexCoord2(dc.Tx1, dc.Ty1);
             GL.Vertex3(dc.Wx1, dc.Wy1, dc.Wz);
 
             if (isReflection)
-                GL.Color4(color.R, color.G, color.B, 0);
+                GL.Color4(color.R, color.G, color.B, color.A * fadeTo * CGraphics.GlobalAlpha);
             GL.TexCoord2(dc.Tx1, dc.Ty2);
             GL.Vertex3(dc.Wx1, dc.Wy2, dc.Wz);
 
@@ -449,7 +453,7 @@ namespace Vocaluxe.Lib.Draw
             GL.Vertex3(dc.Wx2, dc.Wy2, dc.Wz);
 
             if (isReflection)
-                GL.Color4(color.R, color.G, color.B, color.A * CGraphics.GlobalAlpha);
+                GL.Color4(color.R, color.G, color.B, color.A * fadeFrom * CGraphics.GlobalAlpha);
             GL.TexCoord2(dc.Tx2, dc.Ty1);
             GL.Vertex3(dc.Wx2, dc.Wy1, dc.Wz);
 

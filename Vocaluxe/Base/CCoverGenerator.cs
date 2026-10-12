@@ -18,12 +18,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
-using System.Drawing.Text;
 using System.IO;
 using System.Linq;
+using SkiaSharp;
 using Vocaluxe.Base.Fonts;
 using VocaluxeLib;
 
@@ -70,12 +67,16 @@ namespace Vocaluxe.Base
             _MarginBottom = theme.Text.Margin.Bottom.HasValue ? theme.Text.Margin.Bottom.Value : theme.Text.Margin.Default;
         }
 
+        private static SKColor _ToSkColor(SColorF c)
+        {
+            return new SKColor((byte)(c.R * 255), (byte)(c.G * 255), (byte)(c.B * 255), (byte)(c.A * 255));
+        }
+
         private class CTextElement
         {
             public readonly string Text;
             public float Width, Height;
-            private readonly Graphics _Graphics;
-            private readonly Font _Font;
+            private readonly SKFont _Font;
             private float _WidthTrimmed = -1;
             public float WidthTrimmed
             {
@@ -84,20 +85,19 @@ namespace Vocaluxe.Base
                     if (_WidthTrimmed < 0f)
                     {
                         string text = Text.TrimEnd(null);
-                        _WidthTrimmed = text.Length == Text.Length ? Width : _Graphics.MeasureString(text, _Font).Width;
+                        _WidthTrimmed = text.Length == Text.Length ? Width : _Font.MeasureText(text);
                     }
                     return _WidthTrimmed;
                 }
             }
             public int Line;
 
-            public CTextElement(string text, Graphics g, Font font)
+            public CTextElement(string text, SKFont font)
             {
                 Text = text;
-                SizeF dimensions = g.MeasureString(text, font);
-                Width = dimensions.Width;
-                Height = (dimensions.Height + font.Height) / 2;
-                _Graphics = g;
+                Width = font.MeasureText(text);
+                SKFontMetrics m = font.Metrics;
+                Height = m.Descent - m.Ascent;
                 _Font = font;
             }
 
@@ -109,115 +109,139 @@ namespace Vocaluxe.Base
             }
         }
 
-        private void _DrawBackground(Graphics g, Bitmap bmpBackground, String firstCoverPath)
+        private void _DrawBackground(SKCanvas canvas, int width, int height, SKBitmap bmpBackground, string firstCoverPath)
         {
-            g.Clear(_BGColor.AsColor());
+            canvas.Clear(_ToSkColor(_BGColor));
 
-            ImageAttributes ia = null;
+            var dstRect = new SKRect(0, 0, width, height);
+            byte bgAlpha = 255;
             if (_Theme.ShowFirstCover && !String.IsNullOrEmpty(firstCoverPath) && File.Exists(firstCoverPath))
             {
-                using (Bitmap bmp2 = new Bitmap(firstCoverPath))
-                    g.DrawImage(bmp2, bmpBackground.GetRect(), 0, 0, bmp2.Width, bmp2.Height, GraphicsUnit.Pixel);
-                ColorMatrix cm = new ColorMatrix { Matrix33 = _Theme.ImageAlpha };
-                ia = new ImageAttributes();
-                ia.SetColorMatrix(cm);
-            }
-            g.DrawImage(bmpBackground, bmpBackground.GetRect(), 0, 0, bmpBackground.Width, bmpBackground.Height, GraphicsUnit.Pixel, ia);
-        }
-
-        private void _DrawText(Graphics g, Size bmpSize, CFont font, List<CTextElement> elements)
-        {
-            Font fo = CFonts.GetSystemFont(font);
-
-            float maxHeight = elements.Select(el => el.Height).Max();
-            int lineCount = elements.Last().Line + 1;
-
-            //Have to use size in em not pixels!
-            float emSize = fo.Size * fo.FontFamily.GetCellAscent(fo.Style) / fo.FontFamily.GetEmHeight(fo.Style);
-            float outlineSize = CFonts.GetOutlineSize(font) * font.Height;
-            SColorF outlineColorF = CFonts.GetOutlineColor(font);
-            outlineColorF.A = outlineColorF.A * _TextColor.A;
-
-            using (var path = new GraphicsPath())
-            using (var pen = new Pen(outlineColorF.AsColor(), outlineSize / 2))
-            {
-                pen.LineJoin = LineJoin.Round;
-                pen.Alignment = PenAlignment.Outset;
-                float top = (bmpSize.Height - _MarginBottom - _MarginTop - maxHeight * lineCount) / 2 + _MarginTop;
-                int nextLineEl = 0;
-                for (int i = 0; i < lineCount; i++)
+                using (SKBitmap first = SKBitmap.Decode(firstCoverPath))
                 {
-                    int firstEl = nextLineEl;
-                    for (; nextLineEl < elements.Count; nextLineEl++)
-                    {
-                        if (elements[nextLineEl].Line > i)
-                            break;
-                    }
-
-                    string line = elements.GetRange(firstEl, nextLineEl - firstEl).Aggregate("", (current, element) => current + element.Text);
-                    float left;
-                    if (lineCount == 1 || (i == 1 && lineCount == 3))
-                    {
-                        //Center Text if this is the only line or the middle line
-                        float width = _GetWidth(elements, firstEl, nextLineEl - 1);
-                        left = (bmpSize.Width - _MarginLeft - _MarginRight - width) / 2 + _MarginLeft;
-                    }
-                    else if (i == lineCount - 1)
-                    {
-                        //Place last line at right
-                        float width = _GetWidth(elements, firstEl, nextLineEl - 1);
-                        left = bmpSize.Width - width - _MarginRight;
-                    }
-                    else
-                        left = _MarginLeft;
-                    //g.DrawString(line, fo, new SolidBrush(_TextColor.AsColor()), left, top, StringFormat.GenericTypographic);
-                    path.AddString(line, fo.FontFamily, (int)fo.Style, emSize, new PointF(left, top), StringFormat.GenericTypographic);
-                    top += maxHeight + _LineSpace;
+                    if (first != null)
+                        canvas.DrawBitmap(first, dstRect);
                 }
-                g.DrawPath(pen, path);
-                g.FillPath(new SolidBrush(_TextColor.AsColor()), path);
+                bgAlpha = (byte)(_Theme.ImageAlpha * 255);
+            }
+
+            using (var paint = new SKPaint { Color = new SKColor(255, 255, 255, bgAlpha) })
+                canvas.DrawBitmap(bmpBackground, dstRect, paint);
+        }
+
+        private void _DrawText(SKCanvas canvas, int width, int height, CFont font, List<CTextElement> elements)
+        {
+            SKTypeface typeface = CFonts.GetTypeface(font);
+            using (var skFont = new SKFont(typeface, font.Height))
+            {
+                float maxHeight = elements.Select(el => el.Height).Max();
+                int lineCount = elements.Last().Line + 1;
+
+                float outlineSize = CFonts.GetOutlineSize(font) * font.Height;
+                SColorF outlineColorF = CFonts.GetOutlineColor(font);
+                outlineColorF.A = outlineColorF.A * _TextColor.A;
+
+                using (var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = _ToSkColor(_TextColor) })
+                using (var outlinePaint = new SKPaint
+                {
+                    IsAntialias = true,
+                    Style = SKPaintStyle.Stroke,
+                    StrokeWidth = outlineSize / 2,
+                    StrokeJoin = SKStrokeJoin.Round,
+                    Color = _ToSkColor(outlineColorF)
+                })
+                {
+                    SKFontMetrics metrics = skFont.Metrics;
+                    float top = (height - _MarginBottom - _MarginTop - maxHeight * lineCount) / 2 + _MarginTop;
+                    int nextLineEl = 0;
+                    for (int i = 0; i < lineCount; i++)
+                    {
+                        int firstEl = nextLineEl;
+                        for (; nextLineEl < elements.Count; nextLineEl++)
+                        {
+                            if (elements[nextLineEl].Line > i)
+                                break;
+                        }
+
+                        string line = elements.GetRange(firstEl, nextLineEl - firstEl).Aggregate("", (current, element) => current + element.Text);
+                        float left;
+                        if (lineCount == 1 || (i == 1 && lineCount == 3))
+                        {
+                            //Center Text if this is the only line or the middle line
+                            float lineWidth = _GetWidth(elements, firstEl, nextLineEl - 1);
+                            left = (width - _MarginLeft - _MarginRight - lineWidth) / 2 + _MarginLeft;
+                        }
+                        else if (i == lineCount - 1)
+                        {
+                            //Place last line at right
+                            float lineWidth = _GetWidth(elements, firstEl, nextLineEl - 1);
+                            left = width - lineWidth - _MarginRight;
+                        }
+                        else
+                            left = _MarginLeft;
+                        float baseline = top - metrics.Ascent;
+                        if (outlineSize > 0)
+                            canvas.DrawText(line, left, baseline, skFont, outlinePaint);
+                        canvas.DrawText(line, left, baseline, skFont, fillPaint);
+                        top += maxHeight + _LineSpace;
+                    }
+                }
             }
         }
 
-        public Bitmap GetCover(string text, string firstCoverPath)
+        /// <summary>
+        ///     Renders the cover and returns it as a tightly packed, straight-alpha BGRA byte array.
+        ///     Returns null (and width/height 0) if the generator is not valid.
+        /// </summary>
+        public byte[] GetCover(string text, string firstCoverPath, out int width, out int height)
         {
+            width = 0;
+            height = 0;
             if (!_Valid)
                 return null;
             text = CLanguage.Translate(_Theme.Text.Text.Replace("%TEXT%", text));
-            using (Bitmap bmpImage = new Bitmap(_Image))
-            {
-                Bitmap bmp = new Bitmap(bmpImage.Width, bmpImage.Height, PixelFormat.Format32bppArgb);
-                try
-                {
-                    using (Graphics g = Graphics.FromImage(bmp))
-                    {
-                        g.SmoothingMode = SmoothingMode.AntiAlias;
-                        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                        g.TextRenderingHint = TextRenderingHint.AntiAlias;
 
-                        _DrawBackground(g, bmpImage, firstCoverPath);
+            try
+            {
+                using (SKBitmap bmpImage = SKBitmap.Decode(_Image))
+                {
+                    if (bmpImage == null)
+                        return null;
+                    int w = bmpImage.Width;
+                    int h = bmpImage.Height;
+                    var info = new SKImageInfo(w, h, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+                    using (var bmp = new SKBitmap(info))
+                    using (var canvas = new SKCanvas(bmp))
+                    {
+                        _DrawBackground(canvas, w, h, bmpImage, firstCoverPath);
 
                         if (text != "")
                         {
                             CFont font = new CFont(_Theme.Text.Font);
-                            Font fo = CFonts.GetSystemFont(font);
-                            IEnumerable<string> textParts = _SplitText(text);
-                            List<CTextElement> elements = textParts.Select(line => new CTextElement(line, g, fo)).ToList();
-                            float factor = _DistributeText(elements, bmp.Width, bmp.Height);
-                            foreach (CTextElement element in elements)
-                                element.AdjustSize(factor);
-                            font.Height *= factor / (1f + CFonts.GetOutlineSize(font)); //Adjust for outline size
-                            _DrawText(g, bmp.GetSize(), font, elements);
+                            SKTypeface typeface = CFonts.GetTypeface(font);
+                            using (var measureFont = new SKFont(typeface, font.Height))
+                            {
+                                IEnumerable<string> textParts = _SplitText(text);
+                                List<CTextElement> elements = textParts.Select(line => new CTextElement(line, measureFont)).ToList();
+                                float factor = _DistributeText(elements, w, h);
+                                foreach (CTextElement element in elements)
+                                    element.AdjustSize(factor);
+                                font.Height *= factor / (1f + CFonts.GetOutlineSize(font)); //Adjust for outline size
+                                _DrawText(canvas, w, h, font, elements);
+                            }
                         }
+
+                        canvas.Flush();
+                        width = w;
+                        height = h;
+                        return bmp.Bytes;
                     }
-                    return bmp;
-                }
-                catch (Exception)
-                {
-                    bmp.Dispose();
                 }
             }
-            return null;
+            catch (Exception)
+            {
+                return null;
+            }
         }
 
         /// <summary>

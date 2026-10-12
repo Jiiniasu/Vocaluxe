@@ -167,6 +167,15 @@ namespace VocaluxeLib.Menu
         private float _ReflectionSpace;
         private float _ReflectionHeight;
 
+        // Set during DrawRelative: the mirror line (world Y) of the object (e.g. a button) the text
+        // belongs to - halfway between the object bottom and the top of its reflection, the same
+        // equidistant axis its texture mirrors about - and the object's fade ramp: opacity 1 at
+        // _FadeOrigin fading linearly to 0 over _FadeSpan, the same ramp its texture uses, so the
+        // text fades like the rest of the object. 0 = standalone text, which uses its own ramp.
+        private float _MirrorLine;
+        private float _FadeOrigin;
+        private float _FadeSpan;
+
         public bool AllMonitors = true;
 
         private string _Text = String.Empty;
@@ -256,6 +265,9 @@ namespace VocaluxeLib.Menu
             SelColor = text.SelColor;
             _ReflectionSpace = text._ReflectionSpace;
             _ReflectionHeight = text._ReflectionHeight;
+            _MirrorLine = text._MirrorLine;
+            _FadeOrigin = text._FadeOrigin;
+            _FadeSpan = text._FadeSpan;
             AllMonitors = text.AllMonitors;
 
             Text = text.Text;
@@ -321,7 +333,16 @@ namespace VocaluxeLib.Menu
             CBase.Fonts.DrawText(_Text, CalculatedFont, Rect.X, Rect.Y, Z, color, AllMonitors);
 
             if (_ReflectionHeight > 0)
-                CBase.Fonts.DrawTextReflection(_Text, CalculatedFont, Rect.X, Rect.Y, Z, color, _ReflectionSpace, _ReflectionHeight);
+            {
+                // Mirror about the object's mirror line (the same axis its texture uses) and fade
+                // with the object's ramp, so the text fades like the rest of the object at the
+                // same depth. Standalone text is its own object: the axis and the ramp are
+                // defined by its own bottom edge and reflection params.
+                float mirrorLine = (_MirrorLine > 0f) ? _MirrorLine : (Rect.Bottom + _ReflectionSpace / 2f);
+                float fadeOrigin = (_FadeOrigin > 0f) ? _FadeOrigin : (Rect.Bottom + _ReflectionSpace);
+                float fadeSpan = (_FadeOrigin > 0f) ? _FadeSpan : _ReflectionHeight;
+                CBase.Fonts.DrawTextReflection(_Text, CalculatedFont, Rect.X, Rect.Y, Z, color, _ReflectionSpace, _ReflectionHeight, mirrorLine, fadeOrigin, fadeSpan);
+            }
 
             if (Selected && (CBase.Settings.GetProgramState() == EProgramState.EditTheme))
                 CBase.Drawing.DrawRect(new SColorF(0.5f, 1f, 0.5f, 0.5f), new SRectF(Rect.X, Rect.Y, Rect.W, Rect.H, Z));
@@ -347,18 +368,36 @@ namespace VocaluxeLib.Menu
         {
             float oldReflectionSpace = _ReflectionSpace;
             float oldReflectionHeight = _ReflectionHeight;
+            float oldMirrorLine = _MirrorLine;
+            float oldFadeOrigin = _FadeOrigin;
+            float oldFadeSpan = _FadeSpan;
             if (reflectionHeight > 0)
             {
                 _ReflectionSpace = (rectHeight - Rect.Y - Rect.H) * 2 + reflectionSpace;
                 _ReflectionHeight = reflectionHeight - (rectHeight - Rect.Y) + Rect.H;
+
+                // The object's mirror axis: halfway between the object bottom (ry + rectHeight) and
+                // the top of its reflection (object bottom + space), so the text mirrors about the
+                // same line as the object's texture does; and its fade ramp: the object's own
+                // reflection fades 1 -> 0 over min(reflectionHeight, rectHeight) below that top,
+                // so the text fades like the rest of the object at the same depth.
+                _MirrorLine = ry + rectHeight + reflectionSpace / 2f;
+                _FadeOrigin = ry + rectHeight + reflectionSpace;
+                _FadeSpan = Math.Min(reflectionHeight, rectHeight);
             }
             else
+            {
                 _ReflectionHeight = 0;
+                _FadeSpan = 0;
+            }
             X += rx;
             Y += ry;
             _Draw(true);
             _ReflectionSpace = oldReflectionSpace;
             _ReflectionHeight = oldReflectionHeight;
+            _MirrorLine = oldMirrorLine;
+            _FadeOrigin = oldFadeOrigin;
+            _FadeSpan = oldFadeSpan;
             X -= rx;
             Y -= ry;
         }

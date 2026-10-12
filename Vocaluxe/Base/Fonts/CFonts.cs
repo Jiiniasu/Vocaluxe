@@ -97,7 +97,7 @@ namespace Vocaluxe.Base.Fonts
             }
         }
 
-        public static void DrawTextReflection(string text, CFont font, float x, float y, float z, SColorF color, float rspace, float rheight)
+        public static void DrawTextReflection(string text, CFont font, float x, float y, float z, SColorF color, float rspace, float rheight, float mirrorLine = 0f, float fadeOrigin = 0f, float fadeSpan = 0f)
         {
             if (font.Height <= 0f || text == "")
                 return;
@@ -107,7 +107,7 @@ namespace Vocaluxe.Base.Fonts
             float dx = x;
             foreach (char chr in text)
             {
-                fontStyle.DrawGlyphReflection(chr, font.Height, dx, y, z, color, rspace, rheight);
+                fontStyle.DrawGlyphReflection(chr, font.Height, dx, y, z, color, rspace, rheight, mirrorLine, fadeOrigin, fadeSpan);
                 dx += fontStyle.GetWidth(chr, font.Height);
             }
         }
@@ -159,9 +159,9 @@ namespace Vocaluxe.Base.Fonts
             return new RectangleF(text.X, text.Y, GetTextWidth(text.TranslatedText, text.CalculatedFont), GetTextHeight(text.TranslatedText, text.CalculatedFont));
         }
 
-        public static Font GetSystemFont(CFont font)
+        public static SkiaSharp.SKTypeface GetTypeface(CFont font)
         {
-            return _GetFontStyle(font).GetSystemFont(font.Height);
+            return _GetFontStyle(font).GetTypeface();
         }
 
         public static float GetOutlineSize(CFont font)

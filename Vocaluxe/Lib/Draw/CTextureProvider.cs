@@ -19,15 +19,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using SkiaSharp;
 using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
+using VocaluxeLib.Log;
 
 namespace Vocaluxe.Lib.Draw
 {
@@ -58,17 +59,16 @@ namespace Vocaluxe.Lib.Draw
             public readonly EQueueAction Action;
 
             /// <summary>
-            ///     Creates a new Queue entry
+            ///     Creates a new Queue entry for Delete actions (no data required)
             /// </summary>
-            /// <param name="textureOrRef">TTextureType or CTextureRef</param>
-            /// <param name="action"></param>
-            /// <param name="data">Texture data as a bitmap</param>
-            public STextureQueue(object textureOrRef, EQueueAction action, Bitmap data)
+            /// <param name="textureOrRef">CTextureRef to delete</param>
+            /// <param name="action">Must be EQueueAction.Delete</param>
+            public STextureQueue(object textureOrRef, EQueueAction action)
             {
                 TextureOrRef = textureOrRef;
                 Action = action;
-                Data = data;
                 DataSize = new Size();
+                Data = null;
             }
 
             /// <summary>
@@ -256,40 +256,6 @@ namespace Vocaluxe.Lib.Draw
         }
 
         /// <summary>
-        ///     Writes the specified bitmap to the texture, creating it if null<br />
-        ///     Also does the resizing if required
-        /// </summary>
-        /// <param name="texture"></param>
-        /// <param name="bmp"></param>
-        private void _WriteBitmapToTexture(ref TTextureType texture, Bitmap bmp)
-        {
-            Bitmap bmp2 = null;
-            try
-            {
-                Size size = _GetNewTextureSize(bmp.GetSize());
-                if (!size.Equals(bmp.GetSize()))
-                {
-                    bmp2 = bmp.Resize(size);
-                    bmp = bmp2;
-                }
-
-                //Fill the new Bitmap with the texture data
-                BitmapData bmpData = bmp.LockBits(bmp.GetRect(), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-                if (texture == null)
-                    texture = _CreateTexture(size);
-                else
-                    texture.DataSize = size;
-                _WriteDataToTexture(texture, bmpData.Scan0);
-                bmp.UnlockBits(bmpData);
-            }
-            finally
-            {
-                if (bmp2 != null)
-                    bmp2.Dispose();
-            }
-        }
-
-        /// <summary>
         ///     Adds the texture to the cache<br />
         ///     Asserts that the cache entry does not exist yet. So make Get/Add cache atomic through use of _TextureCache lock!<br />
         ///     Thread safe
@@ -450,52 +416,27 @@ namespace Vocaluxe.Lib.Draw
                         Debug.Assert(oldTexture != null, "Queued type is wrong");
                         Debug.Assert(!oldTexture.IsLoaded);
                         if (oldTexture.RefCount <= 0)
-                        {
-                            Bitmap bmp = q.Data as Bitmap;
-                            if (bmp != null)
-                                bmp.Dispose();
                             continue;
-                        }
-                        TTextureType texture = null;
-                        // ReSharper disable CanBeReplacedWithTryCastAndCheckForNull
-                        if (q.Data is Bitmap)
+                        if (q.Data is byte[])
                         {
-                            Bitmap bmp = (Bitmap)q.Data;
-                            _WriteBitmapToTexture(ref texture, bmp);
-                            bmp.Dispose();
+                            TTextureType texture = _CreateAndFillTexture(q.DataSize, (byte[])q.Data);
+                            _MergeTextures(oldTexture, texture);
                         }
-                        else if (q.Data is byte[])
-                            texture = _CreateAndFillTexture(q.DataSize, (byte[])q.Data);
                         else
                             throw new ArgumentException("q.Data is of invalid type");
-                        // ReSharper restore CanBeReplacedWithTryCastAndCheckForNull
-                        _MergeTextures(oldTexture, texture);
                     }
                     else
                     {
                         CTextureRef textureRef = q.TextureOrRef as CTextureRef;
                         Debug.Assert(textureRef != null, "Queued type is wrong");
                         if (!_Textures.ContainsKey(textureRef.ID))
-                        {
-                            Bitmap bmp = q.Data as Bitmap;
-                            if (bmp != null)
-                                bmp.Dispose();
                             continue;
-                        }
                         if (q.Action == EQueueAction.Update)
                         {
-                            // ReSharper disable CanBeReplacedWithTryCastAndCheckForNull
-                            if (q.Data is Bitmap)
-                            {
-                                Bitmap bmp = (Bitmap)q.Data;
-                                UpdateTexture(textureRef, bmp);
-                                bmp.Dispose();
-                            }
-                            else if (q.Data is byte[])
+                            if (q.Data is byte[])
                                 UpdateTexture(textureRef, q.DataSize, (byte[])q.Data);
                             else
                                 throw new ArgumentException("q.Data is of invalid type");
-                            // ReSharper restore CanBeReplacedWithTryCastAndCheckForNull
                         }
                         else if (q.Action == EQueueAction.Delete)
                             RemoveTexture(ref textureRef);
@@ -534,46 +475,23 @@ namespace Vocaluxe.Lib.Draw
         }
 
         /// <summary>
-        ///     Enqueues a bitmap to add or update the texture
+        ///     Resamples a tightly packed straight-alpha BGRA byte array to a new size using SkiaSharp.
+        ///     Keeps the SSIS texture-quality downsample feature (see <see cref="_GetNewTextureSize" />).
         /// </summary>
-        /// <param name="texture">TTextureType (Add) or CTextureRef(Update)</param>
-        /// <param name="bmp"></param>
-        /// <param name="action"></param>
-        /// <param name="asyncResize">True if resizing should be done in an extra thread</param>
-        private void _EnqueueTextureAddOrUpdate(Object texture, Bitmap bmp, EQueueAction action, bool asyncResize)
+        private static byte[] _ResampleBgra(byte[] src, int sw, int sh, int dw, int dh)
         {
-            Debug.Assert(action == EQueueAction.Add || action == EQueueAction.Update);
-            Debug.Assert(action != EQueueAction.Add || texture is TTextureType);
-            Debug.Assert(action != EQueueAction.Update || texture is CTextureRef);
-            if (_RequiresResize(bmp.GetSize()))
+            if (dw <= 0 || dh <= 0 || (dw == sw && dh == sh))
+                return src;
+            using (var source = new SKBitmap(sw, sh, SKColorType.Bgra8888, SKAlphaType.Unpremul))
+            using (var target = new SKBitmap(dw, dh, SKColorType.Bgra8888, SKAlphaType.Unpremul))
+            using (var canvas = new SKCanvas(target))
             {
-                if (asyncResize)
-                    Task.Factory.StartNew(() => _ResizeTextureAndEnqueue(texture, bmp, action));
-                else
-                    _ResizeTextureAndEnqueue(texture, bmp, action);
-            }
-            else
-            {
-                lock (_TextureQueue)
-                {
-                    _TextureQueue.Enqueue(new STextureQueue(texture, action, bmp));
-                }
-            }
-        }
-
-        /// <summary>
-        ///     Helper function to resize a bitmap and enqueue it
-        /// </summary>
-        /// <param name="texture"></param>
-        /// <param name="bmp"></param>
-        /// <param name="action"></param>
-        private void _ResizeTextureAndEnqueue(object texture, Bitmap bmp, EQueueAction action)
-        {
-            Bitmap bmp2 = bmp.Resize(_GetNewTextureSize(bmp.Size));
-            bmp.Dispose();
-            lock (_TextureQueue)
-            {
-                _TextureQueue.Enqueue(new STextureQueue(texture, action, bmp2));
+                Buffer.BlockCopy(src, 0, source.Bytes, 0, Math.Min(src.Length, source.Bytes.Length));
+                using (var paint = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.Medium })
+                    canvas.DrawBitmap(source, new SKRect(0, 0, sw, sh), new SKRect(0, 0, dw, dh), paint);
+                byte[] dst = new byte[dw * dh * 4];
+                Buffer.BlockCopy(target.Bytes, 0, dst, 0, dst.Length);
+                return dst;
             }
         }
 
@@ -586,8 +504,10 @@ namespace Vocaluxe.Lib.Draw
         /// <returns></returns>
         private Size _LoadAndEnqueueBitmap(string filePath, CTextureRef textureRef, TTextureType texture)
         {
-            Bitmap bmp = CHelper.LoadBitmap(filePath);
-            if (bmp == null)
+            // Cross-platform image decode via SkiaSharp (runs on a background thread).
+            int w, h;
+            byte[] data = _LoadImageBgra(filePath, out w, out h);
+            if (data == null)
             {
                 RemoveTexture(ref textureRef); // Done asynchonously in the function
                 lock (_Textures)
@@ -600,8 +520,12 @@ namespace Vocaluxe.Lib.Draw
                 }
                 return new Size(-1, -1);
             }
-            Size origSize = bmp.GetSize();
+            Size origSize = new Size(w, h);
             textureRef.OrigSize = origSize;
+            // SSIS feature: downsample to the configured maximum texture area (proportional resize keeps the aspect).
+            Size target = _GetNewTextureSize(origSize);
+            if (!(target.Width == w && target.Height == h))
+                data = _ResampleBgra(data, w, h, target.Width, target.Height);
             // Update cache, use the same lock as in add/get cache methods
             lock (_Textures)
             {
@@ -616,7 +540,10 @@ namespace Vocaluxe.Lib.Draw
                     _BitmapsLoading.Remove(filePath);
                 }
             }
-            _EnqueueTextureAddOrUpdate(texture, bmp, EQueueAction.Add, false);
+            lock (_TextureQueue)
+            {
+                _TextureQueue.Enqueue(new STextureQueue(texture, EQueueAction.Add, new Size(target.Width, target.Height), data));
+            }
             return origSize;
         }
 
@@ -642,50 +569,77 @@ namespace Vocaluxe.Lib.Draw
                 return textureRef;
             }
 
-            Bitmap bmp = CHelper.LoadBitmap(texturePath);
-            if (bmp == null)
+            // Cross-platform image loading via SkiaSharp (the former GDI+ Bitmap path is Windows-only).
+            int w, h;
+            byte[] data = _LoadImageBgra(texturePath, out w, out h);
+            if (data == null)
                 return null;
-            try
-            {
-                textureRef = AddTexture(bmp, texturePath);
-            }
-            finally
-            {
-                bmp.Dispose();
-            }
-            return textureRef;
-        }
-
-        public CTextureRef AddTexture(Bitmap bmp)
-        {
-            _EnsureMainThread();
-            return AddTexture(bmp, null);
+            Size origSize = new Size(w, h);
+            // SSIS feature: downsample to the configured maximum texture area (proportional resize keeps the aspect).
+            Size target = _GetNewTextureSize(origSize);
+            if (!(target.Width == w && target.Height == h))
+                data = _ResampleBgra(data, w, h, target.Width, target.Height);
+            return _AddTextureWithCache(origSize, target.Width, target.Height, data, texturePath);
         }
 
         /// <summary>
-        ///     Adds a texture and stores it in the Vram
+        ///     Decodes an image file to a tightly packed, straight-alpha BGRA byte array using SkiaSharp.
+        ///     Returns null (and logs) on failure.
         /// </summary>
-        /// <param name="bmp">The Bitmap of which the texure will be created from</param>
-        /// <param name="texturePath"></param>
-        /// <returns>A reference to the texture</returns>
-        public CTextureRef AddTexture(Bitmap bmp, string texturePath)
+        private static byte[] _LoadImageBgra(string texturePath, out int width, out int height)
         {
-            _EnsureMainThread();
-            if (bmp.Height == 0 || bmp.Width == 0)
+            width = 0;
+            height = 0;
+            try
+            {
+                using (var codec = SKCodec.Create(texturePath))
+                {
+                    if (codec == null)
+                    {
+                        CLog.Error("Error loading bitmap: " + texturePath);
+                        return null;
+                    }
+                    var info = new SKImageInfo(codec.Info.Width, codec.Info.Height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+                    using (var bmp = new SKBitmap(info))
+                    {
+                        SKCodecResult res = codec.GetPixels(info, bmp.GetPixels());
+                        if (res != SKCodecResult.Success && res != SKCodecResult.IncompleteInput)
+                        {
+                            CLog.Error("Error loading bitmap: " + texturePath);
+                            return null;
+                        }
+                        width = info.Width;
+                        height = info.Height;
+                        return bmp.Bytes;
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                CLog.Error("Error loading bitmap: " + texturePath);
+                return null;
+            }
+        }
+
+        /// <summary>
+        ///     Adds a texture from raw BGRA bytes, sharing the path-based texture cache with the
+        ///     file-loading overload. <paramref name="origSize"/> is the true original image size (for
+        ///     aspect ratio); <paramref name="w"/>/<paramref name="h"/> are the (possibly downsampled) data size.
+        /// </summary>
+        private CTextureRef _AddTextureWithCache(Size origSize, int w, int h, byte[] data, string texturePath)
+        {
+            if (w == 0 || h == 0)
                 return null;
 
             CTextureRef textureRef;
-            Size origSize = bmp.GetSize();
             TTextureType texture = null;
             Task<Size> loader;
-            // Make the Get/Add Cache methods atomic
             lock (_TextureCache)
             {
                 textureRef = _GetFromCache(texturePath, out loader);
                 if (textureRef == null)
                 {
-                    _WriteBitmapToTexture(ref texture, bmp);
-
+                    texture = _CreateAndFillTexture(new Size(w, h), data);
                     _AddToCache(texture, origSize, texturePath);
                 }
             }
@@ -713,15 +667,6 @@ namespace Vocaluxe.Lib.Draw
                 _TextureQueue.Enqueue(new STextureQueue(texture, EQueueAction.Add, new Size(w, h), data));
                 return textureRef;
             }
-        }
-
-        public CTextureRef EnqueueTexture(Bitmap bmp)
-        {
-            TTextureType texture = _CreateTexture(new Size(-1, -1));
-            CTextureRef textureRef = _GetTextureReference(bmp.GetSize(), texture);
-            _EnqueueTextureAddOrUpdate(texture, bmp, EQueueAction.Add, true);
-
-            return textureRef;
         }
 
         public CTextureRef EnqueueTexture(String filePath)
@@ -774,9 +719,12 @@ namespace Vocaluxe.Lib.Draw
             return textureRef;
         }
 
-        public void EnqueueTextureUpdate(CTextureRef textureRef, Bitmap bmp)
+        public void EnqueueTextureUpdate(CTextureRef textureRef, int w, int h, byte[] data)
         {
-            _EnqueueTextureAddOrUpdate(textureRef, bmp, EQueueAction.Update, true);
+            lock (_TextureQueue)
+            {
+                _TextureQueue.Enqueue(new STextureQueue(textureRef, EQueueAction.Update, new Size(w, h), data));
+            }
         }
 
         public void UpdateTexture(CTextureRef textureRef, int w, int h, byte[] data)
@@ -807,25 +755,6 @@ namespace Vocaluxe.Lib.Draw
             {
                 _DisposeTexture(texture);
                 texture = _CreateAndFillTexture(dataSize, data);
-                texture.RefCount = 1;
-                _Textures[textureRef.ID] = texture;
-            }
-        }
-
-        public void UpdateTexture(CTextureRef textureRef, Bitmap bmp)
-        {
-            _EnsureMainThread();
-            TTextureType texture;
-            if (!_GetTexture(textureRef, out texture, false))
-                return;
-            bool reuseTexture = _IsTextureUsable(texture, bmp.Size);
-            if (reuseTexture && texture.RefCount == 1)
-                _WriteBitmapToTexture(ref texture, bmp);
-            else
-            {
-                _DisposeTexture(texture);
-                texture = null;
-                _WriteBitmapToTexture(ref texture, bmp);
                 texture.RefCount = 1;
                 _Textures[textureRef.ID] = texture;
             }
@@ -869,7 +798,7 @@ namespace Vocaluxe.Lib.Draw
                 {
                     lock (_TextureQueue)
                     {
-                        _TextureQueue.Enqueue(new STextureQueue(textureRef, EQueueAction.Delete, null));
+                        _TextureQueue.Enqueue(new STextureQueue(textureRef, EQueueAction.Delete));
                     }
                     textureRef = null;
                     return;

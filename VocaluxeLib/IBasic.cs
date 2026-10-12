@@ -176,7 +176,7 @@ namespace VocaluxeLib
         RectangleF GetTextBounds(CText text);
 
         void DrawText(string text, CFont font, float x, float y, float z, SColorF color, bool allMonitors = true);
-        void DrawTextReflection(string text, CFont font, float x, float y, float z, SColorF color, float reflectionSpace, float reflectionHeight);
+        void DrawTextReflection(string text, CFont font, float x, float y, float z, SColorF color, float reflectionSpace, float reflectionHeight, float mirrorLine = 0f, float fadeOrigin = 0f, float fadeSpan = 0f);
         void DrawText(string text, CFont font, float x, float y, float z, SColorF color, float begin, float end);
     }
 

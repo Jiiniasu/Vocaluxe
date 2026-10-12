@@ -18,9 +18,8 @@
 using System;
 using System.Data;
 using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
-using System.Runtime.InteropServices;
+using SkiaSharp;
 using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
@@ -123,32 +122,40 @@ namespace Vocaluxe.Lib.Database
             // At this point we do not have a mathing entry in the CoverDB (either no Data found and deleted or nothing at all)
             // We break out of the lock to do the bitmap loading and resizing here to allow multithreaded loading
 
-            Bitmap origin = CHelper.LoadBitmap(coverPath);
-            if (origin == null)
-                return false;
+            // Cross-platform image decode via SkiaSharp (the former GDI+ Bitmap.LockBits path is Windows-only).
+            SKBitmap origin;
+            using (var codec = SKCodec.Create(coverPath))
+            {
+                if (codec == null)
+                    return false;
+                var info = new SKImageInfo(codec.Info.Width, codec.Info.Height, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+                origin = new SKBitmap(info);
+                SKCodecResult res = codec.GetPixels(info, origin.GetPixels());
+                if (res != SKCodecResult.Success && res != SKCodecResult.IncompleteInput)
+                {
+                    origin.Dispose();
+                    return false;
+                }
+            }
 
-            Size size = origin.GetSize();
+            Size size = new Size(origin.Width, origin.Height);
+            byte[] data;
             if (size.Width > maxSize || size.Height > maxSize)
             {
                 size = CHelper.FitInBounds(new SRectF(0, 0, maxSize, maxSize, 0), (float)size.Width / size.Height, EAspect.LetterBox).SizeI;
-                Bitmap tmp = origin.Resize(size);
-                origin.Dispose();
-                origin = tmp;
+                using (var scaled = origin.Resize(new SKImageInfo(size.Width, size.Height, SKColorType.Bgra8888, SKAlphaType.Unpremul), SKSamplingOptions.Default))
+                {
+                    if (scaled == null)
+                    {
+                        origin.Dispose();
+                        return false;
+                    }
+                    data = scaled.Bytes;
+                }
             }
-
-            byte[] data;
-
-            try
-            {
-                data = new byte[size.Width * size.Height * 4];
-                BitmapData bmpData = origin.LockBits(origin.GetRect(), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-                Marshal.Copy(bmpData.Scan0, data, 0, data.Length);
-                origin.UnlockBits(bmpData);
-            }
-            finally
-            {
-                origin.Dispose();
-            }
+            else
+                data = origin.Bytes;
+            origin.Dispose();
 
             tex = CDraw.EnqueueTexture(size.Width, size.Height, data);
 

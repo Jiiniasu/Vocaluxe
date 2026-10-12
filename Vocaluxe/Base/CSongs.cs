@@ -18,8 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -282,6 +280,24 @@ namespace Vocaluxe.Base
             return -1;
         }
 
+        /// <summary>
+        ///     Detects the MIME type of an image from its format signature (replaces the former GDI+ ImageCodecInfo lookup)
+        /// </summary>
+        private static string _GetMimeType(byte[] data)
+        {
+            if (data.Length >= 8 && data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47)
+                return "image/png";
+            if (data.Length >= 3 && data[0] == 0xFF && data[1] == 0xD8)
+                return "image/jpeg";
+            if (data.Length >= 2 && data[0] == 0x42 && data[1] == 0x4D)
+                return "image/bmp";
+            if (data.Length >= 4 && data[0] == 0x47 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x38)
+                return "image/gif";
+            if (data.Length >= 12 && data[8] == 0x57 && data[9] == 0x45 && data[10] == 0x42 && data[11] == 0x50)
+                return "image/webp";
+            return "image/unknown";
+        }
+
         public static ReadOnlyCollection<CSong> AllSongs
         {
             get { return _Songs.AsReadOnly(); }
@@ -409,17 +425,15 @@ namespace Vocaluxe.Base
 
                             if (CloudSongs[i].NewToCloud == 1)
                             {
-                                Image image = Image.FromFile(_Songs[i].Folder + "\\" + _Songs[i].CoverFileName);
-                                MemoryStream ms = new MemoryStream();
-                                image.Save(ms, image.RawFormat);
-                                var imgguid = image.RawFormat.Guid;
-                                string format = "image/unknown";
-                                foreach (ImageCodecInfo codec in ImageCodecInfo.GetImageDecoders())
+                                // Read the raw cover bytes (no GDI+ needed). The MIME type is detected from
+                                // the file format signature instead of the former ImageCodecInfo round-trip.
+                                string coverFile = _Songs[i].Folder + "\\" + _Songs[i].CoverFileName;
+                                if (File.Exists(coverFile))
                                 {
-                                    if (codec.FormatID == imgguid)
-                                        format = codec.MimeType;
+                                    byte[] coverData = File.ReadAllBytes(coverFile);
+                                    string format = _GetMimeType(coverData);
+                                    CCloud.putCover(_Songs[i].DataBaseSongID, Convert.ToBase64String(coverData), format);
                                 }
-                                CCloud.putCover(_Songs[i].DataBaseSongID, Convert.ToBase64String(ms.ToArray()), format);
                             }
                         }
                     }

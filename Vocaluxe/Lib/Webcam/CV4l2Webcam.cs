@@ -21,9 +21,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Threading;
+using SkiaSharp;
 using Vocaluxe.Base;
 using VocaluxeLib.Draw;
 using VocaluxeLib.Log;
@@ -181,7 +180,7 @@ namespace Vocaluxe.Lib.Webcam
             return true;
         }
 
-        public Bitmap GetBitmap()
+        public SKBitmap GetBitmap()
         {
             byte[] data;
             int w, h;
@@ -194,17 +193,9 @@ namespace Vocaluxe.Lib.Webcam
                 h = _Height;
             }
 
-            // BGRA (bottom-up) pixel data straight from the capture buffer into a GDI+ bitmap.
-            var bmp = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
-            BitmapData bmpData = bmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
-            try
-            {
-                Marshal.Copy(data, 0, bmpData.Scan0, Math.Min(data.Length, bmpData.Height * bmpData.Stride));
-            }
-            finally
-            {
-                bmp.UnlockBits(bmpData);
-            }
+            // BGRA pixel data straight from the capture buffer into an SKBitmap.
+            var bmp = new SKBitmap(w, h, SKColorType.Bgra8888, SKAlphaType.Opaque);
+            Array.Copy(data, 0, bmp.Bytes, 0, Math.Min(data.Length, w * h * 4));
             return bmp;
         }
 
