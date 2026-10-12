@@ -88,9 +88,12 @@ namespace Vocaluxe.Lib.Sound.Playback.Decoder
 
             _CurrentTime = 0f;
 
-            if (_FormatInfo.BitDepth != 16)
+            // 16-bit PCM is passed straight through; 32-bit is the float32 output the native
+            // decoder produces for compressed formats (mp3/flac/ogg) and is converted to 16-bit
+            // in Decode(), keeping the pipeline's 16-bit PCM contract.
+            if (_FormatInfo.BitDepth != 16 && _FormatInfo.BitDepth != 32)
             {
-                CLog.Error("Unsupported BitDepth in file " + fileName);
+                CLog.Error("Unsupported BitDepth (" + _FormatInfo.BitDepth + ") in file " + fileName);
                 Close();
                 return false;
             }
@@ -169,11 +172,43 @@ namespace Vocaluxe.Lib.Sound.Playback.Decoder
                 if (decoder.BufferSize > 0)
                     Marshal.Copy(decoder.Buffer, buffer, 0, buffer.Length);
 
+                // The native decoder emits 32-bit float samples for compressed formats while the
+                // playback pipeline consumes 16-bit PCM; convert before handing the frame over.
+                if (decoder.BufferSize > 0 && _FormatInfo.BitDepth == 32)
+                    buffer = _FloatToPcm16(buffer);
+
                 return;
             }
 
             buffer = null;
             timeStamp = 0f;
+        }
+
+        /// <summary>
+        /// Converts an interleaved IEEE754 float32 buffer to 16-bit signed little-endian PCM.
+        /// </summary>
+        private static byte[] _FloatToPcm16(byte[] src)
+        {
+            int samples = src.Length / 4;
+            var dst = new byte[samples * 2];
+            int s = 0, d = 0;
+
+            for (int i = 0; i < samples; i++)
+            {
+                float f = BitConverter.ToSingle(src, s);
+                s += 4;
+
+                int v = (int)(f * 32768f);
+                if (v > 32767)
+                    v = 32767;
+                else if (v < -32768)
+                    v = -32768;
+
+                dst[d++] = (byte)(v & 0xFF);
+                dst[d++] = (byte)((v >> 8) & 0xFF);
+            }
+
+            return dst;
         }
 
         public void Dispose() { }

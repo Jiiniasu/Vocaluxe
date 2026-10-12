@@ -58,6 +58,12 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
         private volatile bool _SetSkip;
         private volatile bool _Terminated;
 
+        // Reused work buffer for the real-time callback. The PortAudio audio thread must never
+        // allocate (each allocation is GC pressure that can stall the callback past its deadline and
+        // produce crackle/underruns). The buffer is sized once and only grown if a callback ever
+        // requests more frames.
+        private byte[] _WorkBuf = Array.Empty<byte>();
+
         private Thread _DecoderThread;
 
         private AutoResetEvent _EventDecode = new AutoResetEvent(false);
@@ -184,6 +190,12 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
             _SyncTimer.Pause();
             _SyncTimer.Time = 0f;
 
+            uint framesPerBuffer = (uint)CConfig.Config.Sound.AudioBufferSize / 2;
+            // Pre-size the real-time work buffer so the callback never has to allocate.
+            int workBufSize = (int)framesPerBuffer * _ByteCount;
+            if (_WorkBuf.Length < workBufSize)
+                _WorkBuf = new byte[workBufSize];
+
             double outputLatency = Math.Max(0.1, _OutputDeviceInfo.defaultLowOutputLatency);
             var outputParams = new PortAudioSharp.StreamParameters
                 {
@@ -197,7 +209,7 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
             _Stream = _PaHandle.OpenOutputStream(
                 outputParams,
                 format.SamplesPerSecond,
-                (uint)CConfig.Config.Sound.AudioBufferSize / 2,
+                framesPerBuffer,
                 PortAudioSharp.StreamFlags.NoFlag,
                 _PaStreamCallback);
             if (_Stream == null)
@@ -366,13 +378,23 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
             PortAudioSharp.StreamCallbackFlags statusFlags,
             IntPtr userData)
         {
-            var buf = new byte[frameCount * _ByteCount];
+            // Real-time path: NO allocations here. Allocate/GC work on the audio thread stalls the
+            // callback past its deadline and audibly produces crackle/dropouts (verified on this
+            // machine with a raw PortAudio harness). Reuse the pre-sized work buffer, growing only
+            // if a callback ever asks for more frames than we pre-allocated.
+            int needed = (int)frameCount * _ByteCount;
+            if (needed > _WorkBuf.Length)
+                _WorkBuf = new byte[needed];
+            byte[] buf = _WorkBuf;
+
+            // Start from silence so underruns and the tail of a non-looping file stay quiet.
+            System.Array.Clear(buf, 0, needed);
 
             if (_Paused)
             {
                 try
                 {
-                    Marshal.Copy(buf, 0, output, buf.Length);
+                    Marshal.Copy(buf, 0, output, needed);
                 }
                 catch (Exception e)
                 {
@@ -386,18 +408,23 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
                 int dataLen = _Data.BytesNotRead;
                 if ((_NoMoreData && dataLen > 0) || dataLen >= buf.Length)
                 {
-                    dataLen = Math.Min(dataLen, buf.Length);
+                    dataLen = Math.Min(dataLen, needed);
                     _Data.Read(buf);
                     //We want to scale all values. No matter how many channels we have (_ByteCount=2 or 4) we have short values
-                    //So just process 2 bytes a time
-                    float volume = Volume * VolumeMax;
+                    //So just process 2 bytes a time. Done in place with integer math: the previous
+                    //BitConverter.GetBytes allocated a new array per sample, driving GC on the
+                    //real-time thread and causing crackle (verified with a raw PortAudio harness).
+                    int volFix = (int)(Volume * VolumeMax * 32768f); // 16.16 fixed point
                     for (int i = 0; i < dataLen; i += 2)
                     {
-                        byte[] b = BitConverter.GetBytes((Int16)(BitConverter.ToInt16(buf, i) * volume));
-                        buf[i] = b[0];
-                        buf[i + 1] = b[1];
+                        int s = (short)(buf[i] | (buf[i + 1] << 8));
+                        int v = (s * volFix) / 32768; // C# int division truncates toward zero, as (Int16)(s*volume) did
+                        if (v > 32767) v = 32767;
+                        if (v < -32768) v = -32768;
+                        buf[i] = (byte)(v & 0xFF);
+                        buf[i + 1] = (byte)((v >> 8) & 0xFF);
                     }
-                    float latency = buf.Length / _BytesPerSecond + _Latency;
+                    float latency = (float)needed / _BytesPerSecond + _Latency;
                     float time = _TimeCode - _Data.BytesNotRead / _BytesPerSecond - latency;
                     _SyncTimer.Update(time);
                 }
@@ -408,7 +435,7 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
 
             try
             {
-                Marshal.Copy(buf, 0, output, (int)frameCount * _ByteCount);
+                Marshal.Copy(buf, 0, output, needed);
             }
             catch (Exception e)
             {
