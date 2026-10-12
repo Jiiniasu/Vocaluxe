@@ -48,6 +48,12 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
 
         private bool _Skip;
 
+        // Self-kept playback-position reference: seconds of output audio written to the ring buffer
+        // since the last skip/stop. Intentionally NOT the decoder-supplied timestamp: for some files
+        // the native decoder's PTS-based timecode freezes permanently mid-stream (acinerella clamps
+        // per-packet timestamp deltas; e.g. this library's "Ash Again.mp3" stalls at 152.2 s of 298.5 s,
+        // which froze the sync timer and stopped the notes mid-song while the audio played on).
+        // Accounting the actual output bytes is always exact and monotonically increasing.
         private volatile float _TimeCode;
 
         private volatile bool _Paused;
@@ -77,8 +83,11 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
             {
                 lock (_LockData)
                 {
-                    // Decoder may return wrong timestamps. This is why we use the synctimer
-                    // If you change this do exessive testing for monoton timestamps espacially for ogg files
+                    // Position is driven by the self-kept byte accounting (_TimeCode, accumulated in
+                    // _DoDecode) smoothed by the synctimer. This must NOT depend on the native decoder's
+                    // timestamp: for some files it freezes mid-stream (e.g. VBR MP3s with broken PTS),
+                    // which stopped the notes mid-song. If you change this, test for monotonic
+                    // timestamps, especially for ogg files.
                     float time = Math.Max(0f, _SyncTimer.Time);
                     if (time > Length)
                     {
@@ -333,7 +342,9 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
             lock (_LockData)
             {
                 _Data.Write(buffer);
-                _TimeCode = timecode;
+                // Drive the sync timer from actual output bytes written, not from the decoder
+                // timestamp, which can freeze mid-file for some encodings (see _TimeCode).
+                _TimeCode += buffer.Length / _BytesPerSecond;
                 if (_Data.BytesNotRead < _BeginRefill)
                     _EventDecode.Set();
             }
