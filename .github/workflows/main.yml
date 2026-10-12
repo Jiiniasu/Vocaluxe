@@ -2,41 +2,66 @@ name: Build
 
 on:
   push:
-    branches: [ SSIS-Remote ]
+    # net10-port is the active branch (default branch SSIS-Remote is still net48;
+    # add/update branches here when the port supersedes it). Semver tags publish official releases.
+    branches: [ net10-port ]
+    tags: [ 'v[0-9]+.[0-9]+.[0-9]+*', '[0-9]+.[0-9]+.[0-9]+*' ]
   pull_request:
-    branches: [ SSIS-Remote ]
+    branches: [ net10-port ]
 
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  build-windows-x64:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-          
-      - name: Set version
-        run: echo "GIT_VERSION_TAG=0.4.1-SSIS-remote_$(Get-Date -Format "yyyy-MM-dd")" >> $env:GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history + tags so `git describe` can mint the version stamp (_StampGitVersion).
+          fetch-depth: 0
+
+      - name: Set version stamp
+        run: |
+          $stamp = & git describe --tags --abbrev=7 2>$null
+          if (-not $stamp) { $stamp = "dev-$(Get-Date -Format 'yyyy-MM-dd')" }
+          "GIT_VERSION_TAG=$stamp" >> $env:GITHUB_ENV
+          Write-Host "Version stamp: $stamp"
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v2
         with:
           msbuild-architecture: x64
-        
-      - name: Setup NuGet.exe for use with actions
-        uses: NuGet/setup-nuget@v2.0.0
 
-      - name: Run Prebuild
-        run: powershell ./.build/winPreBuild.ps1 ./Vocaluxe/ x64
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
 
-      - name: Restore NuGet Packages
-        run: nuget restore Vocaluxe.sln
-        
-      - name: Build solution
-        run: msbuild Vocaluxe.sln /p:Configuration=ReleaseWin /p:Platform="x64"
-        
+      - name: Restore
+        run: dotnet restore Vocaluxe.slnx --nologo
+
+      - name: Build PitchTracker (Release x64)
+        # Must run before the dotnet build/publish: _StageUnmanagedNatives copies the DLL from
+        # PitchTracker\bin\Release.x64 into Output\libs\unmanaged and hard-errors if it is missing.
+        run: msbuild PitchTracker\PitchTracker.vcxproj /p:Configuration=Release /p:Platform=x64 /m /nologo
+
+      - name: Run tests
+        run: dotnet test Tests\Tests.csproj -c Release --nologo
+
+      - name: Publish (self-contained, win-x64)
+        # OutputPath is pinned to the repo's Output/ folder (legacy SSIS-Remote layout) and -o keeps
+        # the final files there too (with -r win-x64 and no -o they would nest into Output\win-x64).
+        # AppendRuntimeIdentifierToOutputPath=false keeps the intermediate build out of Output\win-x64.
+        run: dotnet publish Vocaluxe\Vocaluxe.csproj -c Release -r win-x64 --self-contained true -o Output /p:AppendRuntimeIdentifierToOutputPath=false --nologo
+
       - name: Download theme videos
+        # The Genius theme's screen videos are not in the repo (upstream CI has always downloaded them).
         run: |
-          Invoke-WebRequest -Uri 'https://github.com/lukeIam/VocaluxeDependencies/blob/master/zips/themes/vocaluxe.themes.genius.video.zip?raw=true' -OutFile 'vocaluxe.themes.genius.video.zip'
+          Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/lukeIam/VocaluxeDependencies/master/zips/themes/vocaluxe.themes.genius.video.zip' -OutFile 'vocaluxe.themes.genius.video.zip'
           7z x '-aoa' '-oOutput/' './vocaluxe.themes.genius.video.zip'
           Remove-Item './vocaluxe.themes.genius.video.zip'
 
@@ -47,20 +72,28 @@ jobs:
           path: Output
 
       - name: Pack output into archive
-        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch'}}
+        if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         run: |
-          cd Output
-          Remove-Item * -Include *.pdb
-          Remove-Item * -Include *.dll.config
-          Remove-Item * -Include *.xml -exclude RequiredSkinElements.xml
-          7z a '../Vocaluxe_Windows_x64_${{ env.GIT_VERSION_TAG }}.zip' *
+          # Strip debug symbols from the shipped zip (managed + native pdbs).
+          Get-ChildItem -Path Output -Recurse -Include *.pdb, *.dll.config -File | Remove-Item -Force
+          Push-Location Output
+          7z a "..\Vocaluxe_Windows_x64_${{ env.GIT_VERSION_TAG }}.zip" *
+          Pop-Location
 
-      - name: Create Release
-        if: ${{ github.event_name == 'push'}}
-        uses: ncipollo/release-action@v1.14.0
+      - name: Create Latest release (branch build)
+        if: ${{ github.event_name == 'push' && github.ref_type == 'branch' }}
+        uses: ncipollo/release-action@v2
         with:
           name: Latest build
           tag: Latest
           prerelease: true
           allowUpdates: true
+          artifacts: Vocaluxe_Windows_x64_${{ env.GIT_VERSION_TAG }}.zip
+
+      - name: Create Release (semver tag)
+        if: ${{ github.ref_type == 'tag' }}
+        uses: ncipollo/release-action@v2
+        with:
+          name: ${{ github.ref_name }}
+          tag: ${{ github.ref_name }}
           artifacts: Vocaluxe_Windows_x64_${{ env.GIT_VERSION_TAG }}.zip

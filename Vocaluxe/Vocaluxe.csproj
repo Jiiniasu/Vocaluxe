@@ -112,26 +112,39 @@
     </WriteCodeFragment>
   </Target>
 
-  <!-- Stage PitchTracker (the C++ x64 native module from the sibling vcxproj) next to the other
-       unmanaged natives before the game is copied to Output/. The Release|x64 DLL must be built
-       first (Visual Studio 2022+ with the C++ workload):
-         msbuild PitchTracker\PitchTracker.vcxproj /p:Configuration=Release /p:Platform=x64
-       On Windows a missing build is a hard error - never ship a stale/missing PitchTracker.dll
-       (CRecord/PtAKF would only fail at first voice input). On non-Windows the module is built
-       with PitchTracker/makefile instead, so this is skipped. -->
-  <Target Name="_StagePitchTracker" BeforeTargets="Build;Publish">
+  <!-- Stage every unmanaged native the game needs next to the other libs in Output/libs/unmanaged.
+       Sources:
+         - vocaluxe.dependencies.* NuGet packages ship their binaries in a plain x64/ folder with
+           build targets keyed on Platform=='x64', which net10 SDK builds never set (Platform=AnyCPU)
+           - so nothing gets copied on a fresh checkout without this (the old Output/ copies were
+           net48-era relics).
+         - PitchTracker: the sibling C++ vcxproj. Build it first (Visual Studio 2022+ with the C++
+           workload):  msbuild PitchTracker\PitchTracker.vcxproj /p:Configuration=Release /p:Platform=x64
+       A missing native is a hard error on Windows - never ship a game that would die on first
+       decode/record/DB use. On non-Windows the natives come from the makefiles, so this is skipped. -->
+  <Target Name="_StageUnmanagedNatives" BeforeTargets="Build;Publish">
     <PropertyGroup>
-      <_PitchTrackerSrcDir>$(MSBuildThisFileDirectory)..\PitchTracker\bin\Release.x64</_PitchTrackerSrcDir>
-      <_PitchTrackerDst>$(MSBuildThisFileDirectory)..\Output\libs\unmanaged</_PitchTrackerDst>
+      <_UnmanagedDst>$(MSBuildThisFileDirectory)..\Output\libs\unmanaged</_UnmanagedDst>
+      <_PkgRoot>$(NuGetPackageRoot)</_PkgRoot>
+      <_PtDir>$(MSBuildThisFileDirectory)..\PitchTracker\bin\Release.x64</_PtDir>
+      <_MissingNatives Condition="!Exists('$(_PkgRoot)vocaluxe.dependencies.acinerella\1.0.6\x64\acinerella.dll')">acinerella; $(_MissingNatives)</_MissingNatives>
+      <_MissingNatives Condition="!Exists('$(_PkgRoot)vocaluxe.dependencies.ffmpeg\1.0.6\x64\avcodec-58.dll')">ffmpeg; $(_MissingNatives)</_MissingNatives>
+      <_MissingNatives Condition="!Exists('$(_PkgRoot)vocaluxe.dependencies.sqlite\1.0.1\build\net40\x64\SQLite.Interop.dll')">sqlite; $(_MissingNatives)</_MissingNatives>
+      <_MissingNatives Condition="!Exists('$(_PtDir)\PitchTracker.dll')">PitchTracker (build see header); $(_MissingNatives)</_MissingNatives>
     </PropertyGroup>
-    <Error Condition="'$(OS)' == 'Windows_NT' and !Exists('$(_PitchTrackerSrcDir)\PitchTracker.dll')"
-           Text="PitchTracker.dll (Release x64) not found at '$(_PitchTrackerSrcDir)\'. Build it first: msbuild PitchTracker\PitchTracker.vcxproj /p:Configuration=Release /p:Platform=x64" />
-    <Copy Condition="Exists('$(_PitchTrackerSrcDir)\PitchTracker.dll')"
-          SourceFiles="$(_PitchTrackerSrcDir)\PitchTracker.dll"
-          DestinationFolder="$(_PitchTrackerDst)" SkipUnchangedFiles="true" />
-    <Copy Condition="Exists('$(_PitchTrackerSrcDir)\PitchTracker.pdb')"
-          SourceFiles="$(_PitchTrackerSrcDir)\PitchTracker.pdb"
-          DestinationFolder="$(_PitchTrackerDst)" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <_UnmanagedNative Include="$(_PkgRoot)vocaluxe.dependencies.acinerella\1.0.6\x64\*.dll" />
+      <_UnmanagedNative Include="$(_PkgRoot)vocaluxe.dependencies.acinerella\1.0.6\x64\*.pdb" />
+      <_UnmanagedNative Include="$(_PkgRoot)vocaluxe.dependencies.ffmpeg\1.0.6\x64\*.dll" />
+      <_UnmanagedNative Include="$(_PkgRoot)vocaluxe.dependencies.sqlite\1.0.1\build\net40\x64\SQLite.Interop.dll" />
+      <_UnmanagedNative Include="$(_PtDir)\PitchTracker.dll" />
+      <_UnmanagedNative Include="$(_PtDir)\PitchTracker.pdb" />
+    </ItemGroup>
+    <Error Condition="'$(OS)' == 'Windows_NT' and '$(_MissingNatives)' != ''"
+           Text="Missing unmanaged native(s): $(_MissingNatives) - run 'dotnet restore', and build PitchTracker Release x64 (see _StageUnmanagedNatives header)." />
+    <Copy Condition="'$(OS)' == 'Windows_NT'"
+          SourceFiles="@(_UnmanagedNative)"
+          DestinationFolder="$(_UnmanagedDst)" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>
