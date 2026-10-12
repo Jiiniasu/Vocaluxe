@@ -112,4 +112,26 @@
     </WriteCodeFragment>
   </Target>
 
+  <!-- Stage PitchTracker (the C++ x64 native module from the sibling vcxproj) next to the other
+       unmanaged natives before the game is copied to Output/. The Release|x64 DLL must be built
+       first (Visual Studio 2022+ with the C++ workload):
+         msbuild PitchTracker\PitchTracker.vcxproj /p:Configuration=Release /p:Platform=x64
+       On Windows a missing build is a hard error - never ship a stale/missing PitchTracker.dll
+       (CRecord/PtAKF would only fail at first voice input). On non-Windows the module is built
+       with PitchTracker/makefile instead, so this is skipped. -->
+  <Target Name="_StagePitchTracker" BeforeTargets="Build;Publish">
+    <PropertyGroup>
+      <_PitchTrackerSrcDir>$(MSBuildThisFileDirectory)..\PitchTracker\bin\Release.x64</_PitchTrackerSrcDir>
+      <_PitchTrackerDst>$(MSBuildThisFileDirectory)..\Output\libs\unmanaged</_PitchTrackerDst>
+    </PropertyGroup>
+    <Error Condition="'$(OS)' == 'Windows_NT' and !Exists('$(_PitchTrackerSrcDir)\PitchTracker.dll')"
+           Text="PitchTracker.dll (Release x64) not found at '$(_PitchTrackerSrcDir)\'. Build it first: msbuild PitchTracker\PitchTracker.vcxproj /p:Configuration=Release /p:Platform=x64" />
+    <Copy Condition="Exists('$(_PitchTrackerSrcDir)\PitchTracker.dll')"
+          SourceFiles="$(_PitchTrackerSrcDir)\PitchTracker.dll"
+          DestinationFolder="$(_PitchTrackerDst)" SkipUnchangedFiles="true" />
+    <Copy Condition="Exists('$(_PitchTrackerSrcDir)\PitchTracker.pdb')"
+          SourceFiles="$(_PitchTrackerSrcDir)\PitchTracker.pdb"
+          DestinationFolder="$(_PitchTrackerDst)" SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>

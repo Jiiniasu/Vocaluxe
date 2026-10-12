@@ -120,7 +120,7 @@ namespace VocaluxeLib.Profile
                 var old = xml.Deserialize<SOldXmlProfile>(FilePath);
                 string newXml = ser.Serialize(old.Info);
                 xml.DeserializeString(newXml, this);
-                if (ID == null)
+                if (ID == Guid.Empty)
                     ID = Guid.NewGuid();
                 ser.Serialize(FilePath, this);
 
