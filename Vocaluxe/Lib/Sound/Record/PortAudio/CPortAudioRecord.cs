@@ -16,6 +16,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using PortAudioSharp;
 using Vocaluxe.Base;
@@ -146,6 +147,15 @@ namespace Vocaluxe.Lib.Sound.Record.PortAudio
             foreach (CBuffer buffer in _Buffer)
                 buffer.Reset();
 
+            // PortAudio lists the same physical endpoint once per host API (MME/WASAPI/...), usually
+            // under the same name. The mic config matches on name+channel, so it maps EVERY duplicate
+            // to the same player and each duplicate's callback then feeds the same pitch buffer: 3x the
+            // audio rate into a 4096-sample ring that discards oldest data on overflow. The tracker is
+            // left with a scrambled sample stream, which kills long periods (low notes) first while short
+            // periods (high notes) survive - the classic "jittery below C4" symptom. Open exactly one
+            // stream per physical input: prefer the duplicate whose default rate is closest to our
+            // 48 kHz request (no resampling), break ties with the lower device ID.
+            var selected = new List<int>();
             for (int dev = 0; dev < _Devices.Count; dev++)
             {
                 bool usingDevice = false;
@@ -157,6 +167,30 @@ namespace Vocaluxe.Lib.Sound.Record.PortAudio
 
                 if (!usingDevice)
                     continue;
+
+                int existing = selected.FindIndex(
+                    d => string.Equals(_Devices[d].Name, _Devices[dev].Name, StringComparison.OrdinalIgnoreCase));
+
+                if (existing != -1)
+                {
+                    double rate = Math.Abs(
+                        PortAudioSharp.PortAudio.GetDeviceInfo(_Devices[dev].ID).defaultSampleRate - 48000.0);
+                    double rateOld = Math.Abs(
+                        PortAudioSharp.PortAudio.GetDeviceInfo(_Devices[selected[existing]].ID).defaultSampleRate - 48000.0);
+
+                    if (rate < rateOld || (rate == rateOld && _Devices[dev].ID < _Devices[selected[existing]].ID))
+                        selected[existing] = dev;
+                    else
+                        CLog.Information("[Rec] Skipping duplicate host entry '" + _Devices[dev].Name +
+                                        "' (PA-ID=" + _Devices[dev].ID + "), using PA-ID=" + _Devices[selected[existing]].ID);
+                    continue;
+                }
+
+                selected.Add(dev);
+            }
+
+            foreach (int dev in selected)
+            {
 
                 var inputParams = new StreamParameters
                 {
