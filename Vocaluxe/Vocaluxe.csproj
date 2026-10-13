@@ -147,4 +147,22 @@
           DestinationFolder="$(_UnmanagedDst)" SkipUnchangedFiles="true" />
   </Target>
 
+  <!-- After the PortAudioSharp2 runtime package has laid its stock portaudio.dll down, replace
+        every copy in Output/ with our ASIO-capable build (Native\portaudio-asio, see BUILD.md
+        there). All wrapper entry points are exported (verified), so this is a pure native swap:
+        the C# audio layer is unchanged, stock hosts (MME/WASAPI/DirectSound) keep working as
+        before and ASIO clients appear as additional devices (multichannel + ~1.3 ms buffers).
+        Overwriting the app-dir copy AND the runtimes\ asset keeps every loader path in
+        agreement; libs\unmanaged is on the game's PATH (Program.cs) and gets the same dll. -->
+  <Target Name="_StagePaAsioNative" AfterTargets="Build;Publish" Condition="'$(OS)' == 'Windows_NT'">
+    <PropertyGroup>
+      <_PaAsioSrc>$(MSBuildThisFileDirectory)..\Native\portaudio-asio\win-x64\portaudio.dll</_PaAsioSrc>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(_PaAsioSrc)')"
+           Text="Missing Native\portaudio-asio\win-x64\portaudio.dll - rebuild it (Native\portaudio-asio\build.ps1) or restore the committed binary." />
+    <Copy SourceFiles="$(_PaAsioSrc)" DestinationFiles="$(MSBuildThisFileDirectory)..\Output\portaudio.dll" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(_PaAsioSrc)" DestinationFiles="$(MSBuildThisFileDirectory)..\Output\runtimes\win-x64\native\portaudio.dll" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(_PaAsioSrc)" DestinationFiles="$(MSBuildThisFileDirectory)..\Output\libs\unmanaged\portaudio.dll" SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>
