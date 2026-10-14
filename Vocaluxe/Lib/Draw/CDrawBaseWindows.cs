@@ -245,6 +245,43 @@ namespace Vocaluxe.Lib.Draw
 
             _Window.Title = CSettings.GetFullVersionText();
 
+            // Application icon, the standard way: on every platform set OpenTK's NativeWindow.Icon from
+            // the multi-size Vocaluxe.ico (or a Vocaluxe.png fallback) shipped next to the exe
+            // (WM_SETICON on Windows, _NET_WM_ICON on X11). Best effort: a missing/undecodable file is a
+            // logged no-op, never breaking startup.
+            string appDirectory = AppContext.BaseDirectory;
+            try
+            {
+                if (CAppIcon.TryLoadRgba(appDirectory, out byte[] iconRgba, out int iconW, out int iconH))
+                {
+                    CAppIcon.SetWindowIcon(_Window, iconRgba, iconW, iconH);
+                }
+                else
+                {
+                    CLog.Warning("CAppIcon: no Vocaluxe.ico/Vocaluxe.png next to the exe; the window keeps its default icon");
+                }
+            }
+            catch (Exception e)
+            {
+                CLog.Warning(e, "setting the window icon failed; the window keeps its default icon");
+            }
+
+#if WIN
+            // The Windows task bar reads the window-CLASS icon, which GLFW never sets (it would show the
+            // generic IDI_APPLICATION there). Force it from the same asset: CWindowsIcon builds a crisp
+            // HICON from the largest image of Vocaluxe.ico (CreateIconFromResourceEx) or - failing that -
+            // from the shell's icon for the exe, and sets class + window slots. Best effort, and safe to
+            // call while the window is still hidden.
+            try
+            {
+                CWindowsIcon.Apply(_Window.Title, appDirectory);
+            }
+            catch (Exception e)
+            {
+                CLog.Warning(e, "setting the Windows task-bar icon failed");
+            }
+#endif
+
             _Window.Closing += _OnClosing;
             _Window.Resize += _OnResize;
             _Window.MouseMove += _OnMouseMove;

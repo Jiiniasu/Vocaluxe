@@ -63,6 +63,17 @@
     <ProjectReference Include="..\Community.CsharpSqlite\Community.CsharpSqlite.csproj" />
   </ItemGroup>
 
+  <!-- Ship the application icon next to the exe: CAppIcon decodes it at startup into the NativeWindow
+       icon (the standard cross-platform way - the largest 256x256 image of Vocaluxe.ico). On Windows
+       the exe ALSO embeds it via ApplicationIcon above, which CWindowsIcon reads for the task-bar class
+       icon. PreserveNewest re-stages the ico whenever it is swapped (e.g. for a newer export of
+       icon.svg). A Vocaluxe.png dropped next to it is picked up as a fallback at runtime, no rebuild needed. -->
+  <ItemGroup>
+    <Content Include="Vocaluxe.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
   <!-- Stamp the assembly version from `git describe` at build time. Replaces the old MSBuild build
        events (winPreBuild.ps1 / linuxPreBuildEvent.sh) that the .NET Framework project ran but the
        SDK project does not. git is optional: if it is unavailable (e.g. a source tarball) the build
