@@ -48,10 +48,19 @@ namespace Vocaluxe.Base.Fonts
             using (var font = new SKFont(typeface, maxHeight))
             {
                 font.Edging = SKFontEdging.Antialias;
-                font.Subpixel = true;
-                font.Embolden = fontStyle.IsBold;
-                if (fontStyle.IsItalic)
-                    font.SkewX = -0.25f;
+                // Render as clean grayscale anti-aliased glyphs, matching the original net48 renderer
+                // (GDI+ GraphicsPaths with SmoothingMode.AntiAlias, no grid-fit hinting):
+                //   - Subpixel=false : subpixel (ClearType) coverage shifts the ink bounds and stem
+                //     position per glyph -> was the "wavy" baseline and part of the extra-weighted look.
+                //   - Hinting=None   : grid-fit hinting re-snaps each glyph's stems to the pixel grid,
+                //     thickening them and jittering their vertical position.
+                // The loaded face file already IS the requested style (FreeSans / FreeSansBold /
+                // FreeSansOblique / FreeSansBoldOblique), so - exactly as the original - we must NOT
+                // synthesize bold (Embolden) or italic (SkewX): doing so double-applied both, which
+                // over-weighted the bold text and over-slanted the italic glyphs until their ink
+                // overhung the advance and got clipped by neighbouring glyphs.
+                font.Hinting = SKFontHinting.None;
+                font.Subpixel = false;
 
                 SKFontMetrics metrics = font.Metrics;
                 float fullHeight = metrics.Descent - metrics.Ascent;

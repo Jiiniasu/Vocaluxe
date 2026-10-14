@@ -29,6 +29,13 @@ namespace VocaluxeLib.Utils.Player
         private CVideoStream _Video;
         private CFading _VideoFading;
 
+        // -1 = not a preview (normal playback, e.g. the BGM player). >= 0 = this is a song
+        // preview: keep the caller on the cover until the video has actually reached this
+        // start time, instead of showing a held/initial frame that looks "stuck" while the
+        // audio + video seek to the start position (which is the slow, visible part).
+        private float _PreviewStart = -1f;
+        private bool _VideoAtPlayStart;
+
         public bool VideoEnabled
         {
             get { return _VideoEnabled; }
@@ -81,6 +88,18 @@ namespace VocaluxeLib.Utils.Player
                 return null;
             if (CBase.Video.GetFrame(_Video, CBase.Sound.GetPosition(_StreamID)))
             {
+                // For a preview only: the video is still on its pre-start/initial frame while
+                // it seeks to the start position. Keep the cover on screen until a real frame
+                // at the start has been decoded, so it looks like an intentional fade-in
+                // instead of a frozen "stuck" frame. Normal (non-preview) players have
+                // _PreviewStart < 0 and are unaffected.
+                if (_PreviewStart >= 0f && !_VideoAtPlayStart)
+                {
+                    if (_Video.VideoTime < _PreviewStart - 0.25f)
+                        return null;
+                    _VideoAtPlayStart = true;
+                }
+
                 if (_VideoFading != null)
                 {
                     bool finished;
@@ -91,6 +110,12 @@ namespace VocaluxeLib.Utils.Player
                 return _Video.Texture;
             }
             return null;
+        }
+
+        public void SetPreviewStart(float start)
+        {
+            _PreviewStart = start;
+            _VideoAtPlayStart = false;
         }
 
         public void Load(CSong song, float position = 0f, bool autoplay = false)
@@ -172,6 +197,8 @@ namespace VocaluxeLib.Utils.Player
             base.Close();
 
             _Song = null;
+            _PreviewStart = -1f;
+            _VideoAtPlayStart = false;
             _CloseVideo();
         }
     }

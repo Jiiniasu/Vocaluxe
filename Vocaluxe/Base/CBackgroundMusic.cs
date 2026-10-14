@@ -338,6 +338,23 @@ namespace Vocaluxe.Base
 
             _PreviewPlayer.Load(song);
 
+            // Tell the preview player where its preview starts. Until the video's first
+            // decoded frame actually reaches that start time, GetVideoTexture() keeps the
+            // caller on the song cover instead of showing a held/first frame, which would
+            // look "stuck" during the audio + video seek to the start. (Mirrors the start
+            // position the deferred start task below computes for the audio, so the reveal
+            // and the audible start line up.)
+            float previewLength = _PreviewPlayer.Length;
+            if (previewLength < 1)
+                previewLength = 30; // If length is unknown or invalid assume a length of 30s
+            float previewStart = (start < 0)
+                ? (song.Preview.Source == EDataSource.None ? previewLength / 4f : song.Preview.StartTime)
+                : start;
+            if (previewStart > previewLength - 5f)
+                previewStart = Math.Max(0f, Math.Min(previewLength / 4f, previewLength - 5f));
+            if (previewStart >= 0.5f)
+                previewStart -= 0.5f;
+            _PreviewPlayer.SetPreviewStart(previewStart);
 
             //Change song position only if song is changed or near to end
             if (songChanged || _CurPlayer.Position + 30 < _CurPlayer.Length || _PreviewStartHelperTask == null)

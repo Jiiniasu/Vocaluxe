@@ -83,7 +83,7 @@ namespace VocaluxeLib.Log
                 File.Delete(_CrashMarkerFilePath);
 
 #if !DEBUG
-                if (_CurrentVersion == versionTag && File.Exists(mainLogFilePath))
+                if (_ShowReporterFunc != null && _CurrentVersion == versionTag && File.Exists(mainLogFilePath))
                 {
                     string logContent = File.ReadAllText(mainLogFilePath, Encoding.UTF8);
                     _ShowReporterFunc(crash:true,
@@ -190,8 +190,15 @@ namespace VocaluxeLib.Log
         {
             // Flush the _MainLogStringWriter to get the latest entries to _MainLogStringBuilder
             _MainLogStringWriter.Flush();
-            // Show the Reporter
-            _ShowReporterFunc(crash: crash, showContinue: showContinue, vocaluxeVersionTag: _CurrentVersion, log: _MainLogStringBuilder.ToString(), lastError: _FormatMessageTemplate(messageTemplate, propertyValues));
+
+            // The reporter is optional: the net10 build has no WinForms crash dialog and passes a null
+            // reporter (Program.cs), meaning errors are reported in the log file only. Without this guard
+            // every fatal path throws a NullReferenceException that masks the real error.
+            if (_ShowReporterFunc != null)
+            {
+                // Show the Reporter
+                _ShowReporterFunc(crash: crash, showContinue: showContinue, vocaluxeVersionTag: _CurrentVersion, log: _MainLogStringBuilder.ToString(), lastError: _FormatMessageTemplate(messageTemplate, propertyValues));
+            }
 
             // Delete the crash marker (we do not want to show this error again on the next restart)
             if (!showContinue)
