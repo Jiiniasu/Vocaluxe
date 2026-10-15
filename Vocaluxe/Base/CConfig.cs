@@ -78,6 +78,14 @@ namespace Vocaluxe.Base
 
             [XmlRanged(1, 6), DefaultValue(1)]
             public int NumScreens;
+            /// <summary>
+            ///     ON (default): one borderless window per monitor, all sharing a single GL context;
+            ///         each window renders its own panel (see CWindowManager / CDrawBaseGlfw).
+            ///     OFF: legacy single giant window of ScreenW*NumScreens width (needs Eyefinity/Surround
+            ///         or a single monitor for NumScreens > 1) - byte-identical to the pre-multi-window build.
+            /// </summary>
+            [DefaultValue(EOffOn.TR_CONFIG_ON)]
+            public EOffOn MultiWindow;
             [DefaultValue(1024)]
             public int ScreenW;
             [DefaultValue(576)]
@@ -433,6 +441,8 @@ namespace Vocaluxe.Base
                     return "CoverSize (pixels): 32, 64, 128, 256, 512, 1024 (default: 128)";
                 case "NumScreens":
                     return "Number of screens to use. 1 - 6 (default: 1)";
+                case "MultiWindow":
+                    return "MultiWindow: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
                 case "ScreenW":
                     return "Screen width and height (pixels)";
                 case "BorderLeft":
