@@ -36,23 +36,16 @@ namespace Vocaluxe.Base
         {
             if (_Draw != null)
                 return false;
-            switch (CConfig.Config.Graphics.Renderer)
+            // OpenGL is the single rendering engine on all platforms (the software and
+            // Direct3D renderers were dropped in the .NET 10 port).
+            try
             {
-                // The software (WinForms) renderer was dropped in the .NET 10 port; OpenGL is
-                // the single rendering engine on all platforms.
-                case ERenderer.TR_CONFIG_OPENGL:
-                case ERenderer.TR_CONFIG_SOFTWARE:
-                default:
-                    try
-                    {
-                        _Draw = new COpenGL();
-                    }
-                    catch (Exception e)
-                    {
-                        CLog.Fatal(e, "Error in initializing of OpenGL. Please check whether your graphic card drivers are up to date.");
-                        return false;
-                    }
-                    break;
+                _Draw = new COpenGL();
+            }
+            catch (Exception e)
+            {
+                CLog.Fatal(e, "Error in initializing of OpenGL. Please check whether your graphic card drivers are up to date.");
+                return false;
             }
             return _Draw.Init();
         }

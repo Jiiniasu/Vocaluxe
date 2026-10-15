@@ -185,7 +185,7 @@ namespace Vocaluxe.Screens
             _Buttons[_ButtonToBackgroundVideo].Pressed = _VideoBackground;
             _Buttons[_ButtonShowVideo].Pressed = _VideoPreviewInt;
             _Buttons[_ButtonRepeat].Pressed = CBackgroundMusic.RepeatSong;
-            _Buttons[_ButtonSing].Visible = CBackgroundMusic.CanSing && CParty.CurrentPartyModeID == -1;
+            _Buttons[_ButtonSing].Visible = CBackgroundMusic.CanSing;
             _Buttons[_ButtonPause].Visible = CBackgroundMusic.IsPlaying;
             _Buttons[_ButtonPlay].Visible = !CBackgroundMusic.IsPlaying;
             _Texts[_TextCurrentSong].Text = CBackgroundMusic.ArtistAndTitle;

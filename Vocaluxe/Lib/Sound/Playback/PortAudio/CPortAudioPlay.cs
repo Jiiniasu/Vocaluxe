@@ -29,9 +29,9 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
             return true;
         }
 
-        protected override IAudioStream _CreateStream(int id, string media, bool loop, EAudioEffect effect = EAudioEffect.None)
+        protected override IAudioStream _CreateStream(int id, string media, bool loop)
         {
-            return new CPortAudioStream(id, media, loop, effect);
+            return new CPortAudioStream(id, media, loop);
         }
     }
 }

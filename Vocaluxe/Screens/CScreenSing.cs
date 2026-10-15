@@ -1137,7 +1137,7 @@ namespace Vocaluxe.Screens
                 songname += " (" + CGame.RoundNr + "/" + rounds + ")";
             _Texts[_TextSongName].Text = songname;
 
-            _CurrentStream = CSound.Load(song.GetMP3(), false, true, CConfig.Config.Sound.KaraokeEffect == EOffOn.TR_CONFIG_ON ? EAudioEffect.Karaoke : EAudioEffect.None);
+            _CurrentStream = CSound.Load(song.GetMP3(), false, true);
             CSound.SetStreamVolume(_CurrentStream, 100);
             CSound.SetPosition(_CurrentStream, song.Start);
             _CurrentTime = song.Start;

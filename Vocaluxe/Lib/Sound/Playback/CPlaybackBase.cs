@@ -113,13 +113,13 @@ namespace Vocaluxe.Lib.Sound.Playback
 
         #region Stream Handling
         //Factory method to get a stream instance
-        protected abstract IAudioStream _CreateStream(int id, string media, bool loop, EAudioEffect effect = EAudioEffect.None);
+        protected abstract IAudioStream _CreateStream(int id, string media, bool loop);
 
-        public int Load(string medium, bool loop = false, bool prescan = false, EAudioEffect effect = EAudioEffect.None)
+        public int Load(string medium, bool loop = false, bool prescan = false)
         {
             if (!_Initialized)
                 return -1;
-            IAudioStream stream = _CreateStream(_NextID++, medium, loop, effect);
+            IAudioStream stream = _CreateStream(_NextID++, medium, loop);
 
             if (stream.Open(prescan))
             {

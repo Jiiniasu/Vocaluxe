@@ -17,9 +17,6 @@
 
 using System.Collections.ObjectModel;
 using Vocaluxe.Lib.Sound.Record;
-#if WIN
-
-#endif
 using Vocaluxe.Lib.Sound.Record.PortAudio;
 using VocaluxeLib;
 
@@ -33,14 +30,9 @@ namespace Vocaluxe.Base
         {
             if (_Record != null)
                 return false;
-            switch (CConfig.Config.Sound.RecordLib)
-            {
-                // DirectSound recording was removed in the .NET 10 port; PortAudio is the single
-                // cross-platform capture engine.
-                default:
-                    _Record = new CPortAudioRecord();
-                    break;
-            }
+            // PortAudio is the single cross-platform capture engine for this port
+            // (DirectSound recording was removed in the .NET 10 port).
+            _Record = new CPortAudioRecord();
             return _Record.Init();
         }
 

@@ -102,17 +102,6 @@ namespace VocaluxeLib
     #endregion Fonts
 
     #region Config
-    public enum ERenderer
-    {
-        // ReSharper disable InconsistentNaming
-#if WIN
-        TR_CONFIG_DIRECT3D,
-#endif
-        TR_CONFIG_OPENGL,
-        TR_CONFIG_SOFTWARE
-        // ReSharper restore InconsistentNaming
-    }
-
     public enum EAntiAliasingModes
     {
         X0 = 0,
@@ -170,27 +159,6 @@ namespace VocaluxeLib
         B3584 = 3584,
         B4096 = 4096
         // ReSharper restore UnusedMember.Global
-    }
-
-    public enum EPlaybackLib
-    {
-        PortAudio,
-        OpenAL,
-        GstreamerSharp
-    }
-
-    public enum EWebcamLib
-    {
-        AForgeNet
-    }
-
-    public enum ERecordLib
-    {
-#if WIN
-        DirectSound,
-        PortAudioASIO,
-#endif
-        PortAudio
     }
 
     public enum EVideoDecoder

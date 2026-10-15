@@ -71,13 +71,6 @@ namespace Vocaluxe.Base
 
         public struct SConfigGraphics
         {
-#if WIN
-            [DefaultValue(ERenderer.TR_CONFIG_DIRECT3D)]
-            public ERenderer Renderer;
-#else
-        [DefaultValue(ERenderer.TR_CONFIG_OPENGL)] public ERenderer Renderer;
-#endif
-
             [DefaultValue(ETextureQuality.TR_CONFIG_TEXTURE_MEDIUM)]
             public ETextureQuality TextureQuality;
             [XmlRanged(32, 1024), DefaultValue(256)]
@@ -129,10 +122,6 @@ namespace Vocaluxe.Base
 
         public struct SConfigSound
         {
-            [DefaultValue(EPlaybackLib.GstreamerSharp)]
-            public EPlaybackLib PlayBackLib;
-            [DefaultValue(ERecordLib.PortAudio)]
-            public ERecordLib RecordLib;
             [DefaultValue(EBufferSize.B2048)]
             public EBufferSize AudioBufferSize;
             [XmlRanged(-500, 500)]
@@ -150,10 +139,6 @@ namespace Vocaluxe.Base
             public int PreviewMusicVolume;
             [XmlRanged(0, 100), DefaultValue(80)]
             public int GameMusicVolume;
-            [DefaultValue(EOffOn.TR_CONFIG_OFF)]
-            public EOffOn KaraokeEffect;
-            [XmlRanged(0, 1), DefaultValue(1.0f)]
-            public float KaraokeEffectLevel;
             // ReSharper restore MemberHidesStaticFromOuterClass
         }
 
@@ -196,8 +181,6 @@ namespace Vocaluxe.Base
             public EOffOn VideosInSongs;
             [DefaultValue(EOffOn.TR_CONFIG_OFF)]
             public EOffOn VideosToBackground;
-            [DefaultValue(EWebcamLib.AForgeNet)]
-            public EWebcamLib WebcamLib;
             public SWebcamConfig? WebcamConfig;
         }
 
@@ -208,17 +191,6 @@ namespace Vocaluxe.Base
             public int MicDelay; //[ms]
         }
 
-        public struct SConfigServer
-        {
-            [DefaultValue(EOffOn.TR_CONFIG_OFF)]
-            public EOffOn ServerActive;
-            [DefaultValue(EOffOn.TR_CONFIG_OFF)]
-            public EOffOn ServerEncryption;
-            [DefaultValue(3000)]
-            public int ServerPort;
-            [DefaultValue(70)]
-            public int SongCountCoverThreshold;
-        }
 #pragma warning restore 649
         // ReSharper restore UnassignedField.Global
 
@@ -234,7 +206,6 @@ namespace Vocaluxe.Base
             public SConfigGame Game;
             public SConfigVideo Video;
             public SConfigRecord Record;
-            public SConfigServer Server;
         }
 
         public static SConfig Config;
@@ -428,9 +399,6 @@ namespace Vocaluxe.Base
             Array.Resize(ref Config.Record.MicConfig, CSettings.MaxNumPlayer);
             Config.Record.MicDelay = (int)(20 * Math.Round(Config.Record.MicDelay / 20.0));
 
-            if (!Config.Server.ServerPort.IsInRange(1, 65535))
-                Config.Server.ServerPort = 3000;
-
             Config.Info = new SConfigInfo
             {
                 Version = CSettings.GetFullVersionText(),
@@ -459,8 +427,6 @@ namespace Vocaluxe.Base
                     return "DebugLevel: " + CHelper.ListStrings(Enum.GetNames(typeof(EDebugLevel)));
                 case "SaveModifiedSongs":
                     return "SaveModifiedSongs: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
-                case "Renderer":
-                    return "Renderer: " + CHelper.ListStrings(Enum.GetNames(typeof(ERenderer)));
                 case "TextureQuality":
                     return "TextureQuality: " + CHelper.ListStrings(Enum.GetNames(typeof(ETextureQuality)));
                 case "CoverSize":
@@ -501,10 +467,6 @@ namespace Vocaluxe.Base
                     return "Cover Loading: " + CHelper.ListStrings(Enum.GetNames(typeof(ECoverLoading)));
                 case "LyricStyle":
                     return "Lyric Style: " + CHelper.ListStrings(Enum.GetNames(typeof(ELyricStyle)));
-                case "PlayBackLib":
-                    return "PlayBackLib: " + CHelper.ListStrings(Enum.GetNames(typeof(EPlaybackLib)));
-                case "RecordLib":
-                    return "RecordLib: " + CHelper.ListStrings(Enum.GetNames(typeof(ERecordLib)));
                 case "AudioBufferSize":
                     return "AudioBufferSize: " + CHelper.ListStrings(Enum.GetNames(typeof(EBufferSize)));
                 case "AudioLatency":
@@ -521,10 +483,6 @@ namespace Vocaluxe.Base
                     return "Preview Volume from 0 to 100";
                 case "GameMusicVolume":
                     return "Game Volume from 0 to 100";
-                case "KaraokeEffect":
-                    return "Apply a karaoke effect to song playback (EPlaybackLib.GstreamerSharp only)";
-                case "KaraokeEffectLevel":
-                    return "The level of the karaoke effect [0-1] (EPlaybackLib.GstreamerSharp only)";
                 case "Language":
                     return "Game-Language";
                 case "SongFolder":
@@ -571,18 +529,8 @@ namespace Vocaluxe.Base
                     return "Show Videos while singing: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
                 case "VideosToBackground":
                     return "Show backgroundmusic videos as background: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
-                case "WebcamLib":
-                    return "WebcamLib: " + CHelper.ListStrings(Enum.GetNames(typeof(EWebcamLib)));
                 case "MicDelay":
                     return "Mic delay in ms. 0, 20, 40, 60 ... 500";
-                case "ServerActive":
-                    return "Server On/Off: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
-                case "ServerEncryption":
-                    return "Server Encryption On/Off: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
-                case "ServerPort":
-                    return "Server Port (default: 3000) [1..65535]";
-                case "SongCountCoverThreshold":
-                    return "Threshold of songs for that covers will not longer be included in get-all-songs-requests (e.g. song list) (default: 70) [-1..65535] -1 => always deliver covers";
                 case "Stretch":
                     return "Stretch view to full window size: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
                 default:

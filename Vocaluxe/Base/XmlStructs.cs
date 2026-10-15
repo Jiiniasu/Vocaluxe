@@ -20,7 +20,6 @@ using System.ComponentModel;
 using System.Xml.Serialization;
 using Vocaluxe.Base.Fonts;
 using VocaluxeLib;
-using VocaluxeLib.PartyModes;
 using VocaluxeLib.Xml;
 
 namespace Vocaluxe.Base
@@ -110,26 +109,4 @@ namespace Vocaluxe.Base
         [XmlArray] public SPlaylistSong[] Songs;
     }
 
-    #region Partymode
-    struct SPartyModeInfos
-    {
-        public string Name;
-        public string Description;
-        public string Author;
-        public string Folder;
-        public string PartyModeFile;
-        [XmlAltName("PartyModeVersionMajor")] public int VersionMajor;
-        [XmlAltName("PartyModeVersionMinor")] public int VersionMinor;
-        public string TargetAudience;
-        [XmlIgnore] public IPartyModeInfo ExtInfo;
-    }
-
-    struct SPartyMode
-    {
-        public int PartyModeSystemVersion;
-        [XmlArray("PartyScreens"), XmlArrayItem("ScreenFile")] public List<string> ScreenFiles;
-        [XmlIgnore] public IPartyMode PartyMode;
-        public SPartyModeInfos Info;
-    }
-    #endregion Partymode
 }

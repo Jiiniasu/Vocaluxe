@@ -26,11 +26,10 @@ namespace Vocaluxe.Screens
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {
-            get { return 2; }
+            get { return 3; }
         }
 
         private const string _ButtonSing = "ButtonSing";
-        private const string _ButtonParty = "ButtonParty";
         private const string _ButtonOptions = "ButtonOptions";
         private const string _ButtonProfiles = "ButtonProfiles";
         private const string _ButtonExit = "ButtonExit";
@@ -44,7 +43,7 @@ namespace Vocaluxe.Screens
             base.Init();
 
             _ThemeStatics = new string[] { "StaticMenuBar", _StaticWarningProfiles };
-            _ThemeButtons = new string[] { _ButtonSing, _ButtonParty, _ButtonOptions, _ButtonProfiles, _ButtonExit };
+            _ThemeButtons = new string[] { _ButtonSing, _ButtonOptions, _ButtonProfiles, _ButtonExit };
             _ThemeTexts = new string[] { _TextRelease, _TextWarningProfiles };
         }
 
@@ -152,7 +151,6 @@ namespace Vocaluxe.Screens
             _Statics[_StaticWarningProfiles].Visible = !profileOK;
             _Texts[_TextWarningProfiles].Visible = !profileOK;
             _Buttons[_ButtonSing].Selectable = profileOK;
-            _Buttons[_ButtonParty].Selectable = profileOK;
             return true;
         }
     }

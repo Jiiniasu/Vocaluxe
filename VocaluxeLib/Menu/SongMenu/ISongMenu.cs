@@ -15,7 +15,7 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using VocaluxeLib.PartyModes;
+using VocaluxeLib.Songs;
 
 namespace VocaluxeLib.Menu.SongMenu
 {

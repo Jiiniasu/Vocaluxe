@@ -139,8 +139,6 @@ namespace Vocaluxe.Base
 
             foreach (IMenu popup in _PopupScreens)
                 popup.ReloadTheme(CThemes.GetThemeScreensPath(popup.PartyModeID));
-
-            CParty.ReloadTheme();
         }
 
         public static void ReloadSkin()
@@ -151,8 +149,6 @@ namespace Vocaluxe.Base
 
             foreach (IMenu menu in _PopupScreens)
                 menu.ReloadSkin();
-
-            CParty.ReloadSkin();
         }
 
         public static void SaveTheme()
@@ -167,8 +163,6 @@ namespace Vocaluxe.Base
 
             foreach (IMenu popup in _PopupScreens)
                 popup.SaveTheme();
-
-            CParty.SaveThemes();
         }
 
         public static void InitFirstScreen()
@@ -194,7 +188,6 @@ namespace Vocaluxe.Base
             {
                 run &= _HandleInputs(keys, mouse);
                 run &= _Update();
-                CParty.UpdateGame();
             }
             else
             {

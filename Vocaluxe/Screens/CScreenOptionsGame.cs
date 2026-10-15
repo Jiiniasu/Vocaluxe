@@ -26,7 +26,7 @@ namespace Vocaluxe.Screens
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {
-            get { return 4; }
+            get { return 5; }
         }
 
         private const string _SelectSlideLanguage = "SelectSlideLanguage";
@@ -38,13 +38,12 @@ namespace Vocaluxe.Screens
         private const string _SelectSlideHighscoreStyle = "SelectSlideHighscoreStyle";
 
         private const string _ButtonExit = "ButtonExit";
-        private const string _ButtonServer = "ButtonServer";
 
         public override void Init()
         {
             base.Init();
 
-            _ThemeButtons = new string[] { _ButtonExit, _ButtonServer };
+            _ThemeButtons = new string[] { _ButtonExit };
             _ThemeSelectSlides = new string[] { _SelectSlideLanguage, _SelectSlideDebugLevel, _SelectSlideSongMenu, _SelectSlideSongSorting, _SelectSlideTabs, _SelectSlideHighscoreStyle };
         }
 

@@ -1,4 +1,4 @@
-﻿#region license
+#region license
 // This file is part of Vocaluxe.
 // 
 // Vocaluxe is free software: you can redistribute it and/or modify
@@ -6,8 +6,8 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 // 
-// Vocaluxe is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// Vocaluxe is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 // 
@@ -15,12 +15,8 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using VocaluxeLib.Menu;
-
-namespace VocaluxeLib.PartyModes
+namespace VocaluxeLib.Songs
 {
-
-    #region Structs
     public struct SScreenSongOptions
     {
         public SSortingOptions Sorting;
@@ -82,51 +78,5 @@ namespace VocaluxeLib.PartyModes
         ///     The Team Name of the teams (:>)
         /// </summary>
         public string[] TeamNames;
-    }
-    #endregion Structs
-
-    public interface IPartyModeInfo
-    {
-        int ID { get; }
-        int MinMics { get; }
-        int MaxMics { get; }
-        int MinPlayers { get; }
-        int MaxPlayers { get; }
-        int MinTeams { get; }
-        int MaxTeams { get; }
-        int MinPlayersPerTeam { get; }
-        int MaxPlayersPerTeam { get; }
-    }
-
-    public interface IPartyMode : IPartyModeInfo
-    {
-        int NumPlayers { get; set; }
-        int NumTeams { get; set; }
-
-        bool Init();
-
-        void SetDefaults();
-        void LoadTheme();
-        void ReloadSkin();
-        void ReloadTheme();
-
-        void AddScreen(CMenuParty screen, string screenName);
-        void SaveScreens();
-
-        void UpdateGame();
-
-        IMenu GetStartScreen();
-        SScreenSongOptions GetScreenSongOptions();
-
-        void OnSongChange(int songIndex, ref SScreenSongOptions screenSongOptions);
-        void OnCategoryChange(int categoryIndex, ref SScreenSongOptions screenSongOptions);
-
-        void SetSearchString(string searchString, bool visible);
-
-        void JokerUsed(int teamNr);
-        void SongSelected(int songID);
-        void FinishedSinging();
-        void LeavingScore();
-        void LeavingHighscore();
     }
 }

@@ -17,7 +17,7 @@
 
 using System.Diagnostics;
 using System.Xml.Serialization;
-using VocaluxeLib.PartyModes;
+
 using VocaluxeLib.Songs;
 
 namespace VocaluxeLib.Menu.SongMenu

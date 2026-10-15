@@ -19,7 +19,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        # Bumped to the node24 major (v4 targets Node.js 20, deprecated on the hosted runners since
+        # https://github.blog/changelog/2025-09-19-...-deprecation-of-node-20-on-github-actions-runners/).
+        uses: actions/checkout@v7
         with:
           # Full history + tags so `git describe` can mint the version stamp (_StampGitVersion).
           fetch-depth: 0
@@ -32,12 +34,14 @@ jobs:
           Write-Host "Version stamp: $stamp"
 
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v2
+        # v3: node24 target (v2 runs on the deprecated Node.js 20).
+        uses: microsoft/setup-msbuild@v3
         with:
           msbuild-architecture: x64
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v4
+        # v6: node24 target (v4 runs on the deprecated Node.js 20).
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 

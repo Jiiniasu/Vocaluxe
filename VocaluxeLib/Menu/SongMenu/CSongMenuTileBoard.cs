@@ -19,7 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using VocaluxeLib.Draw;
-using VocaluxeLib.PartyModes;
+
 using VocaluxeLib.Songs;
 
 namespace VocaluxeLib.Menu.SongMenu

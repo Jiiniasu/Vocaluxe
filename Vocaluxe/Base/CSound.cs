@@ -39,17 +39,9 @@ namespace Vocaluxe.Base
         {
             if (_Playback != null)
                 return false;
-            switch (CConfig.Config.Sound.PlayBackLib)
-            {
-                case EPlaybackLib.PortAudio:
-                default:
-                    _Playback = new CPortAudioPlay();
-                    break;
-                // OpenAL and GStreamerSharp backends were removed in the .NET 10 port (net45-era /
-                // OpenTK 1.x dependencies); PortAudio is the single cross-platform playback engine.
-                    _Playback = new CPortAudioPlay();
-                    break;
-            }
+            // PortAudio is the single cross-platform playback engine for this port (the
+            // OpenAL and GStreamerSharp backends were removed in the .NET 10 port).
+            _Playback = new CPortAudioPlay();
             return _Playback.Init();
         }
 
@@ -81,9 +73,9 @@ namespace Vocaluxe.Base
         }
 
         #region Stream Handling
-        public static int Load(string media, bool loop = false, bool prescan = false, EAudioEffect effekt = EAudioEffect.None)
+        public static int Load(string media, bool loop = false, bool prescan = false)
         {
-            return _Playback.Load(media, loop, prescan, effekt);
+            return _Playback.Load(media, loop, prescan);
         }
 
         public static void Close(int stream)

@@ -223,11 +223,11 @@ namespace Vocaluxe
                     }
                     CDraw.UpdateSplash(0.55f);
 
-                    // Init Party Modes (Normal singing mode)
-                    using (CBenchmark.Time("Init Party Modes"))
+                    // Init Game Mode (normal singing game)
+                    using (CBenchmark.Time("Init Game Mode"))
                     {
                         if (!CParty.Init())
-                            throw new CLoadingException("Party Modes");
+                            throw new CLoadingException("Game Mode");
                     }
                     CDraw.UpdateSplash(0.8f);
 

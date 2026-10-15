@@ -23,7 +23,6 @@ using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Menu;
 using VocaluxeLib.Menu.SongMenu;
-using VocaluxeLib.PartyModes;
 using VocaluxeLib.Songs;
 
 namespace Vocaluxe.Screens

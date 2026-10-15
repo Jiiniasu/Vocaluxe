@@ -15,7 +15,6 @@
     <SaveModifiedSongs>TR_CONFIG_OFF</SaveModifiedSongs>
   </Debug>
   <Graphics>
-    <Renderer>TR_CONFIG_DIRECT3D</Renderer>
     <TextureQuality>TR_CONFIG_TEXTURE_MEDIUM</TextureQuality>
     <CoverSize>256</CoverSize>
     <NumScreens>1</NumScreens>
@@ -46,8 +45,6 @@
     <LyricStyle>TR_CONFIG_LYRICSTYLE_SLIDE</LyricStyle>
   </Theme>
   <Sound>
-    <PlayBackLib>GstreamerSharp</PlayBackLib>
-    <RecordLib>PortAudio</RecordLib>
     <AudioBufferSize>B2048</AudioBufferSize>
     <AudioLatency>0</AudioLatency>
     <BackgroundMusic>TR_CONFIG_ON</BackgroundMusic>
@@ -56,8 +53,6 @@
     <BackgroundMusicUseStart>TR_CONFIG_ON</BackgroundMusicUseStart>
     <PreviewMusicVolume>50</PreviewMusicVolume>
     <GameMusicVolume>80</GameMusicVolume>
-    <KaraokeEffect>TR_CONFIG_OFF</KaraokeEffect>
-    <KaraokeEffectLevel>1</KaraokeEffectLevel>
   </Sound>
   <Game>
     <Language>English</Language>
@@ -93,7 +88,6 @@
     <VideoPreview>TR_CONFIG_ON</VideoPreview>
     <VideosInSongs>TR_CONFIG_ON</VideosInSongs>
     <VideosToBackground>TR_CONFIG_OFF</VideosToBackground>
-    <WebcamLib>AForgeNet</WebcamLib>
     <WebcamConfig />
   </Video>
   <Record>
@@ -129,10 +123,4 @@
     </MicConfig>
     <MicDelay>200</MicDelay>
   </Record>
-  <Server>
-    <ServerActive>TR_CONFIG_OFF</ServerActive>
-    <ServerEncryption>TR_CONFIG_OFF</ServerEncryption>
-    <ServerPort>3000</ServerPort>
-    <SongCountCoverThreshold>70</SongCountCoverThreshold>
-  </Server>
 </root>

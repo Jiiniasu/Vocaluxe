@@ -32,19 +32,12 @@ namespace Vocaluxe.Base
                 return false;
 #if LINUX && !MACOS
             // Linux: V4L2 capture via ffmpeg (see CV4l2Webcam). Falls back to "no device" if neither
-            // ffmpeg nor a capture node is present. (macOS would need an AVFoundation backend; until
-            // then it uses the no-op webcam below.)
+            // ffmpeg nor a capture node is present.
             _Webcam = new CV4l2Webcam();
 #else
-            switch (CConfig.Config.Video.WebcamLib)
-            {
-                // AForge.NET/DirectShow is Windows-only and was dropped in the cross-platform port;
-                // until a Media Foundation backend exists, Windows uses the no-op webcam.
-                case EWebcamLib.AForgeNet:
-                default:
-                    _Webcam = new CNullWebcam();
-                    break;
-            }
+            // AForge.NET/DirectShow capture is Windows-only and was dropped in the cross-platform
+            // port; until a Media Foundation backend exists, Windows uses the no-op webcam.
+            _Webcam = new CNullWebcam();
 #endif
             if (!_Webcam.Init())
                 return false;

@@ -135,7 +135,6 @@ namespace Vocaluxe.Base
         public const string FolderNameBackgroundMusic = "BackgroundMusic";
         public const string FolderNameLogs = "Logs";
 
-        public const string FolderNamePartyModes = "PartyModes";
         public const string FolderNamePartyModeCode = "Code";
         public const string FolderNamePartyModeLanguages = "Languages";
         public const string FolderNamePartyModeFonts = "Fonts";
