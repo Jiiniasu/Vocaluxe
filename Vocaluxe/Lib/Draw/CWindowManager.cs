@@ -155,34 +155,85 @@ namespace Vocaluxe.Lib.Draw
         }
 
         /// <summary>
-        ///     F1 (plan v3 §5): a shared context cannot span two GPUs. Compares the per-window
-        ///     <see cref="StringName.Renderer" /> strings (case-folded) and returns true if the session must
-        ///     fall back to the single giant window.
+        ///     F1 (plan v3 §5), pure part: a shared context cannot span two GPUs, so the session must fall
+        ///     back to the single giant window as soon as any two renderer strings differ (compared
+        ///     case-folded and trimmed). Extracted so the decision table is unit-testable without contexts.
+        /// </summary>
+        public static bool RequiresSingleWindow(IEnumerable<string> renderers)
+        {
+            string known = null;
+            foreach (string raw in renderers)
+            {
+                string renderer = (raw ?? "").Trim().ToLowerInvariant();
+                if (known == null)
+                {
+                    known = renderer;
+                    continue;
+                }
+                if (renderer != known)
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        ///     F1 (plan v3 §5): probes the per-window <see cref="StringName.Renderer" /> strings and returns
+        ///     true if the session must fall back to the single giant window.
         /// </summary>
         public bool ProbeRenderers()
         {
-            string known = null;
+            List<string> renderers = new List<string>(_Slots.Count);
             for (int i = 0; i < _Slots.Count; i++)
             {
                 Slot s = _Slots[i];
                 s.Window.MakeCurrent();
-                string renderer = (GL.GetString(StringName.Renderer) ?? "").Trim().ToLowerInvariant();
-                if (known == null)
-                {
-                    known = renderer;
-                    CLog.Information("Multi-window: GL renderer '" + renderer + "' (panel " + s.PanelIndex + ")");
-                    continue;
-                }
-
-                if (renderer != known)
-                {
-                    CLog.Warning("Multi-window: mixed GPUs detected ('" + known + "' vs '" + renderer + "'), " +
-                                 "Falling back to the single giant window for this session.");
-                    return true;
-                }
+                string renderer = GL.GetString(StringName.Renderer) ?? "";
+                renderers.Add(renderer);
+                CLog.Information("Multi-window: GL renderer '" + renderer + "' (panel " + s.PanelIndex + ")");
             }
 
-            return false;
+            bool single = RequiresSingleWindow(renderers);
+            if (single)
+                CLog.Warning("Multi-window: mixed GPUs detected. Falling back to the single giant window for this session.");
+            return single;
+        }
+
+        /// <summary>
+        ///     Monitor assignment, pure part (plan v3 §4.1): slot i wraps round-robin over the monitors, so
+        ///     extra panels stack on the monitor of slot i % monitorCount. Returns -1 when no monitors are
+        ///     available (the caller centers the window on the work area instead). Extracted so the
+        ///     assignment (incl. stacking) is unit-testable without windows.
+        /// </summary>
+        public static int MonitorForSlot(int slot, int monitorCount)
+        {
+            return monitorCount > 0 ? slot % monitorCount : -1;
+        }
+
+        /// <summary>
+        ///     Windowed cascade offset (plan v3 §4.1) for a slot stacked above the first panels of its
+        ///     monitor, clamped so the panel stays on the monitor. Zero for unstacked slots or when no
+        ///     monitors are available.
+        /// </summary>
+        public static Vector2i StackOffset(int slot, int monitorCount)
+        {
+            if (monitorCount <= 0)
+                return Vector2i.Zero;
+            int stacked = slot / monitorCount;
+            return new Vector2i(Math.Min(stacked * 64, 448), Math.Min(stacked * 64, 384));
+        }
+
+        /// <summary>
+        ///     Windowed placement, pure part (plan v3 §4.1): the panel centered in the monitor's client
+        ///     area, shifted by the cascade <paramref name="offset" />, clamped to the client area.
+        /// </summary>
+        public static Vector2i CenteredPanelLocation(Vector2i clientMin, Vector2i clientSize,
+                                                     Vector2i panelSize, Vector2i offset)
+        {
+            int x = Math.Max(clientMin.X,
+                             clientMin.X + (clientSize.X - panelSize.X) / 2 + offset.X);
+            int y = Math.Max(clientMin.Y,
+                             clientMin.Y + (clientSize.Y - panelSize.Y) / 2 + offset.Y);
+            return new Vector2i(x, y);
         }
 
         /// <summary>
@@ -212,7 +263,8 @@ namespace Vocaluxe.Lib.Draw
             for (int i = 0; i < _Slots.Count; i++)
             {
                 Slot s = _Slots[i];
-                MonitorInfo monitor = (monitors.Count > 0) ? monitors[i % monitors.Count] : null;
+                int monitorIndex = MonitorForSlot(i, monitors.Count);
+                MonitorInfo monitor = (monitorIndex >= 0) ? monitors[monitorIndex] : null;
 
                 if (monitor != null && fullscreen)
                 {
@@ -230,18 +282,16 @@ namespace Vocaluxe.Lib.Draw
                 else if (monitor != null)
                 {
                     // Extra panels cascade on the same monitor so they stay visible in windowed mode
-                    int stackedCount = monitors.Count > 0 ? i / monitors.Count : 0;
-                    int ox = Math.Min(stackedCount * 64, 448);
-                    int oy = Math.Min(stackedCount * 64, 384);
+                    Vector2i offset = StackOffset(i, monitors.Count);
+                    Vector2i location = CenteredPanelLocation(monitor.ClientArea.Min,
+                                                              monitor.ClientArea.Size,
+                                                              new Vector2i(_PanelW, _PanelH),
+                                                              offset);
 
                     s.Window.WindowBorder = WindowBorder.Resizable;
                     s.Window.WindowState = WindowState.Normal;
                     s.Window.ClientSize = new Vector2i(_PanelW, _PanelH);
-                    int x = Math.Max(monitor.ClientArea.Min.X,
-                                     monitor.ClientArea.Min.X + (monitor.ClientArea.Size.X - _PanelW) / 2 + ox);
-                    int y = Math.Max(monitor.ClientArea.Min.Y,
-                                     monitor.ClientArea.Min.Y + (monitor.ClientArea.Size.Y - _PanelH) / 2 + oy);
-                    s.Window.Location = new Vector2i(x, y);
+                    s.Window.Location = location;
                 }
                 else
                 {

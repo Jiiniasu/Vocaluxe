@@ -340,28 +340,48 @@ namespace Vocaluxe.Lib.Draw
         protected override void _AdjustNewBorders(int panel)
         {
             int screens = CConfig.Config.Graphics.NumScreens;
-            float rw = CSettings.RenderW;
-
-            float left, right;
-            if (_MultiWindow() && screens > 1)
-            {
-                // This panel's canvas strip, borders only on the canvas' outer edges - exactly the giant
-                // window's border placement (plan v3 §4.3).
-                left = panel * rw - (panel == 0 ? CConfig.Config.Graphics.BorderLeft : 0);
-                right = (panel + 1) * rw + (panel == screens - 1 ? CConfig.Config.Graphics.BorderRight : 0);
-            }
-            else
-            {
-                // Single-window mode (and multi with n == 1): the whole canvas incl. the border margins -
-                // exactly today's ortho.
-                left = -CConfig.Config.Graphics.BorderLeft;
-                right = CConfig.Config.Graphics.BorderRight + rw * screens;
-            }
+            float left, right, bottom, top;
+            PanelOrtho(_MultiWindow(), panel, screens,
+                       CSettings.RenderW, CSettings.RenderH,
+                       CConfig.Config.Graphics.BorderLeft, CConfig.Config.Graphics.BorderRight,
+                       CConfig.Config.Graphics.BorderTop, CConfig.Config.Graphics.BorderBottom,
+                       out left, out right, out bottom, out top);
 
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
-            GL.Ortho(left, right, CConfig.Config.Graphics.BorderBottom + CSettings.RenderH,
-                     -CConfig.Config.Graphics.BorderTop, CSettings.ZNear, CSettings.ZFar);
+            GL.Ortho(left, right, bottom, top, CSettings.ZNear, CSettings.ZFar);
+        }
+
+        /// <summary>
+        ///     Pure panel-strip projection math (plan v3 §4.3), extracted from <c>_AdjustNewBorders</c> so it
+        ///     is unit-testable without a GL context. Multi-window with more than one panel: the strip of
+        ///     panel <paramref name="multiPanel" /> with the borders only on the canvas' outer edges (the
+        ///     union of all panels reconstructs exactly the giant window's ortho). Single-window mode - or
+        ///     multi with one panel: the whole canvas incl. the border margins, exactly today's ortho.
+        ///     The Y span is common to all cases.
+        /// </summary>
+        /// <param name="multiWindow">true when the multi-window path is active (panel routing on).</param>
+        /// <param name="panel">Panel index being projected (0..screens-1; ignored in the giant-window case).</param>
+        /// <param name="screens">Panel count (NumScreens).</param>
+        /// <param name="renderW">One panel's canvas width.</param>
+        /// <param name="renderH">One panel's canvas height.</param>
+        public static void PanelOrtho(bool multiWindow, int panel, int screens,
+                                      float renderW, float renderH,
+                                      float borderL, float borderR, float borderT, float borderB,
+                                      out float left, out float right, out float bottom, out float top)
+        {
+            if (multiWindow && screens > 1)
+            {
+                left = panel * renderW - (panel == 0 ? borderL : 0);
+                right = (panel + 1) * renderW + (panel == screens - 1 ? borderR : 0);
+            }
+            else
+            {
+                left = -borderL;
+                right = borderR + renderW * screens;
+            }
+            bottom = borderB + renderH;
+            top = -borderT;
         }
 
         /// <summary>

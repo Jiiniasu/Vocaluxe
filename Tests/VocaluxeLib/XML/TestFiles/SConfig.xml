@@ -18,6 +18,7 @@
     <TextureQuality>TR_CONFIG_TEXTURE_MEDIUM</TextureQuality>
     <CoverSize>256</CoverSize>
     <NumScreens>1</NumScreens>
+    <MultiWindow>TR_CONFIG_ON</MultiWindow>
     <ScreenW>1024</ScreenW>
     <ScreenH>576</ScreenH>
     <ScreenAlignment>Middle</ScreenAlignment>

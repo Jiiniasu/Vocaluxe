@@ -10,7 +10,8 @@
 [1. About](#1-about)                     
 [2. Download](#2-download)                     
 [3. Contributing](#3-contributing)        
-[4. Help & Support](#4-help--support)
+[4. Help & Support](#4-help--support)  
+[5. Multi-monitor](#5-multi-monitor)
 
 ## 1. About
 Vocaluxe is a free and open source singing game, inspired by the original UltraStar (developed by corvus5) and the great Ultrastar Deluxe project - yet it is an entirely new development in C#.   
@@ -54,3 +55,17 @@ GitHub Issues Tracker:	https://github.com/Vocaluxe/Vocaluxe/issues
 Translations:			https://www.transifex.com/projects/p/vocaluxe/   
 Support Forum (German):	http://www.ultra-star.de   
 Song-Database (USDB):	http://usdb.animux.de/
+
+## 5. Multi-monitor
+Vocaluxe renders one game canvas per screen (1-6, `NumScreens`). Two display paths exist in
+`Config.xml`:
+
+- `MultiWindow = ON` (default): one borderless window **per monitor**, all sharing a single OpenGL
+  context. Each window handles its own input and renders its own panel, so you do not need
+  Eyefinity/Surround or a single giant panel. More panels than monitors are stacked (cascaded)
+  on the first monitors.
+- `MultiWindow = OFF`: the legacy single giant window (`NumScreens` panels wide) - requires
+  Eyefinity/Surround, or a single monitor, for `NumScreens > 1`.
+
+If the windows would land on graphics adapters from different vendors (mixed GPU), Vocaluxe warns
+and falls back to the single giant window for that session.

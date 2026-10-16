@@ -217,12 +217,34 @@ namespace Vocaluxe.Base
             _Timer = new Stopwatch();
         }
 
+        /// <summary>
+        ///     Mouse-x remap, pure part (plan v3 §6): scale window pixels to the canvas (renderW * numScreens)
+        ///     and wrap into the first panel. With the multi-window contract GetScreenWidth ==
+        ///     renderW * numScreens this is the identity for panel-local coordinates (0..renderW) emitted by
+        ///     the per-window handlers; it is today's exact remap for the legacy giant window.
+        ///     Extracted so the contract is unit-testable without a draw context.
+        /// </summary>
+        public static int RemapMouseX(int x, int screenWidth, int renderW, int numScreens)
+        {
+            int rx = (int)(x * (float)renderW * numScreens / screenWidth);
+            while (rx > renderW)
+                rx -= renderW;
+            return rx;
+        }
+
+        /// <summary>
+        ///     Mouse-y remap, pure part (plan v3 §6): scale window pixels to the canvas height. With the
+        ///     multi-window contract GetScreenHeight == renderH this is the identity.
+        /// </summary>
+        public static int RemapMouseY(int y, int screenHeight, int renderH)
+        {
+            return (int)(y * (float)renderH / screenHeight);
+        }
+
         private void _Add(int x, int y, bool lb, bool ld, bool rb, int wheel, bool lbh, bool rbh, bool mb, bool mbh)
         {
-            x = (int)(x * (float)CSettings.RenderW * CConfig.Config.Graphics.NumScreens / CDraw.GetScreenWidth());
-            while (x > CSettings.RenderW)
-                x -= CSettings.RenderW;
-            y = (int)(y * (float)CSettings.RenderH / CDraw.GetScreenHeight());
+            x = RemapMouseX(x, CDraw.GetScreenWidth(), CSettings.RenderW, CConfig.Config.Graphics.NumScreens);
+            y = RemapMouseY(y, CDraw.GetScreenHeight(), CSettings.RenderH);
 
             var pool = new SMouseEvent(ESender.Mouse, _Mod, x, y, lb, ld, rb, -wheel / 120, lbh, rbh, mb, mbh);
 

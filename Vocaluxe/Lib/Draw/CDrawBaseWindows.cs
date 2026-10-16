@@ -284,12 +284,23 @@ namespace Vocaluxe.Lib.Draw
             {
                 if (!ReferenceEquals(s.Window, win))
                     continue;
-                if (s.LetterW > 0)
-                    x = (int)((lx - s.LetterX) * (float)CSettings.RenderW / s.LetterW);
-                if (s.LetterH > 0)
-                    y = (int)((ly - s.LetterY) * (float)CSettings.RenderH / s.LetterH);
+                x = Unletterbox(x, s.LetterX, s.LetterW, CSettings.RenderW);
+                y = Unletterbox(y, s.LetterY, s.LetterH, CSettings.RenderH);
                 return;
             }
+        }
+
+        /// <summary>
+        ///     Letterbox-undo, pure part (plan v3 §6): window-local pixel into panel-local canvas coordinates
+        ///     through the slot's letterbox rect (identity when the letterbox is degenerate, which in
+        ///     single-window mode is then scaled to the canvas by <c>CMouse</c> exactly as before).
+        ///     Extracted so the mapping is unit-testable without windows.
+        /// </summary>
+        public static int Unletterbox(int pixel, int letterOrigin, int letterSize, int renderSize)
+        {
+            return letterSize > 0
+                ? (int)((pixel - letterOrigin) * (float)renderSize / letterSize)
+                : pixel;
         }
 
         private bool _Shift(NativeWindow win)

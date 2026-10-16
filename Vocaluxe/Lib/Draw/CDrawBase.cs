@@ -270,10 +270,21 @@ namespace Vocaluxe.Lib.Draw
         /// </summary>
         protected bool _PanelVisible(SRectF rect)
         {
-            if (_PanelIndex < 0)
+            return PanelVisible(_PanelIndex, rect.X, rect.Right, CSettings.RenderW);
+        }
+
+        /// <summary>
+        ///     Pure form of the panel guard: true when a canvas rect [rectX, rectRight) overlaps panel
+        ///     <paramref name="panelIndex" /> (each panel spans renderW pixels). panelIndex &lt; 0 is
+        ///     single-window mode: always visible. Extracted so the truth table is unit-testable without a
+        ///     draw context.
+        /// </summary>
+        public static bool PanelVisible(int panelIndex, float rectX, float rectRight, int renderW)
+        {
+            if (panelIndex < 0)
                 return true;
-            int x0 = _PanelIndex * CSettings.RenderW;
-            return rect.Right > x0 && rect.X < x0 + CSettings.RenderW;
+            float x0 = panelIndex * renderW;
+            return rectRight > x0 && rectX < x0 + renderW;
         }
 
         public void DrawTexture(CTextureRef textureRef, SRectF rect, SColorF color, bool mirrored = false, bool allMonitors = true)
