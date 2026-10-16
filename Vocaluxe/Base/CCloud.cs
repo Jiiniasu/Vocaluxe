@@ -91,10 +91,17 @@ namespace Vocaluxe.Base
         // superset of the old Json.NET default (case-sensitive matching), so it accepts everything
         // the old deserializer accepted. WhenWritingNull reproduces the old
         // NullValueHandling.Ignore that the state sends used; it is a no-op when reading.
-        private static readonly JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
+        // JsonStringEnumConverter: the server returns enum values as their name strings
+        // ("TR_CONFIG_NORMAL"); Json.NET accepted those while System.Text.Json rejects strings
+        // on enum types by default, so the converter restores the tolerant read (it also keeps
+        // accepting the bare integers we have always sent). Write paths deliberately keep the
+        // default options so payloads still carry bare integers, which the server accepts.
+        // internal: Tests asserts the production options directly (string-enum regression guard).
+        internal static readonly JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            Converters = { new JsonStringEnumConverter() }
         };
         private static string _State = "loading_game";
         // Written by the WebSocket dispatch, read via isUpdated(). Both run on the UI thread, so
@@ -259,7 +266,7 @@ namespace Vocaluxe.Base
                 return default(T);
             try
             {
-                return JsonSerializer.Deserialize<T>(json);
+                return JsonSerializer.Deserialize<T>(json, _JsonOptions);
             }
             catch (Exception e)
             {
@@ -546,7 +553,7 @@ namespace Vocaluxe.Base
                 {
                     string incoming = await ReadFromSocket(ws);
                     CLog.CCloudLog.Information("Received message: {data}", CLog.Params(incoming));
-                    message = JsonSerializer.Deserialize<EventMessage>(incoming);
+                    message = JsonSerializer.Deserialize<EventMessage>(incoming, _JsonOptions);
                 }
                 catch (Exception e)
                 {
@@ -622,7 +629,7 @@ namespace Vocaluxe.Base
         {
             try
             {
-                EventData data = JsonSerializer.Deserialize<EventData>(message.data);
+                EventData data = JsonSerializer.Deserialize<EventData>(message.data, _JsonOptions);
                 return data != null ? data.id : -1;
             }
             catch
@@ -635,7 +642,7 @@ namespace Vocaluxe.Base
         {
             try
             {
-                CloudPlayer player = JsonSerializer.Deserialize<CloudPlayer>(message.data);
+                CloudPlayer player = JsonSerializer.Deserialize<CloudPlayer>(message.data, _JsonOptions);
                 if (player == null)
                     return;
 
