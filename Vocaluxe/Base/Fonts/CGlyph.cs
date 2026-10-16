@@ -163,13 +163,16 @@ namespace Vocaluxe.Base.Fonts
             texture = _Texture;
             float factor = _GetFactor(fontHeight);
             x += _DrawBounding.X * factor;
+            y += _DrawBounding.Y * factor; // quad top = ink top (the frame SnapToBaselineRow expects)
             float h = _DrawBounding.Height * factor;
             float w = _DrawBounding.Width * factor;
 
             // Baseline-anchored pixel snap (see SnapToBaselineRow): every glyph of a line shares
             // one float baseline; snapping around it keeps that on a single shared pixel row
             // instead of letting the per-corner rounding in COpenGL._DrawTexture quantize it
-            // differently per glyph (the "wavy words").
+            // differently per glyph (the "wavy words"). Contract: y is the QUAD top (ink top),
+            // NOT the line top - passing the line top anchors every quad to the element top
+            // ("top justified" text), which is what y += inkTop*factor above prevents.
             SnapToBaselineRow(y, h, _BaselineY * factor, out y, out h);
 
             rect = new SRectF(x, y, w, h, z);
