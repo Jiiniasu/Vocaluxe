@@ -3,6 +3,7 @@ using Polly.Retry;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Net.WebSockets;
@@ -92,16 +93,18 @@ namespace Vocaluxe.Base
         // the old deserializer accepted. WhenWritingNull reproduces the old
         // NullValueHandling.Ignore that the state sends used; it is a no-op when reading.
         // JsonStringEnumConverter: the server returns enum values as their name strings
-        // ("TR_CONFIG_NORMAL"); Json.NET accepted those while System.Text.Json rejects strings
-        // on enum types by default, so the converter restores the tolerant read (it also keeps
-        // accepting the bare integers we have always sent). Write paths deliberately keep the
-        // default options so payloads still carry bare integers, which the server accepts.
-        // internal: Tests asserts the production options directly (string-enum regression guard).
+        // ("TR_CONFIG_NORMAL") on some endpoints while other endpoints use bare integers;
+        // Json.NET accepted both, System.Text.Json rejects strings on enum types by default.
+        // CloudDateTimeConverter: the server stamps high-score dates as zone-less
+        // "yyyy-MM-dd HH:mm:ss"; Json.NET parsed that, System.Text.Json only accepts RFC 3339.
+        // Write paths deliberately keep the default options so payloads still carry the shapes
+        // (bare integers, ISO dates) the server already accepts.
+        // internal: Tests assert the production options directly (wire-shape regression guards).
         internal static readonly JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            Converters = { new JsonStringEnumConverter() }
+            Converters = { new JsonStringEnumConverter(), new CloudDateTimeConverter() }
         };
         private static string _State = "loading_game";
         // Written by the WebSocket dispatch, read via isUpdated(). Both run on the UI thread, so
@@ -1065,5 +1068,30 @@ namespace Vocaluxe.Base
         public int Voice { get; set; }
         [JsonPropertyName("tone_helper_text")]
         public EOffOn ToneHelperText { get; set; }
+    }
+
+    // The SSIS server stamps high-score dates as "yyyy-MM-dd HH:mm:ss" (a space, no zone). The
+    // legacy Json.NET reader parsed that, but System.Text.Json only accepts RFC 3339, so one such
+    // entry sank the whole getHighScores response. Read that exact shape as local time (it is the
+    // zone-less wall clock of the user's own server, and CScreenHighscore's "ToLocalTime()"
+    // needs Local kind) and fall back to the strict reader for everything else. Write the same
+    // zone-less form, the shape the server already accepts from us.
+    class CloudDateTimeConverter : JsonConverter<DateTime>
+    {
+        private const string _SpaceFormat = "yyyy-MM-dd HH:mm:ss";
+
+        public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.String
+                && DateTime.TryParseExact(reader.GetString(), _SpaceFormat, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTime date))
+                return date;
+
+            return reader.GetDateTime();
+        }
+
+        public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value.ToString(_SpaceFormat, CultureInfo.InvariantCulture));
+        }
     }
 }

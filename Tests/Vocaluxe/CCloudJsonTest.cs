@@ -16,6 +16,7 @@
 #endregion
 
 using NUnit.Framework;
+using System;
 using System.Text.Json;
 using Vocaluxe.Base;
 using VocaluxeLib;
@@ -92,6 +93,38 @@ namespace Tests.Vocaluxe
             Assert.AreEqual(EGameDifficulty.TR_CONFIG_HARD, player.Difficulty);
             Assert.AreEqual(1, player.Voice);
             Assert.AreEqual(EOffOn.TR_CONFIG_ON, player.ToneHelperText);
+        }
+
+        // The getHighScores wire shape captured verbatim from the live SSIS server on 2026-10-16:
+        // a space-separated zone-less date AND a bare-integer enum in the same object (the server
+        // mixes both enum styles across endpoints). Any one of these in isolation used to sink the
+        // whole response, so the screen showed no scores.
+        [Test]
+        public void TestGetHighScoresWireFormat_SpaceDateAndIntEnum()
+        {
+            string json = @"[ { ""Name"": ""Jiiniasu"", ""Score"": 7713, ""Date"": ""2026-10-03 19:14:56"", ""Difficulty"": 2, ""VoiceNr"": 0, ""ID"": 202 } ]";
+
+            SDBScoreEntry[] scores = JsonSerializer.Deserialize<SDBScoreEntry[]>(json, CCloud._JsonOptions);
+
+            Assert.AreEqual(1, scores.Length);
+            Assert.AreEqual("Jiiniasu", scores[0].Name);
+            Assert.AreEqual(7713, scores[0].Score);
+            // Zone-less wall clock parsed as local (the display path calls ToLocalTime()).
+            Assert.AreEqual(new DateTime(2026, 10, 3, 19, 14, 56), scores[0].Date.ToLocalTime());
+            Assert.AreEqual(EGameDifficulty.TR_CONFIG_HARD, scores[0].Difficulty);
+            Assert.AreEqual(0, scores[0].VoiceNr);
+            Assert.AreEqual(202, scores[0].ID);
+        }
+
+        // RFC 3339 dates must keep parsing through the strict fallback path of the converter.
+        [Test]
+        public void TestReadPath_StillAcceptsRfc3339Dates()
+        {
+            string json = @"[ { ""Name"": ""Zulu"", ""Score"": 1, ""Date"": ""2026-10-03T19:14:56Z"", ""Difficulty"": 1, ""VoiceNr"": 0, ""ID"": 1 } ]";
+
+            SDBScoreEntry[] scores = JsonSerializer.Deserialize<SDBScoreEntry[]>(json, CCloud._JsonOptions);
+
+            Assert.AreEqual(new DateTime(2026, 10, 3, 19, 14, 56, DateTimeKind.Utc), scores[0].Date.ToUniversalTime());
         }
     }
 }
