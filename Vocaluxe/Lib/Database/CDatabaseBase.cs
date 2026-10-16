@@ -16,25 +16,19 @@
 #endregion
 
 using System;
-using System.IO;
-#if WIN
-using System.Data.SQLite;
-
-#else
-using Mono.Data.Sqlite;
-using SQLiteCommand = Mono.Data.Sqlite.SqliteCommand;
-using SQLiteConnection = Mono.Data.Sqlite.SqliteConnection;
-using SQLiteDataReader = Mono.Data.Sqlite.SqliteDataReader;
-#endif
+using System.Text;
+using Microsoft.Data.Sqlite;
 
 namespace Vocaluxe.Lib.Database
 {
     public abstract class CDatabaseBase
     {
         protected readonly string _FilePath;
-        protected SQLiteConnection _Connection;
 
-        //You have to lock all actions using connection or transaction, otherwhise order is not guaranted
+        //True between Init() and Close()
+        protected bool _Initialized;
+
+        //You have to lock all actions on a database using _Mutex, otherwise order is not guaranteed
         protected readonly object _Mutex = new object();
 
         protected int _Version; //Version of the database (value of row "Value" in table "Version") or -1 if none
@@ -44,29 +38,40 @@ namespace Vocaluxe.Lib.Database
             _FilePath = filePath;
         }
 
+        //Microsoft.Data.Sqlite connections are thread-affine, so the databases no longer hold one persistent
+        //connection: every operation opens a short-lived connection and closes it right away (MDS pools them
+        //under the hood, so this is cheap). Throws if the database cannot be opened - use a using block.
+        protected static SqliteConnection _OpenConnection(string filePath)
+        {
+            var connection = new SqliteConnection("Data Source=" + filePath);
+            connection.Open();
+            return connection;
+        }
+
         public virtual bool Init()
         {
             lock (_Mutex)
             {
-                if (_Connection != null)
+                if (_Initialized)
                     return false;
-                _Connection = new SQLiteConnection("Data Source=" + _FilePath);
+
+                SqliteConnection connection;
+
                 try
                 {
-                    _Connection.Open();
+                    connection = _OpenConnection(_FilePath);
                 }
                 catch (Exception)
                 {
-                    _Connection.Dispose();
-                    _Connection = null;
                     return false;
                 }
 
-                using (var command = new SQLiteCommand(_Connection))
+                using (connection)
+                using (var command = connection.CreateCommand())
                 {
                     command.CommandText = "SELECT Value FROM Version";
 
-                    SQLiteDataReader reader = null;
+                    SqliteDataReader reader = null;
 
                     try
                     {
@@ -82,6 +87,7 @@ namespace Vocaluxe.Lib.Database
                     if (reader != null)
                         reader.Dispose();
                 }
+                _Initialized = true;
             }
             return true;
         }
@@ -90,11 +96,7 @@ namespace Vocaluxe.Lib.Database
         {
             lock (_Mutex)
             {
-                if (_Connection != null)
-                {
-                    _Connection.Dispose();
-                    _Connection = null;
-                }
+                _Initialized = false;
             }
         }
 
@@ -112,21 +114,16 @@ namespace Vocaluxe.Lib.Database
         /// <param name="reader"></param>
         /// <param name="field">Field number to read from (default=first)</param>
         /// <returns></returns>
-        protected static byte[] _GetBytes(SQLiteDataReader reader, int field = 0)
+        protected static byte[] _GetBytes(SqliteDataReader reader, int field = 0)
         {
-            const int chunkSize = 2 * 1024;
-            var buffer = new byte[chunkSize];
-            long fieldOffset = 0;
-            using (var stream = new MemoryStream())
-            {
-                int bytesRead;
-                while ((bytesRead = (int)reader.GetBytes(field, fieldOffset, buffer, 0, buffer.Length)) > 0)
-                {
-                    stream.Write(buffer, 0, bytesRead);
-                    fieldOffset += bytesRead;
-                }
-                return stream.ToArray();
-            }
+            //MDS has no zero-copy chunked BLOB reader (the offset overloads of reader.GetBytes throw
+            //NotSupportedException): the value is already fully materialized, so read it as one array.
+            var value = reader.GetValue(field);
+            if (value is byte[] bytes)
+                return bytes;
+            if (value is string text)
+                return Encoding.UTF8.GetBytes(text);
+            throw new InvalidCastException("Field " + field + " is not a BLOB (" + (value == null ? "null" : value.GetType().Name) + ")");
         }
     }
 }

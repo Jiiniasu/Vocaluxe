@@ -16,23 +16,12 @@
 #endregion
 
 using System;
-using System.Data;
-using System.Drawing;
 using System.IO;
+using Microsoft.Data.Sqlite;
 using SkiaSharp;
 using Vocaluxe.Base;
 using VocaluxeLib.Draw;
 using VocaluxeLib.Log;
-#if WIN
-using System.Data.SQLite;
-
-#else
-using Mono.Data.Sqlite;
-using SQLiteCommand = Mono.Data.Sqlite.SqliteCommand;
-using SQLiteConnection = Mono.Data.Sqlite.SqliteConnection;
-using SQLiteDataReader = Mono.Data.Sqlite.SqliteDataReader;
-using SQLiteTransaction = Mono.Data.Sqlite.SqliteTransaction;
-#endif
 
 namespace Vocaluxe.Lib.Database
 {
@@ -72,40 +61,48 @@ namespace Vocaluxe.Lib.Database
 
         public bool GetCreditsRessource(string fileName, ref CTextureRef tex)
         {
-            if (_Connection == null)
+            if (!_Initialized)
                 return false;
             bool result = false;
 
-            using (var command = new SQLiteCommand(_Connection))
+            lock (_Mutex)
             {
-                command.CommandText = "SELECT id, width, height FROM Images WHERE [Path] = @path";
-                command.Parameters.Add("@path", DbType.String, 0).Value = fileName;
-
-                SQLiteDataReader reader = command.ExecuteReader();
-
-                if (reader != null && reader.HasRows)
+                using (var connection = _OpenConnection(_FilePath))
+                using (var command = connection.CreateCommand())
                 {
-                    reader.Read();
-                    int id = reader.GetInt32(0);
-                    int w = reader.GetInt32(1);
-                    int h = reader.GetInt32(2);
-                    reader.Close();
+                    command.CommandText = "SELECT id, width, height FROM Images WHERE [Path] = @path";
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@path", fileName);
 
-                    command.CommandText = "SELECT Data FROM ImageData WHERE ImageID = @id";
-                    command.Parameters.Add("@id", DbType.Int32).Value = id;
-                    reader = command.ExecuteReader();
-
-                    if (reader.HasRows)
+                    int id = -1;
+                    int w = 0, h = 0;
+                    using (var reader = command.ExecuteReader())
                     {
-                        result = true;
-                        reader.Read();
-                        byte[] data = _GetBytes(reader);
-                        tex = CDraw.AddTexture(w, h, data);
+                        if (reader.Read())
+                        {
+                            id = reader.GetInt32(0);
+                            w = reader.GetInt32(1);
+                            h = reader.GetInt32(2);
+                        }
+                    }
+                    if (id >= 0)
+                    {
+                        //Reader is closed, so this command can be reused for the second query
+                        command.CommandText = "SELECT Data FROM ImageData WHERE ImageID = @id";
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@id", id);
+
+                        using (var reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                result = true;
+                                byte[] data = _GetBytes(reader);
+                                tex = CDraw.AddTexture(w, h, data);
+                            }
+                        }
                     }
                 }
-
-                if (reader != null)
-                    reader.Dispose();
             }
 
             return result;
@@ -115,43 +112,57 @@ namespace Vocaluxe.Lib.Database
         //Update from V0 (empty) to V1
         private bool _UpdateV1()
         {
-            if (_Connection == null || _Version >= 1)
+            if (!_Initialized || _Version >= 1)
                 return false;
-            using (SQLiteTransaction transaction = _Connection.BeginTransaction())
+            //Run on one short-lived connection (MDS connections are thread-affine); the whole update
+            //stays in a single transaction so a failure leaves the database untouched.
+            try
             {
-                try
+                using (var connection = _OpenConnection(_FilePath))
                 {
-                    foreach (string file in _FilesV1)
+                    using (var transaction = connection.BeginTransaction())
                     {
-                        string filePath = Path.Combine(CSettings.ProgramFolder, file);
-                        if (!_AddImageToCreditsDB(filePath, transaction))
+                        try
+                        {
+                            foreach (string file in _FilesV1)
+                            {
+                                string filePath = Path.Combine(CSettings.ProgramFolder, file);
+                                if (!_AddImageToCreditsDB(filePath, connection, transaction))
+                                {
+                                    transaction.Rollback();
+                                    return false;
+                                }
+                            }
+                            using (var command = connection.CreateCommand())
+                            {
+                                command.Transaction = transaction;
+                                command.CommandText = "Update Version SET Value=@Value";
+                                command.Parameters.Clear();
+                                command.Parameters.AddWithValue("@Value", 1);
+                                command.ExecuteNonQuery();
+                            }
+                            transaction.Commit();
+                        }
+                        catch (Exception)
                         {
                             transaction.Rollback();
                             return false;
                         }
                     }
-                    using (SQLiteCommand command = new SQLiteCommand(_Connection))
-                    {
-                        command.Transaction = transaction;
-                        command.CommandText = "Update Version SET Value=@Value)";
-                        command.Parameters.Add("@Value", DbType.Int32).Value = 1;
-                        command.ExecuteNonQuery();
-                    }
-                    transaction.Commit();
                 }
-                catch (Exception)
-                {
-                    transaction.Rollback();
-                    return false;
-                }
+                _Version = 1;
+                return true;
             }
-            return true;
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         //If you want to add an image to db, call this method!
-        private bool _AddImageToCreditsDB(string imagePath, SQLiteTransaction transaction)
+        private bool _AddImageToCreditsDB(string imagePath, SqliteConnection connection, SqliteTransaction transaction)
         {
-            if (_Connection == null || !File.Exists(imagePath))
+            if (!File.Exists(imagePath))
                 return false;
 
             SKBitmap origin;
@@ -178,39 +189,39 @@ namespace Vocaluxe.Lib.Database
                 int h = origin.Height;
                 byte[] data = origin.Bytes;
 
-                using (SQLiteCommand command = new SQLiteCommand(_Connection))
+                using (var command = connection.CreateCommand())
                 {
                     command.Transaction = transaction;
                     command.CommandText = "INSERT INTO Images (Path, width, height) VALUES (@path, @w, @h)";
-                    command.Parameters.Add("@path", DbType.String).Value = Path.GetFileName(imagePath);
-                    command.Parameters.Add("@w", DbType.Int32).Value = w;
-                    command.Parameters.Add("@h", DbType.Int32).Value = h;
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@path", Path.GetFileName(imagePath));
+                    command.Parameters.AddWithValue("@w", w);
+                    command.Parameters.AddWithValue("@h", h);
                     command.ExecuteNonQuery();
                 }
 
                 int id = -1;
-                using (SQLiteCommand command = new SQLiteCommand(_Connection))
+                using (var command = connection.CreateCommand())
                 {
                     command.Transaction = transaction;
                     command.CommandText = "SELECT id FROM Images WHERE [Path] = @path";
-                    command.Parameters.Add("@path", DbType.String, 0).Value = Path.GetFileName(imagePath);
-                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@path", Path.GetFileName(imagePath));
+                    using (var reader = command.ExecuteReader())
                     {
-                        if (reader != null)
-                        {
-                            reader.Read();
+                        if (reader.Read())
                             id = reader.GetInt32(0);
-                        }
                     }
                 }
                 if (id < 0)
                     return false;
-                using (SQLiteCommand command = new SQLiteCommand(_Connection))
+                using (var command = connection.CreateCommand())
                 {
                     command.Transaction = transaction;
                     command.CommandText = "INSERT INTO ImageData (ImageID, Data) VALUES (@id, @data)";
-                    command.Parameters.Add("@id", DbType.Int32).Value = id;
-                    command.Parameters.Add("@data", DbType.Binary).Value = data;
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@id", id);
+                    command.Parameters.AddWithValue("@data", data);
                     command.ExecuteNonQuery();
                     return true;
                 }
@@ -227,12 +238,10 @@ namespace Vocaluxe.Lib.Database
 
         private bool _CreateDB()
         {
-            if (_Connection == null)
-                return false;
-
             try
             {
-                using (SQLiteCommand command = new SQLiteCommand(_Connection))
+                using (var connection = _OpenConnection(_FilePath))
+                using (var command = connection.CreateCommand())
                 {
                     command.CommandText = "CREATE TABLE IF NOT EXISTS Version (Value INTEGER NOT NULL);";
                     command.ExecuteNonQuery();
@@ -247,6 +256,8 @@ namespace Vocaluxe.Lib.Database
                     command.CommandText = "CREATE TABLE IF NOT EXISTS ImageData ( id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +
                                           "ImageID INTEGER NOT NULL, Data BLOB NOT NULL);";
                     command.ExecuteNonQuery();
+
+                    return true;
                 }
             }
             catch (Exception e)
@@ -254,7 +265,6 @@ namespace Vocaluxe.Lib.Database
                 CLog.Error("Error creating Ressource DB " + e);
                 return false;
             }
-            return true;
         }
 #endif
     }

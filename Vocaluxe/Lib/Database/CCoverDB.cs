@@ -16,30 +16,19 @@
 #endregion
 
 using System;
-using System.Data;
 using System.Drawing;
 using System.IO;
+using Microsoft.Data.Sqlite;
 using SkiaSharp;
 using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
 using VocaluxeLib.Log;
-#if WIN
-using System.Data.SQLite;
-
-#else
-using Mono.Data.Sqlite;
-using SQLiteCommand = Mono.Data.Sqlite.SqliteCommand;
-using SQLiteDataReader = Mono.Data.Sqlite.SqliteDataReader;
-using SQLiteTransaction = Mono.Data.Sqlite.SqliteTransaction;
-#endif
 
 namespace Vocaluxe.Lib.Database
 {
     public class CCoverDB : CDatabaseBase
     {
-        private SQLiteTransaction _TransactionCover;
-
         public CCoverDB(string filePath) : base(filePath) { }
 
         public override bool Init()
@@ -57,20 +46,9 @@ namespace Vocaluxe.Lib.Database
             return true;
         }
 
-        public override void Close()
-        {
-            //Do commit and close atomicly otherwhise we may loose changes
-            lock (_Mutex)
-            {
-                _CommitCovers();
-
-                base.Close();
-            }
-        }
-
         public bool GetCover(string coverPath, ref CTextureRef tex, int maxSize)
         {
-            if (_Connection == null)
+            if (!_Initialized)
                 return false;
             if (!File.Exists(coverPath))
             {
@@ -80,42 +58,50 @@ namespace Vocaluxe.Lib.Database
 
             lock (_Mutex)
             {
-                //Double check here because we may have just closed our connection
-                if (_Connection == null)
+                //Double check here because we may have just closed the database
+                if (!_Initialized)
                     return false;
-                using (var command = new SQLiteCommand(_Connection))
+                using (var connection = _OpenConnection(_FilePath))
+                using (var command = connection.CreateCommand())
                 {
                     command.CommandText = "SELECT id, width, height FROM Cover WHERE [Path] = @path";
-                    command.Parameters.Add("@path", DbType.String).Value = coverPath;
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@path", coverPath);
 
-                    SQLiteDataReader reader = command.ExecuteReader();
-
-                    if (reader != null && reader.HasRows)
+                    int id = -1;
+                    int w = 0, h = 0;
+                    using (var reader = command.ExecuteReader())
                     {
-                        reader.Read();
-                        int id = reader.GetInt32(0);
-                        int w = reader.GetInt32(1);
-                        int h = reader.GetInt32(2);
-                        reader.Close();
-
-                        command.CommandText = "SELECT Data FROM CoverData WHERE CoverID = @id";
-                        command.Parameters.Add("@id", DbType.Int32).Value = id;
-                        reader = command.ExecuteReader();
-
-                        if (reader.HasRows)
+                        if (reader.Read())
                         {
-                            reader.Read();
-                            byte[] data2 = _GetBytes(reader);
-                            reader.Dispose();
-                            tex = CDraw.EnqueueTexture(w, h, data2);
-                            return true;
+                            id = reader.GetInt32(0);
+                            w = reader.GetInt32(1);
+                            h = reader.GetInt32(2);
                         }
+                    }
+                    if (id >= 0)
+                    {
+                        //Reader is closed, so this command can be reused for a second query
+                        command.CommandText = "SELECT Data FROM CoverData WHERE CoverID = @id";
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@id", id);
+
+                        using (var reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                byte[] data2 = _GetBytes(reader);
+                                tex = CDraw.EnqueueTexture(w, h, data2);
+                                return true;
+                            }
+                        }
+
+                        //Stale entry without data: drop it, the fallback below rebuilds the cover
                         command.CommandText = "DELETE FROM Cover WHERE id = @id";
-                        command.Parameters.Add("@id", DbType.Int32).Value = id;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@id", id);
                         command.ExecuteNonQuery();
                     }
-                    if (reader != null)
-                        reader.Close();
                 }
             }
 
@@ -161,31 +147,35 @@ namespace Vocaluxe.Lib.Database
 
             lock (_Mutex)
             {
-                //Double check here because we may have just closed our connection
-                if (_Connection == null)
+                //Double check here because we may have just closed the database
+                if (!_Initialized)
                     return false;
-                if (_TransactionCover == null)
-                    _TransactionCover = _Connection.BeginTransaction();
-                using (var command = new SQLiteCommand(_Connection))
+                using (var connection = _OpenConnection(_FilePath))
+                using (var command = connection.CreateCommand())
                 {
                     command.CommandText = "INSERT INTO Cover (Path, width, height) VALUES (@path, @w, @h)";
-                    command.Parameters.Add("@w", DbType.Int32).Value = size.Width;
-                    command.Parameters.Add("@h", DbType.Int32).Value = size.Height;
-                    command.Parameters.Add("@path", DbType.String).Value = coverPath;
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@w", size.Width);
+                    command.Parameters.AddWithValue("@h", size.Height);
+                    command.Parameters.AddWithValue("@path", coverPath);
                     command.ExecuteNonQuery();
 
+                    int id = -1;
                     command.CommandText = "SELECT id FROM Cover WHERE [Path] = @path";
-                    command.Parameters.Add("@path", DbType.String).Value = coverPath;
-                    SQLiteDataReader reader = command.ExecuteReader();
-
-                    if (reader != null)
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@path", coverPath);
+                    using (var reader = command.ExecuteReader())
                     {
-                        reader.Read();
-                        int id = reader.GetInt32(0);
-                        reader.Dispose();
+                        if (reader.Read())
+                            id = reader.GetInt32(0);
+                    }
+
+                    if (id >= 0)
+                    {
                         command.CommandText = "INSERT INTO CoverData (CoverID, Data) VALUES (@id, @data)";
-                        command.Parameters.Add("@id", DbType.Int32).Value = id;
-                        command.Parameters.Add("@data", DbType.Binary).Value = data;
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@id", id);
+                        command.Parameters.AddWithValue("@data", data);
                         command.ExecuteNonQuery();
                         return true;
                     }
@@ -194,37 +184,28 @@ namespace Vocaluxe.Lib.Database
             return false;
         }
 
+        /// <summary>
+        ///     Covers are written to the database right away (each operation commits itself), so there
+        ///     is nothing left to commit; kept for API compatibility with the deferred-transaction days.
+        /// </summary>
         public void CommitCovers()
         {
-            lock (_Mutex)
-            {
-                _CommitCovers();
-            }
-        }
-
-        /// <summary>
-        ///     You have to hold the CoverMutex when calling this!
-        /// </summary>
-        private void _CommitCovers()
-        {
-            if (_TransactionCover == null)
-                return;
-            _TransactionCover.Commit();
-            _TransactionCover.Dispose();
-            _TransactionCover = null;
+            //No-op by design: see the comment on GetCover - every write is self-committing
         }
 
         private bool _CreateCoverDB()
         {
             try
             {
-                using (var command = new SQLiteCommand(_Connection))
+                using (var connection = _OpenConnection(_FilePath))
+                using (var command = connection.CreateCommand())
                 {
                     command.CommandText = "CREATE TABLE IF NOT EXISTS Version (Value INTEGER NOT NULL);";
                     command.ExecuteNonQuery();
 
                     command.CommandText = "INSERT INTO Version (Value) VALUES(@Value)";
-                    command.Parameters.Add("@Value", DbType.Int32).Value = CSettings.DatabaseCoverVersion;
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@Value", CSettings.DatabaseCoverVersion);
                     command.ExecuteNonQuery();
 
                     command.CommandText = "CREATE TABLE IF NOT EXISTS Cover ( id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, " +

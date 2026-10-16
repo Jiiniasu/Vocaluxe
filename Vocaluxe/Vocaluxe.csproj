@@ -30,17 +30,18 @@
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="3.119.4" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
     <!-- CCloud's HTTP retry (v7-compatible API surface, v8 package). -->
     <PackageReference Include="Polly" Version="8.8.0" />
-    <!-- Native-only bundles (FFmpeg 4.x + acinerella shim + SQLite) that place their binaries under
+    <!-- Native-only bundles (FFmpeg 4.x + acinerella shim) that place their binaries under
           libs/unmanaged, exactly like the old packages.config build did. -->
     <PackageReference Include="vocaluxe.dependencies.acinerella" Version="1.0.6" />
     <PackageReference Include="vocaluxe.dependencies.ffmpeg" Version="1.0.6" />
-    <PackageReference Include="vocaluxe.dependencies.csharpsqlite" Version="1.0.1" />
-    <PackageReference Include="vocaluxe.dependencies.sqlite" Version="1.0.1" />
+    <!-- SQLite on the official Microsoft.Data.Sqlite provider. Its native engine (SQLitePCLRaw
+          "e_sqlite3") ships as runtimes/<rid>/native assets and resolves next to the exe in
+          Output/ - no manual staging target needed for it. -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\VocaluxeLib\VocaluxeLib.csproj" />
-    <ProjectReference Include="..\Community.CsharpSqlite\Community.CsharpSqlite.csproj" />
   </ItemGroup>
 
   <!-- Ship the application icon next to the exe: CAppIcon decodes it at startup into the NativeWindow
@@ -120,14 +121,12 @@
       <_PtDir>$(MSBuildThisFileDirectory)..\PitchTracker\bin\Release.x64</_PtDir>
       <_MissingNatives Condition="!Exists('$(_PkgRoot)vocaluxe.dependencies.acinerella\1.0.6\x64\acinerella.dll')">acinerella; $(_MissingNatives)</_MissingNatives>
       <_MissingNatives Condition="!Exists('$(_PkgRoot)vocaluxe.dependencies.ffmpeg\1.0.6\x64\avcodec-58.dll')">ffmpeg; $(_MissingNatives)</_MissingNatives>
-      <_MissingNatives Condition="!Exists('$(_PkgRoot)vocaluxe.dependencies.sqlite\1.0.1\build\net40\x64\SQLite.Interop.dll')">sqlite; $(_MissingNatives)</_MissingNatives>
       <_MissingNatives Condition="!Exists('$(_PtDir)\PitchTracker.dll')">PitchTracker (build see header); $(_MissingNatives)</_MissingNatives>
     </PropertyGroup>
     <ItemGroup>
       <_UnmanagedNative Include="$(_PkgRoot)vocaluxe.dependencies.acinerella\1.0.6\x64\*.dll" />
       <_UnmanagedNative Include="$(_PkgRoot)vocaluxe.dependencies.acinerella\1.0.6\x64\*.pdb" />
       <_UnmanagedNative Include="$(_PkgRoot)vocaluxe.dependencies.ffmpeg\1.0.6\x64\*.dll" />
-      <_UnmanagedNative Include="$(_PkgRoot)vocaluxe.dependencies.sqlite\1.0.1\build\net40\x64\SQLite.Interop.dll" />
       <_UnmanagedNative Include="$(_PtDir)\PitchTracker.dll" />
       <_UnmanagedNative Include="$(_PtDir)\PitchTracker.pdb" />
     </ItemGroup>
