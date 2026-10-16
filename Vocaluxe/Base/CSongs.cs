@@ -20,7 +20,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using VocaluxeLib;
@@ -46,8 +45,6 @@ namespace Vocaluxe.Base
 
         private static Thread _CoverLoaderThread;
         public static event CategoryChangedHandler OnCategoryChanged;
-
-        private static readonly HttpClient _Client = new HttpClient();
 
         public static List<CSong> Songs
         {

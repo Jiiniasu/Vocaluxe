@@ -18,7 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Game;
@@ -29,8 +28,6 @@ namespace Vocaluxe.Screens
 {
     public class CScreenHighscore : CMenu
     {
-        private static readonly HttpClient _Client = new HttpClient();
-
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {

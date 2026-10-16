@@ -18,6 +18,7 @@
 using System;
 using System.ComponentModel;
 using System.IO;
+using System.Text.Json.Serialization;
 using System.Xml.Serialization;
 using VocaluxeLib.Log;
 using VocaluxeLib.Xml;
@@ -43,20 +44,22 @@ namespace VocaluxeLib.Profile
 #pragma warning restore 649
         }
 
-        [DefaultValue(null)] public Guid ID;
+        // [JsonInclude]: System.Text.Json (cloud profile payload) does not include public fields by
+        // default. FilePath is deliberately left off the wire (it is a local path, XML-only).
+        [JsonInclude] [DefaultValue(null)] public Guid ID;
 
-        public string PlayerName;
+        [JsonInclude] public string PlayerName;
         [XmlIgnore] public string FilePath;
-        [DefaultValue(null)] public byte[] PasswordHash;
-        [DefaultValue(null)] public byte[] PasswordSalt;
+        [JsonInclude] [DefaultValue(null)] public byte[] PasswordHash;
+        [JsonInclude] [DefaultValue(null)] public byte[] PasswordSalt;
 
-        public EGameDifficulty Difficulty;
+        [JsonInclude] public EGameDifficulty Difficulty;
 
         [XmlIgnore]
         public CAvatar Avatar { get; set; }
 
-        public EUserRole UserRole;
-        public EOffOn Active;
+        [JsonInclude] public EUserRole UserRole;
+        [JsonInclude] public EOffOn Active;
 
         [XmlElement("Avatar")]
         // ReSharper disable UnusedMember.Global

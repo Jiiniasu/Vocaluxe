@@ -18,7 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Newtonsoft.Json;
+using System.Text.Json;
 using VocaluxeLib;
 using VocaluxeLib.Log;
 
@@ -42,6 +42,14 @@ namespace Vocaluxe.Base
 
         // Records older than this are dropped, so old rounds aren't silently replayed days later.
         public static TimeSpan MaxAge { get { return TimeSpan.FromDays(7); } }
+
+        // The queue file is a local, human-readable artifact: indented exactly like the old
+        // Json.NET Formatting.Indented output, property names unchanged, names matched leniently.
+        private static readonly JsonSerializerOptions _FileOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            PropertyNameCaseInsensitive = true
+        };
 
         public sealed class SOutboxEntry
         {
@@ -176,7 +184,7 @@ namespace Vocaluxe.Base
                     if (File.Exists(FilePath))
                     {
                         string json = File.ReadAllText(FilePath);
-                        List<SOutboxEntry> loaded = JsonConvert.DeserializeObject<List<SOutboxEntry>>(json);
+                        List<SOutboxEntry> loaded = JsonSerializer.Deserialize<List<SOutboxEntry>>(json, _FileOptions);
                         if (loaded != null)
                             _Entries.AddRange(loaded);
                     }
@@ -198,7 +206,7 @@ namespace Vocaluxe.Base
                 if (!Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
 
-                string json = JsonConvert.SerializeObject(_Entries, Formatting.Indented);
+                string json = JsonSerializer.Serialize(_Entries, _FileOptions);
                 string tmp = FilePath + ".tmp";
 
                 File.WriteAllText(tmp, json);

@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Polly;
+﻿using Polly;
 using Polly.Retry;
 using System;
 using System.Collections.Generic;
@@ -8,6 +7,8 @@ using System.Net.Http;
 using SkiaSharp;
 using System.Net.WebSockets;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using VocaluxeLib;
@@ -86,7 +87,15 @@ namespace Vocaluxe.Base
         {
             get { return COutbox.Count; }
         }
-        private static readonly JsonSerializerSettings _JsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
+        // System.Text.Json options for the cloud wire format. PropertyNameCaseInsensitive is a
+        // superset of the old Json.NET default (case-sensitive matching), so it accepts everything
+        // the old deserializer accepted. WhenWritingNull reproduces the old
+        // NullValueHandling.Ignore that the state sends used; it is a no-op when reading.
+        private static readonly JsonSerializerOptions _JsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        };
         private static string _State = "loading_game";
         // Written by the WebSocket dispatch, read via isUpdated(). Both run on the UI thread, so
         // no extra synchronization is required.
@@ -250,7 +259,7 @@ namespace Vocaluxe.Base
                 return default(T);
             try
             {
-                return JsonConvert.DeserializeObject<T>(json);
+                return JsonSerializer.Deserialize<T>(json);
             }
             catch (Exception e)
             {
@@ -374,7 +383,7 @@ namespace Vocaluxe.Base
 
         private static Task SubscribeToChannel(string channel)
         {
-            string message = JsonConvert.SerializeObject(new
+            string message = JsonSerializer.Serialize(new
             {
                 @event = "pusher:subscribe",
                 data = new
@@ -537,7 +546,7 @@ namespace Vocaluxe.Base
                 {
                     string incoming = await ReadFromSocket(ws);
                     CLog.CCloudLog.Information("Received message: {data}", CLog.Params(incoming));
-                    message = JsonConvert.DeserializeObject<EventMessage>(incoming);
+                    message = JsonSerializer.Deserialize<EventMessage>(incoming);
                 }
                 catch (Exception e)
                 {
@@ -613,7 +622,7 @@ namespace Vocaluxe.Base
         {
             try
             {
-                EventData data = JsonConvert.DeserializeObject<EventData>(message.data);
+                EventData data = JsonSerializer.Deserialize<EventData>(message.data);
                 return data != null ? data.id : -1;
             }
             catch
@@ -626,7 +635,7 @@ namespace Vocaluxe.Base
         {
             try
             {
-                CloudPlayer player = JsonConvert.DeserializeObject<CloudPlayer>(message.data);
+                CloudPlayer player = JsonSerializer.Deserialize<CloudPlayer>(message.data);
                 if (player == null)
                     return;
 
@@ -686,14 +695,14 @@ namespace Vocaluxe.Base
         public static Task setState(string state)
         {
             _State = state;
-            string message = JsonConvert.SerializeObject(new GameStateMessage(new GameState(state)), _JsonSerializerSettings);
+            string message = JsonSerializer.Serialize(new GameStateMessage(new GameState(state)), _JsonOptions);
             return SendToSocket(message);
         }
 
         public static Task setState(string state, int songId)
         {
             _State = state;
-            string message = JsonConvert.SerializeObject(new GameStateMessage(new GameState(state, songId)), _JsonSerializerSettings);
+            string message = JsonSerializer.Serialize(new GameStateMessage(new GameState(state, songId)), _JsonOptions);
             return SendToSocket(message);
         }
 
@@ -704,20 +713,20 @@ namespace Vocaluxe.Base
 
         public static CloudSong[] loadSongs(List<CloudSong> songs)
         {
-            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, Data = songs });
+            string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey, Data = songs });
             CloudSong[] result = SafeDeserialize<CloudSong[]>(PostStringToCloud("/api/loadSongs", json, _HTTPRetryPolicy));
             return result ?? new CloudSong[0];
         }
         public static CProfile[] getProfiles()
         {
-            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey });
+            string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey });
             CProfile[] result = SafeDeserialize<CProfile[]>(PostStringToCloud("/api/getProfiles", json, _HTTPRetryPolicy));
             return result ?? new CProfile[0];
         }
 
         public static byte[] getAvatar(string fileName)
         {
-            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, FileName = fileName });
+            string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey, FileName = fileName });
 
             byte[] data = PostBytesToCloud("/api/getAvatar", json, _HTTPRetryPolicy);
             if (data == null || data.Length == 0)
@@ -743,13 +752,13 @@ namespace Vocaluxe.Base
 
         public static SDBScoreEntry[] getHighScores(int databaseSongId, EGameMode gameMode, EHighscoreStyle highscoreStyle)
         {
-            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = databaseSongId, GameMode = gameMode, Style = highscoreStyle });
+            string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey, DataBaseSongID = databaseSongId, GameMode = gameMode, Style = highscoreStyle });
             SDBScoreEntry[] result = SafeDeserialize<SDBScoreEntry[]>(PostStringToCloud("/api/getHighScores", json, _HTTPRetryPolicy));
             return result ?? new SDBScoreEntry[0];
         }
         public static void putCover(int databaseSongId, string data, string format)
         {
-            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = databaseSongId, Data = data, Format = format });
+            string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey, DataBaseSongID = databaseSongId, Data = data, Format = format });
             // Upload is fire-and-forget from the caller's perspective; failures are logged in PostBytesToCloud.
             PostStringToCloud("/api/putCover", json, _HTTPRetryPolicy);
         }
@@ -770,7 +779,7 @@ namespace Vocaluxe.Base
             }
 
             const string Endpoint = "/api/putRound";
-            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey, DataBaseSongID = song.DataBaseSongID, SongFinished = players[0].SongFinished, Scores = players });
+            string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey, DataBaseSongID = song.DataBaseSongID, SongFinished = players[0].SongFinished, Scores = players });
 
             // Non-idempotent: use the conservative policy (connection failures only) to avoid
             // submitting the same round twice if the server already accepted it.
@@ -890,7 +899,7 @@ namespace Vocaluxe.Base
         {
             CProfiles.LoadProfiles();
 
-            string json = JsonConvert.SerializeObject(new { Key = CConfig.CloudServerKey });
+            string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey });
             CloudPlayer[] cloudPlayers = SafeDeserialize<CloudPlayer[]>(PostStringToCloud("/api/getPlayers", json, _HTTPRetryPolicy));
             if (cloudPlayers == null)
                 return;
@@ -968,9 +977,9 @@ namespace Vocaluxe.Base
     }
     class GameState
     {
-        [JsonProperty("state")]
+        [JsonPropertyName("state")]
         public string State { get; set; }
-        [JsonProperty("song_id")]
+        [JsonPropertyName("song_id")]
         public int? SongId { get; set; }
 
         public GameState(string state)
@@ -987,11 +996,11 @@ namespace Vocaluxe.Base
 
     class GameStateMessage
     {
-        [JsonProperty("channel")]
+        [JsonPropertyName("channel")]
         public string Channel { get; } = "game-state";
-        [JsonProperty("event")]
+        [JsonPropertyName("event")]
         public string Event { get; } = "client-setState";
-        [JsonProperty("data")]
+        [JsonPropertyName("data")]
         public GameState State { get; set; }
 
         public GameStateMessage(GameState state)
@@ -1020,33 +1029,34 @@ namespace Vocaluxe.Base
 
     class EventMessage
     {
-        [JsonProperty("event")]
+        [JsonPropertyName("event")]
         public string eventName { get; set; }
 
-        [JsonProperty("data")]
+        [JsonPropertyName(nameof(data))]
         public string data { get; set; }
 
-        [JsonProperty("channel")]
+        [JsonPropertyName(nameof(channel))]
         public string channel { get; set; }
     }
 
     class EventData
     {
-        [JsonProperty("id")]
+        [JsonPropertyName(nameof(id))]
         public int id { get; set; }
     }
 
     class CloudPlayer
     {
-        [JsonProperty("id")]
+        [JsonPropertyName(nameof(Id))]
         public int Id { get; set; }
-        [JsonProperty("profile_guid")]
+        [JsonPropertyName("profile_guid")]
         public Guid ProfileGuid { get; set; }
-        [JsonProperty("game_difficulty")]
+        [JsonPropertyName("game_difficulty")]
         public EGameDifficulty Difficulty { get; set; }
-        [JsonProperty("voice")]
+        // "voice" stays lowercase: it is the server's literal wire name (not a casing of "Voice").
+        [JsonPropertyName("voice")]
         public int Voice { get; set; }
-        [JsonProperty("tone_helper_text")]
+        [JsonPropertyName("tone_helper_text")]
         public EOffOn ToneHelperText { get; set; }
     }
 }

@@ -21,6 +21,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Drawing;
+using System.Text.Json.Serialization;
 using System.Xml.Serialization;
 using VocaluxeLib.Songs;
 using VocaluxeLib.Xml;
@@ -340,33 +341,35 @@ namespace VocaluxeLib
     #region Game
     public struct SPlayer
     {
-        public Guid ProfileID;
-        public EGameDifficulty Difficulty;
-        public EOffOn ToneHelperText;
-        public double Points;
-        public double PointsLineBonus;
-        public double PointsGoldenNotes;
-        public double Rating;
-        public int NoteDiff;
-        public int VoiceNr;
-        public List<CSungLine> SungLines;
-        public int CurrentLine;
-        public int CurrentNote;
+        // [JsonInclude]: System.Text.Json (cloud wire format) does not serialize public fields by
+        // default; these mark the ones that are part of the round-upload payload.
+        [JsonInclude] public Guid ProfileID;
+        [JsonInclude] public EGameDifficulty Difficulty;
+        [JsonInclude] public EOffOn ToneHelperText;
+        [JsonInclude] public double Points;
+        [JsonInclude] public double PointsLineBonus;
+        [JsonInclude] public double PointsGoldenNotes;
+        [JsonInclude] public double Rating;
+        [JsonInclude] public int NoteDiff;
+        [JsonInclude] public int VoiceNr;
+        [JsonInclude] public List<CSungLine> SungLines;
+        [JsonInclude] public int CurrentLine;
+        [JsonInclude] public int CurrentNote;
 
-        public int SongID;
-        public EGameMode GameMode;
-        public long DateTicks;
-        public bool SongFinished;
+        [JsonInclude] public int SongID;
+        [JsonInclude] public EGameMode GameMode;
+        [JsonInclude] public long DateTicks;
+        [JsonInclude] public bool SongFinished;
     }
 
     public struct SDBScoreEntry
     {
-        public string Name;
-        public int Score;
-        public DateTime Date;
-        public EGameDifficulty Difficulty;
-        public int VoiceNr;
-        public int ID;
+        [JsonInclude] public string Name;
+        [JsonInclude] public int Score;
+        [JsonInclude] public DateTime Date;
+        [JsonInclude] public EGameDifficulty Difficulty;
+        [JsonInclude] public int VoiceNr;
+        [JsonInclude] public int ID;
     }
     #endregion Game
 }

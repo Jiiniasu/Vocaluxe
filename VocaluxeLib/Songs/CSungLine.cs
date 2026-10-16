@@ -16,12 +16,13 @@
 #endregion
 
 using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace VocaluxeLib.Songs
 {
     public class CSungLine : CLineBase<CSungNote>
     {
-        public double BonusPoints;
+        [JsonInclude] public double BonusPoints; // part of the cloud payload (System.Text.Json needs explicit field inclusion)
 
         // for drawing perfect line effect
         public bool PerfectLine { get; set; }

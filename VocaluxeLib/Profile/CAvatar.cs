@@ -17,13 +17,14 @@
 
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json.Serialization;
 using VocaluxeLib.Draw;
 
 namespace VocaluxeLib.Profile
 {
     public class CAvatar
     {
-        public int ID;
+        [JsonInclude] public int ID; // bound from the cloud profile payload (System.Text.Json needs explicit field inclusion)
         private readonly string _FileName = "";
         private CTextureRef _Texture;
         private const int _MaxNameLen = 12;
