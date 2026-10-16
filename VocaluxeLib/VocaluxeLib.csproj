@@ -1,24 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- Common settings (target framework, language level, style enforcement, CI-strict warnings,
+         platform define constants) come from the repo-root Directory.Build.props: the WIN/LINUX
+         symbols are shared with Vocaluxe.csproj on purpose - the library has #if WIN code the game
+         references, so both must agree on the platform define. -->
     <OutputType>Library</OutputType>
     <RootNamespace>VocaluxeLib</RootNamespace>
     <AssemblyName>VocaluxeLib</AssemblyName>
-    <LangVersion>latest</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Nullable>disable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <!-- Properties/AssemblyInfo.cs is kept from the original project -->
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <!-- The legacy code triggers many analyzer/obsolete warnings; do not fail the build on them during migration -->
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <NoWarn>$(NoWarn);CS0618;CS0612;CA1416</NoWarn>
-    <!-- Same OS-conditional symbols as Vocaluxe.csproj: VocaluxeLib has #if WIN code that the game
-         references, so the library must agree on the platform define. -->
-    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('Windows'))">WIN;ARCH_X64</DefineConstants>
-    <DefineConstants Condition="!$([MSBuild]::IsOSPlatform('Windows'))">LINUX;ARCH_X64</DefineConstants>
-    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(DefineConstants);MACOS</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

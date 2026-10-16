@@ -1,10 +1,8 @@
 obj
+bin
 PitchTracker.dll
 Thumbs.db
-.transifexrc
 .vs
-tx.exe
-Output
 *.mp4
 *.pdb
 *.csproj.user
@@ -35,6 +33,9 @@ Output
 *.dll.config
 /*.vsp
 /*.ctl
+# The Output/ folder is mostly committed game data (Themes, Fonts, Languages, ...) that the game
+# ships with; the lines below keep the runtime-generated content out of git.
+Output
 /Output/Config.xml
 /Output/CoverDB.sqlite
 /Output/HighscoreDB.sqlite
@@ -52,25 +53,20 @@ Output
 /Output/Playlists/*.xml
 /Output/Profiles/*.xml
 /Output/Profiles/*.png
-/VocaluxeLib/bin
-/ServerLib/bin/ClientServerLib.dll
-/Installer/setup-cache
-/Installer/Files
-/Installer/log.txt
-/Installer/setup-cache
-/Installer/Setup Files
-/WebserverInitalConfig/bin
-/PhoneGap/
-/TestResults
-/VocaluxeTests/bin
 /Output/libs
 /Output/Themes/*.mp4
-/packages
 /Output/x64
 /Output/x86
+/VocaluxeLib/bin
+/ServerLib/bin/ClientServerLib.dll
+/TestResults
 /PitchTracker/bin
 /PitchTracker/obj
-/Logs
 /Tests/bin
-
-bin
+/Logs
+# Legacy tooling trees that exist on disk (net48 package-restore cache, the old PhoneGap shell);
+# never committed, so ignore any new content in them.
+/packages
+/PhoneGap/
+# OpenCode session tooling (local, per-machine).
+/.mcp/

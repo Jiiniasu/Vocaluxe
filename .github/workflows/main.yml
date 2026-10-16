@@ -48,6 +48,14 @@ jobs:
       - name: Restore
         run: dotnet restore Vocaluxe.slnx --nologo
 
+      - name: Verify code style (dotnet format)
+        # .editorconfig is the single source of style truth. EnforceCodeStyleInBuild enforces its
+        # explicit severities at build time (and any warning fails the pipeline: TreatWarningsAsErrors
+        # is set in Directory.Build.props when CI=true). This step additionally catches the whitespace,
+        # using-order and other formatting findings only the formatter reports, so every checkout is
+        # byte-reproducible across machines and platforms.
+        run: dotnet format Vocaluxe.slnx --verify-no-changes --nologo
+
       - name: Build PitchTracker (Release x64)
         # Must run before the dotnet build/publish: _StageUnmanagedNatives copies the DLL from
         # PitchTracker\bin\Release.x64 into Output\libs\unmanaged and hard-errors if it is missing.

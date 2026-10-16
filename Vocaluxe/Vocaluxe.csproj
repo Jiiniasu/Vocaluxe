@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- Common settings (target framework, language level, style enforcement, CI-strict warnings,
+         platform define constants) come from the repo-root Directory.Build.props. -->
     <!-- WinExe = Windows GUI subsystem: no console window pops up on launch (the game window is the UI).
          On Linux/macOS WinExe is treated identically to Exe, so this stays cross-platform. -->
     <OutputType>WinExe</OutputType>
@@ -9,14 +10,6 @@
     <AssemblyName>Vocaluxe</AssemblyName>
     <StartupObject>Vocaluxe.CMainProgram</StartupObject>
     <ApplicationIcon>Vocaluxe.ico</ApplicationIcon>
-    <LangVersion>latest</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Nullable>disable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <!-- Properties/AssemblyInfo.cs is kept from the original project; the version attributes in it
-         were replaced by the _StampGitVersion target below. -->
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <!-- The legacy SSIS-Remote layout: the app builds into the repo's Output/ folder, right next to the
          game data (Themes, Languages, Fonts, ...) that already lives there - same as the net48 build. -->
     <OutputPath>$(MSBuildThisFileDirectory)..\Output\</OutputPath>
@@ -24,16 +17,6 @@
          the game data (Themes, Fonts, Languages, Config.xml, libs/unmanaged) that lives at the Output/
          root. ProgramFolder = AppDomain.BaseDirectory, so the app resolves data relative to the exe. -->
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <!-- One cross-platform codebase: OpenGL everywhere (OpenTK 4) + PortAudio, no WinForms/Direct3D.
-         The WIN/LINUX symbol is chosen per build OS so the same sources compile correctly on each
-         platform. ARCH_X64 selects the 64-bit native-interop paths. -->
-    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('Windows'))">WIN;ARCH_X64</DefineConstants>
-    <DefineConstants Condition="!$([MSBuild]::IsOSPlatform('Windows'))">LINUX;ARCH_X64</DefineConstants>
-    <!-- macOS is a non-Windows platform, so it also gets LINUX (the shared Unix/OpenGL/PortAudio
-         paths). MACOS is defined additionally so genuinely Linux-only code can opt out with
-         '#if LINUX && !MACOS'. -->
-    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(DefineConstants);MACOS</DefineConstants>
-    <NoWarn>$(NoWarn);CS0618;CS0612;CS0649;CS0169;CS0414;CS0162;CA1416;NU1701</NoWarn>
     <RuntimeIdentifiers>linux-x64;win-x64;osx-x64;osx-arm64</RuntimeIdentifiers>
   </PropertyGroup>
 
@@ -43,7 +26,7 @@
     <PackageReference Include="SkiaSharp" Version="3.119.4" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
     <!-- macOS publishes need the SkiaSharp dylib from the macOS native-asset package; only pulled in
-         when building on/for macOS so the Linux/Windows builds are unaffected. -->
+          when building on/for macOS so the Linux/Windows builds are unaffected. -->
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="3.119.4" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <!-- CCloud's HTTP stack (IHttpClientFactory + Polly resilience), same versions as the net48 build. -->
@@ -51,7 +34,7 @@
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.0" />
     <PackageReference Include="Polly" Version="8.2.0" />
     <!-- Native-only bundles (FFmpeg 4.x + acinerella shim + SQLite) that place their binaries under
-         libs/unmanaged, exactly like the old packages.config build did. -->
+          libs/unmanaged, exactly like the old packages.config build did. -->
     <PackageReference Include="vocaluxe.dependencies.acinerella" Version="1.0.6" />
     <PackageReference Include="vocaluxe.dependencies.ffmpeg" Version="1.0.6" />
     <PackageReference Include="vocaluxe.dependencies.csharpsqlite" Version="1.0.1" />
@@ -64,23 +47,23 @@
   </ItemGroup>
 
   <!-- Ship the application icon next to the exe: CAppIcon decodes it at startup into the NativeWindow
-       icon (the standard cross-platform way - the largest 256x256 image of Vocaluxe.ico). On Windows
-       the exe ALSO embeds it via ApplicationIcon above, which CWindowsIcon reads for the task-bar class
-       icon. PreserveNewest re-stages the ico whenever it is swapped (e.g. for a newer export of
-       icon.svg). A Vocaluxe.png dropped next to it is picked up as a fallback at runtime, no rebuild needed. -->
-  <ItemGroup>
+        icon (the standard cross-platform way - the largest 256x256 image of Vocaluxe.ico). On Windows
+        the exe ALSO embeds it via ApplicationIcon above, which CWindowsIcon reads for the task-bar class
+        icon. PreserveNewest re-stages the ico whenever it is swapped (e.g. for a newer export of
+        icon.svg). A Vocaluxe.png dropped next to it is picked up as a fallback at runtime, no rebuild needed. -->
+   <ItemGroup>
     <Content Include="Vocaluxe.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
   <!-- Stamp the assembly version from `git describe` at build time. Replaces the old MSBuild build
-       events (winPreBuild.ps1 / linuxPreBuildEvent.sh) that the .NET Framework project ran but the
-       SDK project does not. git is optional: if it is unavailable (e.g. a source tarball) the build
-       falls back to the "Not Versioned" strings instead of failing. -->
-  <Target Name="_StampGitVersion" BeforeTargets="CoreCompile">
+        events (winPreBuild.ps1 / linuxPreBuildEvent.sh) that the .NET Framework project ran but the
+        SDK project does not. git is optional: if it is unavailable (e.g. a source tarball) the build
+        falls back to the "Not Versioned" strings instead of failing. -->
+   <Target Name="_StampGitVersion" BeforeTargets="CoreCompile">
     <Exec Command="git describe --tags --long --always --dirty" ConsoleToMSBuild="true"
-          ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
+           ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
       <Output TaskParameter="ConsoleOutput" PropertyName="_GitRaw" />
       <Output TaskParameter="ExitCode" PropertyName="_GitExit" />
     </Exec>
@@ -92,9 +75,9 @@
       <_Informational Condition="'$(_Versioned)' == 'true'">$(_GitRaw)</_Informational>
       <_Tag Condition="'$(_Versioned)' == 'true'">$([System.Text.RegularExpressions.Regex]::Match($(_GitRaw), `^[^-]+`).Value)</_Tag>
       <!-- First DOTTED numeric run in the tag, e.g. "0.4.1" (a leading `v` like `v0.4.1` is tolerated; no `^`
-           anchor). Requires at least one dot so a bare commit hash (git describe falls back to the hash on a
-           tagless/shallow checkout, e.g. "4117979a") is not mined for digits: "4117979" would exceed the
-           65534 AssemblyVersion-component limit and fail with CS7034. No match then falls back to 0.0.0. -->
+            anchor). Requires at least one dot so a bare commit hash (git describe falls back to the hash on a
+            tagless/shallow checkout, e.g. "4117979a") is not mined for digits: "4117979" would exceed the
+            65534 AssemblyVersion-component limit and fail with CS7034. No match then falls back to 0.0.0. -->
       <_Numeric Condition="'$(_Versioned)' == 'true'">$([System.Text.RegularExpressions.Regex]::Match($(_Tag), `[0-9]+(\.[0-9]+)+`).Value)</_Numeric>
       <_Title Condition="'$(_Versioned)' == 'true'">Vocaluxe $(_Tag) ($(_Arch)) ($(_GitRaw))</_Title>
 
@@ -124,16 +107,16 @@
   </Target>
 
   <!-- Stage every unmanaged native the game needs next to the other libs in Output/libs/unmanaged.
-       Sources:
-         - vocaluxe.dependencies.* NuGet packages ship their binaries in a plain x64/ folder with
-           build targets keyed on Platform=='x64', which net10 SDK builds never set (Platform=AnyCPU)
-           - so nothing gets copied on a fresh checkout without this (the old Output/ copies were
-           net48-era relics).
-         - PitchTracker: the sibling C++ vcxproj. Build it first (Visual Studio 2022+ with the C++
-           workload):  msbuild PitchTracker\PitchTracker.vcxproj /p:Configuration=Release /p:Platform=x64
-       A missing native is a hard error on Windows - never ship a game that would die on first
-       decode/record/DB use. On non-Windows the natives come from the makefiles, so this is skipped. -->
-  <Target Name="_StageUnmanagedNatives" BeforeTargets="Build;Publish">
+        Sources:
+          - vocaluxe.dependencies.* NuGet packages ship their binaries in a plain x64/ folder with
+            build targets keyed on Platform=='x64', which net10 SDK builds never set (Platform=AnyCPU)
+            - so nothing gets copied on a fresh checkout without this (the old Output/ copies were
+            net48-era relics).
+          - PitchTracker: the sibling C++ vcxproj. Build it first (Visual Studio 2022+ with the C++
+            workload):  msbuild PitchTracker\PitchTracker.vcxproj /p:Configuration=Release /p:Platform=x64
+        A missing native is a hard error on Windows - never ship a game that would die on first
+        decode/record/DB use. On non-Windows the natives come from the makefiles, so this is skipped. -->
+   <Target Name="_StageUnmanagedNatives" BeforeTargets="Build;Publish">
     <PropertyGroup>
       <_UnmanagedDst>$(MSBuildThisFileDirectory)..\Output\libs\unmanaged</_UnmanagedDst>
       <_PkgRoot>$(NuGetPackageRoot)</_PkgRoot>
@@ -165,7 +148,7 @@
         before and ASIO clients appear as additional devices (multichannel + ~1.3 ms buffers).
         Overwriting the app-dir copy AND the runtimes\ asset keeps every loader path in
         agreement; libs\unmanaged is on the game's PATH (Program.cs) and gets the same dll. -->
-  <Target Name="_StagePaAsioNative" AfterTargets="Build;Publish" Condition="'$(OS)' == 'Windows_NT'">
+   <Target Name="_StagePaAsioNative" AfterTargets="Build;Publish" Condition="'$(OS)' == 'Windows_NT'">
     <PropertyGroup>
       <_PaAsioSrc>$(MSBuildThisFileDirectory)..\Native\portaudio-asio\win-x64\portaudio.dll</_PaAsioSrc>
     </PropertyGroup>

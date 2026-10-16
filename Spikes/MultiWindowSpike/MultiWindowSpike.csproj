@@ -1,15 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- Common settings (target framework, language level, style enforcement, CI-strict warnings)
+         come from the repo-root Directory.Build.props. -->
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>MultiWindowSpike</RootNamespace>
     <AssemblyName>MultiWindowSpike</AssemblyName>
-    <LangVersion>latest</LangVersion>
-    <Nullable>disable</Nullable>
-    <ImplicitUsings>disable</ImplicitUsings>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Throwaway spike: its warning set is frozen in place (no one owes it a cleanup pass),
+         unlike the shipped projects which must build warning-free. -->
     <NoWarn>$(NoWarn);CS0618;CS0612;CS0649;CS0169;CS0414</NoWarn>
   </PropertyGroup>
 

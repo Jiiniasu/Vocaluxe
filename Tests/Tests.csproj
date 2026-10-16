@@ -1,14 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- Common settings (target framework, language level, style enforcement, CI-strict warnings)
+         come from the repo-root Directory.Build.props. -->
     <RootNamespace>Tests</RootNamespace>
     <AssemblyName>Tests</AssemblyName>
     <IsPackable>false</IsPackable>
-    <!-- Keep the hand-written Properties/AssemblyInfo.cs instead of the SDK-generated attributes. -->
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <Nullable>disable</Nullable>
-    <LangVersion>latest</LangVersion>
     <!-- The .tt template's generated output (CLogTest.cs) is checked in; don't run T4 here. -->
     <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
   </PropertyGroup>

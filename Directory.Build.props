@@ -1,0 +1,43 @@
+<Project>
+  <!-- Shared build settings for every project in this repo (the slnx projects and the Spikes alike).
+       The project files only carry what is genuinely project-specific: identity, layout, packages
+       and custom targets. Keeping the common settings in one place is also how the repo enforces
+       its guarantees deterministically: what you build here is what CI builds (see AGENTS.md). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- C# 14: the language level of the .NET 10 SDK. Pinned instead of "latest" so the codebase
+         does not silently start using a future preview language with a newer SDK. -->
+    <LangVersion>14</LangVersion>
+    <!-- The legacy codebase carries no nullable annotations; annotating it is a deliberate, separate
+         epic (see the backlog in AGENTS.md), not something that should be switched on accidentally. -->
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Every project keeps its checked-in Properties/AssemblyInfo.cs (the legacy convention, kept
+         on purpose during the net10 port). -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+
+    <!-- Style enforcement. .editorconfig is the single source of style truth. Its explicit severities
+         (dotnet_diagnostic.* / naming conventions) are enforced at build time; IDE-only
+         "suggestion"-level settings remain suggestions. -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- Policy: NoWarn is not used anywhere in this repo. A warning means the code (or the rule
+         configuration) is wrong; fix one of them instead of suppressing. -->
+
+    <!-- NuGet security-audit findings (NU19xx) fail even local builds. -->
+    <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
+    <!-- CI is strict: every warning (including style) fails the pipeline. GitHub Actions sets
+         CI=true, so local builds stay warning-only and a developer keeps context while working. -->
+    <TreatWarningsAsErrors Condition="'$(CI)' == 'true'">true</TreatWarningsAsErrors>
+
+    <!-- Cross-platform codebase: OpenGL everywhere (OpenTK) + PortAudio, no Windows-only
+         frameworks. The WIN/LINUX symbol is chosen per build OS so the same sources compile
+         correctly on each platform. ARCH_X64 selects the 64-bit native-interop paths.
+         macOS is a non-Windows platform, so it also gets LINUX (the shared Unix/OpenGL/PortAudio
+         paths); MACOS is defined additionally so genuinely Linux-only code can opt out with
+         '#if LINUX && !MACOS'. -->
+    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('Windows'))">WIN;ARCH_X64</DefineConstants>
+    <DefineConstants Condition="!$([MSBuild]::IsOSPlatform('Windows'))">LINUX;ARCH_X64</DefineConstants>
+    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('OSX'))">$(DefineConstants);MACOS</DefineConstants>
+  </PropertyGroup>
+</Project>
