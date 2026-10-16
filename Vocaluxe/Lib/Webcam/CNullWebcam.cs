@@ -33,10 +33,10 @@ namespace Vocaluxe.Lib.Webcam
             return true;
         }
 
-        public void Close() {}
-        public void Start() {}
-        public void Pause() {}
-        public void Stop() {}
+        public void Close() { }
+        public void Start() { }
+        public void Pause() { }
+        public void Stop() { }
 
         public bool GetFrame(ref CTextureRef frame)
         {
@@ -73,6 +73,6 @@ namespace Vocaluxe.Lib.Webcam
             return false;
         }
 
-        public void DeSelect() {}
+        public void DeSelect() { }
     }
 }

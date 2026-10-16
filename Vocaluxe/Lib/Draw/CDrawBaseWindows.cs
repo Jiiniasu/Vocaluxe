@@ -15,17 +15,17 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using System;
-using System.ComponentModel;
-using System.Diagnostics;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
-using GlfwKeys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using System;
+using System.ComponentModel;
+using System.Diagnostics;
 using Vocaluxe.Base;
-using VKeys = VocaluxeLib.Keys;
 using VocaluxeLib.Log;
+using GlfwKeys = OpenTK.Windowing.GraphicsLibraryFramework.Keys;
+using VKeys = VocaluxeLib.Keys;
 
 namespace Vocaluxe.Lib.Draw
 {
@@ -63,7 +63,7 @@ namespace Vocaluxe.Lib.Draw
                 else
                     _Window?.Close();
             }
-            catch {}
+            catch { }
         }
 
         protected override void _EnterFullScreen()

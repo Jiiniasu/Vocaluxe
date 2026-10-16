@@ -15,16 +15,16 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using System;
-using System.Collections.Generic;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
+using System;
+using System.Collections.Generic;
 using Vocaluxe.Base;
-using VKeys = VocaluxeLib.Keys;
 using VocaluxeLib.Log;
 using GL = OpenTK.Graphics.OpenGL.GL;
 using StringName = OpenTK.Graphics.OpenGL.StringName;
+using VKeys = VocaluxeLib.Keys;
 
 namespace Vocaluxe.Lib.Draw
 {
@@ -142,11 +142,11 @@ namespace Vocaluxe.Lib.Draw
                 }
 
                 _Slots.Add(new Slot
-                           {
-                               Window = win,
-                               PanelIndex = i,
-                               SharesPrimaryContext = true
-                           });
+                {
+                    Window = win,
+                    PanelIndex = i,
+                    SharesPrimaryContext = true
+                });
             }
 
             // OpenTK 4 raises a single event for both connect and disconnect (MonitorEventArgs.IsConnected

@@ -15,11 +15,11 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using SkiaSharp;
 using System.Linq;
 using Vocaluxe.Base;
 using VocaluxeLib;

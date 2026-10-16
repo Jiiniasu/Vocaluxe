@@ -15,11 +15,11 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using Microsoft.Data.Sqlite;
+using SkiaSharp;
 using System;
 using System.Drawing;
 using System.IO;
-using Microsoft.Data.Sqlite;
-using SkiaSharp;
 using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Draw;

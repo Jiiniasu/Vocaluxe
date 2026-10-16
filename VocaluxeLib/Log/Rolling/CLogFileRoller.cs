@@ -65,7 +65,7 @@ namespace VocaluxeLib.Log.Rolling
                         File.Move(mainLogFile, currentSourceFile);
                     else
                         File.Delete(mainLogFile);
-                    }
+                }
 #if DEBUG
                 catch (Exception e)
                 {

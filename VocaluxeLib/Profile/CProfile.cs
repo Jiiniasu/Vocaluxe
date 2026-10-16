@@ -46,12 +46,12 @@ namespace VocaluxeLib.Profile
 
         // [JsonInclude]: System.Text.Json (cloud profile payload) does not include public fields by
         // default. FilePath is deliberately left off the wire (it is a local path, XML-only).
-        [JsonInclude] [DefaultValue(null)] public Guid ID;
+        [JsonInclude][DefaultValue(null)] public Guid ID;
 
         [JsonInclude] public string PlayerName;
         [XmlIgnore] public string FilePath;
-        [JsonInclude] [DefaultValue(null)] public byte[] PasswordHash;
-        [JsonInclude] [DefaultValue(null)] public byte[] PasswordSalt;
+        [JsonInclude][DefaultValue(null)] public byte[] PasswordHash;
+        [JsonInclude][DefaultValue(null)] public byte[] PasswordSalt;
 
         [JsonInclude] public EGameDifficulty Difficulty;
 

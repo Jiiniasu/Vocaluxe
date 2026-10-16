@@ -77,7 +77,7 @@ namespace Vocaluxe.Lib.Draw
         protected abstract void _EnterFullScreen();
 
         /// <summary>Flushes the per-window event queues and polls "should close" (called once per frame).</summary>
-        protected virtual void _ProcessEvents() {}
+        protected virtual void _ProcessEvents() { }
 
         /// <summary>Number of render passes per frame: 1 in single-window mode, the window count in multi mode.</summary>
         protected virtual int _GetPanelCount() { return 1; }
@@ -91,7 +91,7 @@ namespace Vocaluxe.Lib.Draw
         /// <summary>True when a monitor hotplug asked for a layout rebuild (applied at the frame boundary).</summary>
         protected virtual bool _WantRelayout() { return false; }
 
-        protected virtual void _ApplyRelayout() {}
+        protected virtual void _ApplyRelayout() { }
 
         /// <summary>
         ///     The aspect ratio a window is letterboxed to: the whole canvas (RenderW*NumScreens) in
@@ -489,7 +489,7 @@ namespace Vocaluxe.Lib.Draw
         /// <summary>
         ///     Makes the render window visible. No-op for backends without a separate window object.
         /// </summary>
-        protected virtual void _ShowWindow() {}
+        protected virtual void _ShowWindow() { }
 
         private CTextureRef _SplashLogo;
         private CTextureRef _SplashWhite;
@@ -512,7 +512,7 @@ namespace Vocaluxe.Lib.Draw
 
             // 1x1 white texture, tinted per-draw, used to paint the progress bar (DrawRect lives only in
             // the concrete backend, but DrawTexture is available here).
-            _SplashWhite = AddTexture(1, 1, new byte[] {255, 255, 255, 255});
+            _SplashWhite = AddTexture(1, 1, new byte[] { 255, 255, 255, 255 });
 
             _ShowWindow();
             _DoResize(); // set up viewport + projection so render-space coordinates map correctly

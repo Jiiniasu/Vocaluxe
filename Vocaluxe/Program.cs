@@ -40,7 +40,7 @@ namespace Vocaluxe
         [STAThread]
         // ReSharper disable InconsistentNaming
         private static void Main(string[] args)
-            // ReSharper restore InconsistentNaming
+        // ReSharper restore InconsistentNaming
         {
             // Run from the executable's directory so the relative data paths (Themes, Languages,
             // Fonts, ...) resolve regardless of the launch working directory.

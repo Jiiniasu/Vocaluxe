@@ -15,9 +15,9 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using SkiaSharp;
 using System;
 using System.Drawing; // System.Drawing.Primitives only (SizeF/RectangleF/Rectangle) - cross-platform, no GDI+
-using SkiaSharp;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
 

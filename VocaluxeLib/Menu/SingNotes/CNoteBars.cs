@@ -373,7 +373,7 @@ namespace VocaluxeLib.Menu.SingNotes
             List<float> los = new List<float>();
             List<float> his = new List<float>();
             List<bool> entryFlags = new List<bool>();
-            for (int i = 0; i < events.Count; )
+            for (int i = 0; i < events.Count;)
             {
                 float beat = events[i].Key;
                 int j = i;

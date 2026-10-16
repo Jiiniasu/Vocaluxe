@@ -45,4 +45,4 @@ using System.Runtime.InteropServices;
 [assembly: Guid("da631594-f891-4994-9869-c37e626e44f9")]
 
 // Allow internal access from the Tests project
-[assembly:InternalsVisibleTo("Tests")]
+[assembly: InternalsVisibleTo("Tests")]

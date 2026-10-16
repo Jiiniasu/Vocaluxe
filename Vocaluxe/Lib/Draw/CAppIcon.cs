@@ -15,13 +15,13 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using OpenTK.Windowing.Common.Input;
+using OpenTK.Windowing.Desktop;
+using SkiaSharp;
 using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using OpenTK.Windowing.Common.Input;
-using OpenTK.Windowing.Desktop;
-using SkiaSharp;
 using VocaluxeLib.Log;
 
 namespace Vocaluxe.Lib.Draw
