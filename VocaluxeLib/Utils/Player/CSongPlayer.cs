@@ -121,7 +121,7 @@ namespace VocaluxeLib.Utils.Player
         public void Load(CSong song, float position = 0f, bool autoplay = false)
         {
             if (song == null)
-                throw new ArgumentNullException("song");
+                throw new ArgumentNullException(nameof(song));
 
             Load(song.GetMP3(), position, autoplay);
             _Song = song;

@@ -79,14 +79,14 @@ namespace Vocaluxe.Base
         public CPlaylistElement(CSong song)
         {
             if (song == null)
-                throw new ArgumentNullException("song");
+                throw new ArgumentNullException(nameof(song));
             Song = song;
         }
 
         public CPlaylistElement(string filePath)
         {
             if (String.IsNullOrEmpty(filePath))
-                throw new ArgumentNullException("filePath");
+                throw new ArgumentNullException(nameof(filePath));
             _MusicFilePath = filePath;
         }
     }

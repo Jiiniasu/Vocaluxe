@@ -326,7 +326,7 @@ namespace Vocaluxe.Base
         public static void LoadPreview(CSong song, float start = -1f)
         {
             if (song == null)
-                throw new ArgumentNullException("song");
+                throw new ArgumentNullException(nameof(song));
 
             if (!IsPlayingPreview)
             {

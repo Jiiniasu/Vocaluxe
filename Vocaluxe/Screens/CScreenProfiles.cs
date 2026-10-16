@@ -510,10 +510,9 @@ namespace Vocaluxe.Screens
 
         private Guid _GetIdFromTag(int tag)
         {
-            if (tag == -1 || !_SelectSlideGuids.ContainsKey(tag))
+            if (tag == -1 || !_SelectSlideGuids.TryGetValue(tag, out Guid id))
                 return Guid.Empty;
-            else
-                return _SelectSlideGuids[tag];
+            return id;
         }
     }
 }

@@ -58,7 +58,7 @@ namespace Vocaluxe.Base.ThemeSystem
                     skin = _Skins.Values.FirstOrDefault();
                     break;
                 default:
-                    throw new ArgumentException();
+                    throw new ArgumentException("Unknown fallback number.", nameof(fallbackNum));
             }
             return skin;
         }

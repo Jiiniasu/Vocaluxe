@@ -151,7 +151,7 @@ namespace Vocaluxe.Lib.Draw
             if (_NonPowerOf2TextureSupported)
                 return n;
             if (n < 0)
-                throw new ArgumentOutOfRangeException("n", "Must be positive.");
+                throw new ArgumentOutOfRangeException(nameof(n), "Must be positive.");
             return (int)Math.Pow(2, Math.Ceiling(Math.Log(n, 2)));
         }
 
@@ -491,8 +491,12 @@ namespace Vocaluxe.Lib.Draw
             using (var data = SKData.CreateCopy(src))
             using (var source = SKImage.FromPixels(new SKImageInfo(sw, sh, SKColorType.Bgra8888, SKAlphaType.Unpremul), data, sw * 4))
             {
-                using (var paint = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.Medium })
-                    canvas.DrawImage(source, new SKRect(0, 0, sw, sh), new SKRect(0, 0, dw, dh), paint);
+                using (var paint = new SKPaint { IsAntialias = true })
+                    // SkiaSharp 3: sampling options are no longer a SKPaint property (SKPaint.FilterQuality
+                    // is obsolete) but a draw-call argument. Linear is the closest successor of the old
+                    // SKFilterQuality.Medium and matches what CCoverDB's resize path already uses.
+                    canvas.DrawImage(source, new SKRect(0, 0, sw, sh), new SKRect(0, 0, dw, dh),
+                        new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None), paint);
                 byte[] dst = new byte[dw * dh * 4];
                 Buffer.BlockCopy(target.Bytes, 0, dst, 0, dst.Length);
                 return dst;

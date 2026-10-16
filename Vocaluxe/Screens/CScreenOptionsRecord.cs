@@ -66,7 +66,7 @@ namespace Vocaluxe.Screens
         private int _DeviceNr;
 
         private int _SelectedPlayer = -1;
-        private bool _PlayerEditActive = false;
+        private bool _PlayerEditActive;
 
         private readonly CDelayTest _DelayTest = new CDelayTest(CSettings.MaxNumPlayer);
 

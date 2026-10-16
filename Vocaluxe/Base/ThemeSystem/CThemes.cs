@@ -153,7 +153,7 @@ namespace Vocaluxe.Base.ThemeSystem
                 CLog.Error("No valid themes found in " + path);
                 return false;
             }
-            if (partyModeID >= 0 && newThemes.Count(th => th.Name == CSettings.DefaultName) == 0)
+            if (partyModeID >= 0 && !newThemes.Any(th => th.Name == CSettings.DefaultName))
             {
                 CLog.Error("Partymode misses default theme in " + path);
                 return false;

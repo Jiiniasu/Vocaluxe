@@ -32,7 +32,7 @@ namespace VocaluxeLib.Log
         private static readonly double _NanosecPerTick = (1000.0 * 1000.0 * 1000.0) / Stopwatch.Frequency;
 
         // The stop watch used by this instance
-        private Stopwatch _Watch = null;
+        private Stopwatch _Watch;
         // The operation name the will be written to the log on events for this instance
         private readonly string _OperationName;
 

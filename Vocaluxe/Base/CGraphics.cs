@@ -308,7 +308,7 @@ namespace Vocaluxe.Base
         public static void FadeTo(IMenu screen)
         {
             if (screen == null)
-                throw new ArgumentNullException("screen");
+                throw new ArgumentNullException(nameof(screen));
             if (screen == CurrentScreen || screen == NextScreen)
                 return;
             // Make sure the last screen change is done

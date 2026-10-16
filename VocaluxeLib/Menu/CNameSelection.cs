@@ -110,7 +110,7 @@ namespace VocaluxeLib.Menu
             get { return _Rect; }
         }
 
-        private bool _Selectable = false;
+        private bool _Selectable;
 
         public bool Selectable
         {

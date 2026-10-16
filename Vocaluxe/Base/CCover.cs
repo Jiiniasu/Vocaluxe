@@ -102,11 +102,13 @@ namespace Vocaluxe.Base
                     _CancelToken.Token.ThrowIfCancellationRequested();
                     string coverPath = firstSong != null ? Path.Combine(firstSong.Folder, firstSong.CoverFileName) : null;
                     int coverW = 0, coverH = 0;
-                    byte[] coverData = !_CoverGenerators.ContainsKey(type)
-                                          ? null : _CoverGenerators[type].GetCover(text, coverPath, out coverW, out coverH);
+                    byte[] coverData = null;
+                    if (_CoverGenerators.TryGetValue(type, out CCoverGenerator generator))
+                        coverData = generator.GetCover(text, coverPath, out coverW, out coverH);
                     _CancelToken.Token.ThrowIfCancellationRequested();
-                    if (coverData == null && _CoverGenerators.ContainsKey(ECoverGeneratorType.Default))
-                        coverData = _CoverGenerators[ECoverGeneratorType.Default].GetCover(text, coverPath, out coverW, out coverH);
+                    if (coverData == null
+                        && _CoverGenerators.TryGetValue(ECoverGeneratorType.Default, out CCoverGenerator defaultGenerator))
+                        coverData = defaultGenerator.GetCover(text, coverPath, out coverW, out coverH);
                     _CancelToken.Token.ThrowIfCancellationRequested();
                     if (coverData != null)
                         CDraw.EnqueueTextureUpdate(texture, coverW, coverH, coverData);
@@ -258,7 +260,7 @@ namespace Vocaluxe.Base
                 case ESongSorting.TR_CONFIG_DATEADDED:
                     return ECoverGeneratorType.Date;
                 default:
-                    throw new ArgumentOutOfRangeException("sorting");
+                    throw new ArgumentOutOfRangeException(nameof(sorting));
             }
         }
 

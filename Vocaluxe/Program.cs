@@ -390,7 +390,7 @@ namespace Vocaluxe
         private static Assembly _AssemblyResolver(Object sender, ResolveEventArgs args)
         {
             // a fix to handle mscorlib.resources
-            if (args.Name.IndexOf(".resources", StringComparison.Ordinal) >= 0)
+            if (args.Name.Contains(".resources", StringComparison.Ordinal))
                 return null;
 
             Assembly assembly = null;

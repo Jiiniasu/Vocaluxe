@@ -19,6 +19,7 @@ using Microsoft.Win32;
 using System;
 using System.IO;
 using System.Reflection;
+using System.Runtime.Versioning;
 using System.Security;
 using Vocaluxe.Base;
 using VocaluxeLib.Log;
@@ -30,6 +31,7 @@ namespace Vocaluxe
     /// </summary>
     static class CProgrammHelper
     {
+        [SupportedOSPlatform("windows")]
         private static bool _CheckUninstallKey(string name, string key)
         {
             using (RegistryKey rk = Registry.LocalMachine.OpenSubKey(key))
@@ -51,6 +53,7 @@ namespace Vocaluxe
             return false;
         }
 
+        [SupportedOSPlatform("windows")]
         private static bool _KeyExists(string key)
         {
             using (RegistryKey rk = Registry.LocalMachine.OpenSubKey(key))
@@ -66,6 +69,7 @@ namespace Vocaluxe
         /// </summary>
         /// <param name="name">Name of the programm. Got to equal the displayname in the key or one needs to be the start of the other one. NOT case sensitive.</param>
         /// <returns></returns>
+        [SupportedOSPlatform("windows")]
         private static bool _IsProgramInstalled(string name)
         {
             const string baseKey = @"SOFTWARE\";
@@ -86,11 +90,13 @@ namespace Vocaluxe
             return _SystemDllExists("msvcr110") && _SystemDllExists("msvcp110");
         }
 
+        [SupportedOSPlatform("windows")]
         private static bool _IsVC2008Installed()
         {
             return _IsProgramInstalled("Microsoft Visual C++ 2008 Redistributable");
         }
 
+        [SupportedOSPlatform("windows")]
         private static bool _IsVC2010Installed()
         {
             //Note: Maybe check for x64 or x86
@@ -119,7 +125,11 @@ namespace Vocaluxe
         public static bool CheckRequirements()
         {
 #if WIN
-            if (!_IsVC2010Installed())
+            // OperatingSystem.IsWindows(): CA1416 (the platform-compat analyzer) does not understand
+            // our '#if WIN' define, so the call to the [SupportedOSPlatform("windows")] members below
+            // is guarded at runtime as well. A build made on Windows (WIN is only defined there) can
+            // only ever run on Windows, so this never changes behavior.
+            if (OperatingSystem.IsWindows() && !_IsVC2010Installed())
             {
                 CLog.Fatal(
                     "VC++ 2010 Redistributables are missing. Please install them first. \r\nDownload(x86): https://www.microsoft.com/de-de/download/details.aspx?id=5555 \r\nDownload(x64): https://www.microsoft.com/de-de/download/details.aspx?id=14632");

@@ -35,7 +35,7 @@ namespace VocaluxeLib.Menu.SingNotes
         private readonly SColorF _NoteLinesColor;
         private readonly SColorF _NoteBaseColor;
         public float Alpha = 1;
-        private float ToneHelperAlpha = 0;
+        private float ToneHelperAlpha;
         private readonly CSongLine[] _Lines;
         private CText _CurrentToneText = new CText(0, 0, 0, 14, 50, EAlignment.Right, EStyle.Bold, "Outline", new SColorF(Color.White), String.Empty);
 
@@ -105,7 +105,7 @@ namespace VocaluxeLib.Menu.SingNotes
         private readonly List<int> _AccidentalNotes = new List<int> { 1, 3, 6, 8, 10 };
 
         private int _CurrentLine = -1;
-        private float _LastBeatF = 0;
+        private float _LastBeatF;
 
         private readonly int _JudgementLine = CBase.Config.GetJudgementDistance();
 
@@ -118,7 +118,7 @@ namespace VocaluxeLib.Menu.SingNotes
         private readonly List<CParticleEffect> _PerfectNoteEffect = new List<CParticleEffect>();
         private readonly List<CParticleEffect> _PerfectLineTwinkle = new List<CParticleEffect>();
 
-        private bool _ShowToneHelperText = false;
+        private bool _ShowToneHelperText;
 
         private readonly List<string> _Tone = new List<string>()
         {

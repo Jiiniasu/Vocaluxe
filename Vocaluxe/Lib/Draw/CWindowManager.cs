@@ -107,7 +107,7 @@ namespace Vocaluxe.Lib.Draw
         public CWindowManager(NativeWindow primary, int panelCount, NativeWindowSettings template)
         {
             if (panelCount < 1)
-                throw new ArgumentException("panelCount must be >= 1", "panelCount");
+                throw new ArgumentException("panelCount must be >= 1", nameof(panelCount));
 
             _PanelW = template.ClientSize.X;
             _PanelH = template.ClientSize.Y;

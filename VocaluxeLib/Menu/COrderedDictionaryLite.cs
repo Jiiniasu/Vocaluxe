@@ -64,13 +64,13 @@ namespace VocaluxeLib.Menu
             }
             set
             {
-                if (!_HtIndex.ContainsKey(key))
+                if (_HtIndex.TryGetValue(key, out int index))
+                    _Items[index] = value;
+                else
                 {
                     _HtIndex.Add(key, _Items.Count);
                     _Items.Add(value);
                 }
-                else
-                    _Items[_HtIndex[key]] = value;
             }
         }
 

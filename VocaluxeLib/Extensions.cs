@@ -144,7 +144,7 @@ namespace VocaluxeLib
 
         public static bool ContainsIgnoreCase(this string value, string other)
         {
-            return value.IndexOf(other, StringComparison.CurrentCultureIgnoreCase) >= 0;
+            return value.Contains(other, StringComparison.CurrentCultureIgnoreCase);
         }
 
         private static Regex _MultipleWhiteSpaceRegEx = new Regex(@" {2,}");
