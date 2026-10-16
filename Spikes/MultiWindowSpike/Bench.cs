@@ -545,12 +545,14 @@ namespace MultiWindowSpike
                     Scene.DrawPanel(i, 0, 1.0, 7);
                 // Read the FBO back while it is still the current draw framebuffer: this proves
                 // the SCENE pass wrote the right panel at the right place before any blit.
+                // Panel 0 plus the LAST panel (N is not always 6; a point beyond N*1280 reads
+                // outside the VFB and would spuriously fail).
                 var vfbPts = new (int x, int y, int panel, string tag)[]
                 {
                     (160, 360, 0, "p0@160"),
                     (640, 360, 0, "p0center"),
                     (1200, 360, 0, "p0@1200"),
-                    (1280 * 5 + 640, 360, 5, "p5center")
+                    (1280 * (N - 1) + 640, 360, N - 1, "plastcenter")
                 };
                 bool vfbOk = true;
                 string vfbDet = null;

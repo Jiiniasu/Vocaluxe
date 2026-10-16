@@ -482,13 +482,17 @@ namespace Vocaluxe.Lib.Draw
         {
             if (dw <= 0 || dh <= 0 || (dw == sw && dh == sh))
                 return src;
-            using (var source = new SKBitmap(sw, sh, SKColorType.Bgra8888, SKAlphaType.Unpremul))
+            // The source is seeded with SKImage.FromPixels: in SkiaSharp 3, SKBitmap.Bytes is no longer
+            // the bitmap's pixel store, so the pre-3.0 "BlockCopy into SKBitmap.Bytes + DrawBitmap"
+            // idiom drew a blank bitmap (verified), silently turning every resampled texture into an
+            // empty (white) quad.
             using (var target = new SKBitmap(dw, dh, SKColorType.Bgra8888, SKAlphaType.Unpremul))
             using (var canvas = new SKCanvas(target))
+            using (var data = SKData.CreateCopy(src))
+            using (var source = SKImage.FromPixels(new SKImageInfo(sw, sh, SKColorType.Bgra8888, SKAlphaType.Unpremul), data, sw * 4))
             {
-                Buffer.BlockCopy(src, 0, source.Bytes, 0, Math.Min(src.Length, source.Bytes.Length));
                 using (var paint = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.Medium })
-                    canvas.DrawBitmap(source, new SKRect(0, 0, sw, sh), new SKRect(0, 0, dw, dh), paint);
+                    canvas.DrawImage(source, new SKRect(0, 0, sw, sh), new SKRect(0, 0, dw, dh), paint);
                 byte[] dst = new byte[dw * dh * 4];
                 Buffer.BlockCopy(target.Bytes, 0, dst, 0, dst.Length);
                 return dst;

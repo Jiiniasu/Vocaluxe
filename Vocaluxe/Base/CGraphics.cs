@@ -257,6 +257,7 @@ namespace Vocaluxe.Base
 
             _Cursor.Draw();
             _DrawCloudStatusOverlay();
+            _DrawSessionNotice();
             _DrawDebugInfos();
 
             return true;
@@ -605,6 +606,34 @@ namespace Vocaluxe.Base
 
             CDraw.DrawRect(new SColorF(0.10f, 0.12f, 0.18f, 0.82f), new SRectF(x, y, width, height, CSettings.ZNear));
             CFonts.DrawText(message, font, x + pad, y + pad / 2f, CSettings.ZNear, new SColorF(1f, 1f, 1f, 1f));
+        }
+
+        // Session notice (e.g. the F1 multi-window downgrade): a persistent top banner for the whole
+        // session, styled like the cloud-status banner.
+        private static string _SessionNotice;
+
+        public static void SetSessionNotice(string message)
+        {
+            _SessionNotice = message;
+        }
+
+        private static void _DrawSessionNotice()
+        {
+            if (string.IsNullOrEmpty(_SessionNotice))
+                return;
+
+            CFont font = new CFont("Normal", EStyle.Normal, 24);
+            float textWidth = CFonts.GetTextWidth(_SessionNotice, font);
+            float textHeight = CFonts.GetTextHeight(_SessionNotice, font);
+            const float pad = 16f;
+            float width = textWidth + pad * 2f;
+            float height = textHeight + pad;
+            float x = (CSettings.RenderW - width) / 2f;
+            // Stack below the cloud-status banner when that one can be visible.
+            float y = 14f + (CConfig.UseCloudServer ? 52f : 0f);
+
+            CDraw.DrawRect(new SColorF(0.14f, 0.11f, 0.11f, 0.85f), new SRectF(x, y, width, height, CSettings.ZNear));
+            CFonts.DrawText(_SessionNotice, font, x + pad, y + pad / 2f, CSettings.ZNear, new SColorF(1f, 1f, 1f, 1f));
         }
 
         private static void _DrawDebugInfos()

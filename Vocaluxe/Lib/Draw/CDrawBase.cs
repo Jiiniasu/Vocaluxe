@@ -56,57 +56,90 @@ namespace Vocaluxe.Lib.Draw
         protected int _BorderBottom;
         protected EGeneralAlignment _CurrentAlignment = EGeneralAlignment.Middle;
 
+        /// <summary>
+        ///     The panel currently being rendered, or -1 in single-window mode. In single-window mode (-1)
+        ///     every draw is replicated/routed exactly as before; in multi-window mode (0..Count-1, plan v3 §4)
+        ///     the draw loops only produce the copy/routing for this panel, whose own projection is set by
+        ///     <c>_OnBeforeDraw(panel)</c>.
+        /// </summary>
+        protected int _PanelIndex = -1;
+
         protected abstract void _ClearScreen();
-        protected abstract void _AdjustNewBorders();
+        protected abstract void _AdjustNewBorders(int panel);
         protected abstract void _LeaveFullScreen();
 
-        protected abstract void _OnAfterDraw();
+        protected abstract void _OnAfterDraw(int panel);
 
-        protected abstract void _OnBeforeDraw();
+        protected abstract void _OnBeforeDraw(int panel);
 
         protected abstract void _DoResize();
 
         protected abstract void _EnterFullScreen();
 
-        protected void _AdjustAspect(bool reverse)
+        /// <summary>Flushes the per-window event queues and polls "should close" (called once per frame).</summary>
+        protected virtual void _ProcessEvents() {}
+
+        /// <summary>Number of render passes per frame: 1 in single-window mode, the window count in multi mode.</summary>
+        protected virtual int _GetPanelCount() { return 1; }
+
+        /// <summary>True in multi-window mode (one real window per panel); false means single giant window.</summary>
+        protected virtual bool _MultiWindow() { return false; }
+
+        /// <summary>The scene pass for the panel currently being rendered.</summary>
+        protected virtual bool _DrawScene() { return CGraphics.Draw(); }
+
+        /// <summary>True when a monitor hotplug asked for a layout rebuild (applied at the frame boundary).</summary>
+        protected virtual bool _WantRelayout() { return false; }
+
+        protected virtual void _ApplyRelayout() {}
+
+        /// <summary>
+        ///     The aspect ratio a window is letterboxed to: the whole canvas (RenderW*NumScreens) in
+        ///     single-window mode, one panel in multi-window mode.
+        /// </summary>
+        protected virtual float _WindowAspect() { return CSettings.GetRenderAspect(); }
+
+        protected void _AdjustAspect(bool reverse, int winW, int winH, out int x, out int y, out int vw, out int vh)
         {
-            if (_W / (float)_H > CSettings.GetRenderAspect())
+            vw = winW;
+            vh = winH;
+            x = 0;
+            y = 0;
+            if (winW / (float)winH > _WindowAspect())
             {
-                _Y = 0;
+                y = 0;
                 //The windows width is too big
-                int old = _W;
-                _W = (int)Math.Round(_H * CSettings.GetRenderAspect());
-                int diff = old - _W;
+                vw = (int)Math.Round(winH * _WindowAspect());
+                int diff = winW - vw;
                 switch (_CurrentAlignment)
                 {
                     case EGeneralAlignment.Start:
-                        _X = 0;
+                        x = 0;
                         break;
                     case EGeneralAlignment.Middle:
-                        _X = diff / 2;
+                        x = diff / 2;
                         break;
                     case EGeneralAlignment.End:
-                        _X = diff;
+                        x = diff;
                         break;
                 }
             }
             else
             {
-                _X = 0;
+                x = 0;
                 //The windows height is too big
-                int old = _H;
-                _H = (int)Math.Round(_W / CSettings.GetRenderAspect());
-                int diff = old - _H;
+                vh = (int)Math.Round(winW / _WindowAspect());
+                int diff = winH - vh;
                 switch (_CurrentAlignment)
                 {
                     case EGeneralAlignment.Start:
-                        _Y = reverse ? diff : 0;
+                        y = reverse ? diff : 0;
                         break;
                     case EGeneralAlignment.Middle:
-                        _Y = diff / 2;
+                        y = diff / 2;
                         break;
                     case EGeneralAlignment.End:
-                        _Y = reverse ? 0 : diff;
+                        y = reverse ? 0 : diff;
                         break;
                 }
             }
@@ -228,6 +261,21 @@ namespace Vocaluxe.Lib.Draw
             return true;
         }
 
+        /// <summary>
+        ///     Multi-window panel routing (plan v3 §4): true when a canvas-space draw belongs to the panel
+        ///     currently being rendered. allMonitors draws arrive already shifted to their panel by the draw
+        ///     loops; allMonitors=false draws arrive with absolute canvas coordinates (assigned once at
+        ///     creation, e.g. X += screen * RenderW), and only their panel's window should draw them.
+        ///     Single-window mode (_PanelIndex == -1): always visible, exactly as before.
+        /// </summary>
+        protected bool _PanelVisible(SRectF rect)
+        {
+            if (_PanelIndex < 0)
+                return true;
+            int x0 = _PanelIndex * CSettings.RenderW;
+            return rect.Right > x0 && rect.X < x0 + CSettings.RenderW;
+        }
+
         public void DrawTexture(CTextureRef textureRef, SRectF rect, SColorF color, bool mirrored = false, bool allMonitors = true)
         {
             if (Math.Abs(color.A) < 0.01)
@@ -242,6 +290,8 @@ namespace Vocaluxe.Lib.Draw
                 {
                     SRectF newrect = rect;
                     newrect.X += CSettings.RenderW * i;
+                    if (!_PanelVisible(newrect))
+                        continue;
                     if (!_CalcDrawCoords(texture, newrect, out dc, mirrored))
                         return;
                     _DrawTexture(texture, dc, color);
@@ -249,6 +299,8 @@ namespace Vocaluxe.Lib.Draw
             }
             else
             {
+                if (!_PanelVisible(rect))
+                    return;
                 if (!_CalcDrawCoords(texture, rect, out dc, mirrored))
                     return;
                 _DrawTexture(texture, dc, color);
@@ -280,6 +332,8 @@ namespace Vocaluxe.Lib.Draw
                     SRectF newbounds = bounds;
                     newrect.X += CSettings.RenderW * i;
                     newbounds.X += CSettings.RenderW * i;
+                    if (!_PanelVisible(newrect))
+                        continue;
                     if (!_CalcDrawCoords(texture, newrect, newbounds, out dc, mirrored))
                         return;
                     _DrawTexture(texture, dc, color);
@@ -287,6 +341,8 @@ namespace Vocaluxe.Lib.Draw
             }
             else
             {
+                if (!_PanelVisible(rect))
+                    return;
                 if (!_CalcDrawCoords(texture, rect, bounds, out dc, mirrored))
                     return;
                 _DrawTexture(texture, dc, color);
@@ -316,6 +372,8 @@ namespace Vocaluxe.Lib.Draw
                 {
                     SRectF newrect = rect;
                     newrect.X += CSettings.RenderW * i;
+                    if (!_PanelVisible(newrect))
+                        continue;
                     if (!_CalcDrawCoords(texture, newrect, out dc, false, begin, end))
                         return;
                     _DrawTexture(texture, dc, color);
@@ -323,6 +381,8 @@ namespace Vocaluxe.Lib.Draw
             }
             else
             {
+                if (!_PanelVisible(rect))
+                    return;
                 if (!_CalcDrawCoords(texture, rect, out dc, false, begin, end))
                     return;
                 _DrawTexture(texture, dc, color);
@@ -367,6 +427,8 @@ namespace Vocaluxe.Lib.Draw
                 SRectF newbounds = bounds;
                 newrect.X += CSettings.RenderW * i;
                 newbounds.X += CSettings.RenderW * i;
+                if (!_PanelVisible(newrect))
+                    continue;
                 if (!_CalcDrawCoords(texture, newrect, newbounds, out dc, true))
                     return;
 
@@ -460,9 +522,22 @@ namespace Vocaluxe.Lib.Draw
 
         private void _DrawSplashFrame(float progress)
         {
-            _OnBeforeDraw();
-            _ClearScreen();
+            // Multi-window (plan v3 §11.4): every window shows the splash, matching today's behavior
+            // where every panel of the giant window shows it.
+            for (int panel = 0; panel < _GetPanelCount(); panel++)
+            {
+                _PanelIndex = _MultiWindow() ? panel : -1;
+                _OnBeforeDraw(panel);
+                _ClearScreen();
+                _DrawSplashContent(progress);
+                _OnAfterDraw(panel);
+            }
+            _PanelIndex = -1;
+            _ProcessEvents();
+        }
 
+        private void _DrawSplashContent(float progress)
+        {
             float renderW = CSettings.RenderW;
             float renderH = CSettings.RenderH;
 
@@ -512,7 +587,6 @@ namespace Vocaluxe.Lib.Draw
                 }
             }
 
-            _OnAfterDraw();
         }
 
         // Resharper doesn't get that this is used -.-
@@ -539,13 +613,25 @@ namespace Vocaluxe.Lib.Draw
                 // else to process per frame here.
 
                 //We want to begin drawing
-                _OnBeforeDraw();
+                // One render pass per window (multi-window primary, plan v3 §4.4): each slot renders and
+                // presents only its own panel; single-window mode is one pass with _PanelIndex == -1 (the
+                // panel guards are inert, exactly as before).
+                for (int panel = 0; panel < _GetPanelCount() && _Run; panel++)
+                {
+                    _PanelIndex = _MultiWindow() ? panel : -1;
+                    _OnBeforeDraw(panel);
 
-                //Clear the previous Frame
-                _ClearScreen();
-                if (!CGraphics.Draw())
-                    _Run = false;
-                _OnAfterDraw();
+                    //Clear the previous frame of this slot's backbuffer
+                    _ClearScreen();
+                    if (!_DrawScene())
+                        _Run = false;
+                    _OnAfterDraw(panel);
+                }
+                _PanelIndex = -1;
+
+                //Flush the window event queues once per frame (after all backbuffer swaps) and poll the
+                //"should close" flag, so closing any window ends the loop.
+                _ProcessEvents();
 
                 if (!CGraphics.UpdateGameLogic(_Keys, _Mouse))
                     _Run = false;
@@ -563,11 +649,17 @@ namespace Vocaluxe.Lib.Draw
                     _BorderTop = CConfig.Config.Graphics.BorderTop;
                     _BorderBottom = CConfig.Config.Graphics.BorderBottom;
 
-                    _AdjustNewBorders();
+                    for (int panel = 0; panel < _GetPanelCount(); panel++)
+                        _AdjustNewBorders(panel);
                 }
 
                 if (_CurrentAlignment != CConfig.Config.Graphics.ScreenAlignment)
                     _DoResize();
+
+                //Monitor hotplug (plan v3 §7): the window manager flagged a layout rebuild, applied at the
+                //frame boundary (never mid-frame).
+                if (_WantRelayout())
+                    _ApplyRelayout();
 
                 if (CConfig.Config.Graphics.VSync == EOffOn.TR_CONFIG_OFF)
                 {

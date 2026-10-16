@@ -34,20 +34,34 @@ namespace Vocaluxe.Lib.Draw
     ///     Replaces the former WinForms host so the OpenGL renderer runs natively on Windows, Linux and macOS.
     ///     Concrete drivers (e.g. COpenGL) create <see cref="_Window" /> with the desired GL context settings;
     ///     this base wires window/input events into the game's <c>_Keys</c>/<c>_Mouse</c> queues and owns fullscreen.
+    ///     In multi-window mode (<see cref="_Windows" /> != null, plan v3 §4) the same wiring is applied to every
+    ///     per-monitor window; single-window mode (<see cref="_Windows" /> == null) behaves exactly as before.
     /// </summary>
     abstract class CDrawBaseGlfw<TTextureType> : CDrawBase<TTextureType> where TTextureType : CTextureBase, IDisposable
     {
         protected NativeWindow _Window;
+
+        // Single-window-mode fullscreen restore state (multi-window mode keeps its own per-slot copies in
+        // CWindowManager.Slot).
         private Vector2i _RestoreLocation;
         private Vector2i _RestoreSize;
         private WindowBorder _RestoreBorder;
+
+        /// <summary>
+        ///     The multi-window manager (plan v3 §4): one window per panel. Null in single-window mode,
+        ///     where <see cref="_Window" /> is the one giant window of today.
+        /// </summary>
+        protected CWindowManager _Windows;
 
         public override void Close()
         {
             base.Close();
             try
             {
-                _Window?.Close();
+                if (_MultiWindow())
+                    _Windows.CloseAll();
+                else
+                    _Window?.Close();
             }
             catch {}
         }
@@ -57,6 +71,13 @@ namespace Vocaluxe.Lib.Draw
             Debug.Assert(!_Fullscreen);
             _Fullscreen = true;
 
+            if (_MultiWindow())
+            {
+                _Windows.EnterFullScreen();
+                _DoResize();
+                return;
+            }
+
             _RestoreLocation = _Window.Location;
             _RestoreSize = _Window.ClientSize;
             _RestoreBorder = _Window.WindowBorder;
@@ -64,7 +85,7 @@ namespace Vocaluxe.Lib.Draw
 #if WIN
             // Windows: any window that EXACTLY covers a monitor (exclusive GLFW WindowState.Fullscreen
             // OR a borderless window sized to the monitor) gets promoted by Windows to fullscreen-
-            // exclusive present, whose path freezes our manually-driven render loop ÔÇö SwapBuffers keeps
+            // exclusive present, whose path freezes our manually-driven render loop — SwapBuffers keeps
             // succeeding but the visible front buffer never updates (app looks stuck on the first
             // frame). Work around it with a borderless window sized 1px taller than the monitor: it
             // still looks fullscreen (the extra row is off-screen) but stays on the composited (DWM)
@@ -81,7 +102,7 @@ namespace Vocaluxe.Lib.Draw
             }
             catch (Exception e)
             {
-                // Never let fullscreen setup kill startup ÔÇö fall back to a normal maximized window.
+                // Never let fullscreen setup kill startup — fall back to a normal maximized window.
                 CLog.Error("Borderless fullscreen setup failed, falling back to windowed: " + e);
                 _Window.WindowBorder = _RestoreBorder;
                 _Window.WindowState = WindowState.Maximized;
@@ -98,11 +119,72 @@ namespace Vocaluxe.Lib.Draw
             Debug.Assert(_Fullscreen);
             _Fullscreen = false;
 
+            if (_MultiWindow())
+            {
+                _Windows.LeaveFullScreen();
+                _DoResize();
+                return;
+            }
+
             _Window.WindowState = WindowState.Normal;
             _Window.WindowBorder = _RestoreBorder;
             _Window.ClientSize = _RestoreSize;
             _Window.Location = _RestoreLocation;
         }
+
+        #region multi-window plumbing (plan v3 §4)
+        protected override int _GetPanelCount()
+        {
+            return _Windows == null ? 1 : _Windows.Count;
+        }
+
+        protected override bool _MultiWindow()
+        {
+            return _Windows != null;
+        }
+
+        /// <summary>
+        ///     Single-window mode letterboxes to the whole canvas (RenderW*NumScreens); multi-window mode
+        ///     letterboxes each window to one panel (RenderW x RenderH).
+        /// </summary>
+        protected override float _WindowAspect()
+        {
+            return _MultiWindow() ? CSettings.RenderW / (float)CSettings.RenderH : CSettings.GetRenderAspect();
+        }
+
+        protected override bool _WantRelayout()
+        {
+            return _Windows != null && _Windows.RebuildPending;
+        }
+
+        protected override void _ApplyRelayout()
+        {
+            if (_Windows == null)
+                return;
+            _Windows.ApplyLayout(_Fullscreen);
+            _DoResize(); // recompute the per-slot letterbox from the new window sizes
+        }
+
+        protected override void _ProcessEvents()
+        {
+            NativeWindow.ProcessWindowEvents(false);
+
+            // Reliably end the main loop when the user closes any window. The Closing event alone is not
+            // dependable with a manually-driven OpenTK 4 NativeWindow, so also poll the GLFW "should close"
+            // flag every frame. Once _Run is false, CDraw.MainLoop returns and Program._CloseProgram shuts
+            // everything down (Environment.Exit).
+            if (_MultiWindow())
+            {
+                foreach (CWindowManager.Slot s in _Windows.Slots)
+                    if (s.Window.IsExiting)
+                        _Run = false;
+                return;
+            }
+
+            if (_Window.IsExiting)
+                _Run = false;
+        }
+        #endregion
 
         #region window/input event handlers
         private void _OnClosing(CancelEventArgs e)
@@ -115,40 +197,48 @@ namespace Vocaluxe.Lib.Draw
             _DoResize();
         }
 
-        private void _OnMouseMove(MouseMoveEventArgs e)
+        private void _OnMouseMove(NativeWindow win, MouseMoveEventArgs e)
         {
-            _Mouse.MouseMove((int)e.X, (int)e.Y,
-                             _Window.IsMouseButtonDown(MouseButton.Left),
-                             _Window.IsMouseButtonDown(MouseButton.Right),
-                             _Window.IsMouseButtonDown(MouseButton.Middle),
-                             _Shift, _Alt, _Ctrl);
+            int x, y;
+            _MapPosition(win, e.X, e.Y, out x, out y);
+            _Mouse.MouseMove(x, y,
+                             win.IsMouseButtonDown(MouseButton.Left),
+                             win.IsMouseButtonDown(MouseButton.Right),
+                             win.IsMouseButtonDown(MouseButton.Middle),
+                             _Shift(win), _Alt(win), _Ctrl(win));
         }
 
-        private void _OnMouseWheel(MouseWheelEventArgs e)
+        private void _OnMouseWheel(NativeWindow win, MouseWheelEventArgs e)
         {
-            Vector2 p = _Window.MousePosition;
+            Vector2 p = win.MousePosition;
+            int x, y;
+            _MapPosition(win, p.X, p.Y, out x, out y);
             // OpenTK reports the wheel in notches; CMouse expects WinForms-style 120-per-notch deltas.
-            _Mouse.MouseWheel((int)p.X, (int)p.Y, (int)(e.OffsetY * 120), _Shift, _Alt, _Ctrl);
+            _Mouse.MouseWheel(x, y, (int)(e.OffsetY * 120), _Shift(win), _Alt(win), _Ctrl(win));
         }
 
-        private void _OnMouseDown(MouseButtonEventArgs e)
+        private void _OnMouseDown(NativeWindow win, MouseButtonEventArgs e)
         {
-            Vector2 p = _Window.MousePosition;
-            _Mouse.MouseDown((int)p.X, (int)p.Y,
+            Vector2 p = win.MousePosition;
+            int x, y;
+            _MapPosition(win, p.X, p.Y, out x, out y);
+            _Mouse.MouseDown(x, y,
                              e.Button == MouseButton.Left,
                              e.Button == MouseButton.Right,
                              e.Button == MouseButton.Middle,
-                             _Shift, _Alt, _Ctrl);
+                             _Shift(win), _Alt(win), _Ctrl(win));
         }
 
-        private void _OnMouseUp(MouseButtonEventArgs e)
+        private void _OnMouseUp(NativeWindow win, MouseButtonEventArgs e)
         {
-            Vector2 p = _Window.MousePosition;
-            _Mouse.MouseUp((int)p.X, (int)p.Y,
+            Vector2 p = win.MousePosition;
+            int x, y;
+            _MapPosition(win, p.X, p.Y, out x, out y);
+            _Mouse.MouseUp(x, y,
                            e.Button == MouseButton.Left,
                            e.Button == MouseButton.Right,
                            e.Button == MouseButton.Middle,
-                           _Shift, _Alt, _Ctrl);
+                           _Shift(win), _Alt(win), _Ctrl(win));
         }
 
         private void _OnKeyDown(KeyboardKeyEventArgs e)
@@ -161,24 +251,60 @@ namespace Vocaluxe.Lib.Draw
             _Keys.KeyUp(_MapKey(e.Key), e.Shift, e.Alt, e.Control);
         }
 
-        private void _OnTextInput(TextInputEventArgs e)
+        private void _OnTextInput(NativeWindow win, TextInputEventArgs e)
         {
-            _Keys.KeyPress((char)e.Unicode, _Shift, _Alt, _Ctrl);
+            _Keys.KeyPress((char)e.Unicode, _Shift(win), _Alt(win), _Ctrl(win));
         }
 
-        private bool _Shift
+        private void _OnLostFocus(NativeWindow win, FocusedChangedEventArgs e)
         {
-            get { return _Window.IsKeyDown(GlfwKeys.LeftShift) || _Window.IsKeyDown(GlfwKeys.RightShift); }
+            if (e.IsFocused || _Windows == null)
+                return;
+            VKeys lost = _Windows.ConsumeLostFocusKey(win);
+            if (lost != VKeys.None)
+            {
+                // Focus was lost while a key was still down: flush it so it cannot stick (plan v3 §6).
+                _Keys.KeyUp(lost, false, false, false);
+            }
         }
 
-        private bool _Alt
+        /// <summary>
+        ///     Maps window-local mouse coordinates into canvas coordinates (plan v3 §6): single-window mode
+        ///     passes the raw window pixels through (CUtility._Add scales them to the canvas exactly as
+        ///     before); multi-window mode maps through the slot's letterbox rect into panel-local
+        ///     coordinates (0..RenderW), where CUtility._Add's scaling becomes an identity.
+        /// </summary>
+        private void _MapPosition(NativeWindow win, float lx, float ly, out int x, out int y)
         {
-            get { return _Window.IsKeyDown(GlfwKeys.LeftAlt) || _Window.IsKeyDown(GlfwKeys.RightAlt); }
+            x = (int)lx;
+            y = (int)ly;
+            if (_Windows == null)
+                return;
+            foreach (CWindowManager.Slot s in _Windows.Slots)
+            {
+                if (!ReferenceEquals(s.Window, win))
+                    continue;
+                if (s.LetterW > 0)
+                    x = (int)((lx - s.LetterX) * (float)CSettings.RenderW / s.LetterW);
+                if (s.LetterH > 0)
+                    y = (int)((ly - s.LetterY) * (float)CSettings.RenderH / s.LetterH);
+                return;
+            }
         }
 
-        private bool _Ctrl
+        private bool _Shift(NativeWindow win)
         {
-            get { return _Window.IsKeyDown(GlfwKeys.LeftControl) || _Window.IsKeyDown(GlfwKeys.RightControl); }
+            return win.IsKeyDown(GlfwKeys.LeftShift) || win.IsKeyDown(GlfwKeys.RightShift);
+        }
+
+        private bool _Alt(NativeWindow win)
+        {
+            return win.IsKeyDown(GlfwKeys.LeftAlt) || win.IsKeyDown(GlfwKeys.RightAlt);
+        }
+
+        private bool _Ctrl(NativeWindow win)
+        {
+            return win.IsKeyDown(GlfwKeys.LeftControl) || win.IsKeyDown(GlfwKeys.RightControl);
         }
         #endregion
 
@@ -243,27 +369,62 @@ namespace Vocaluxe.Lib.Draw
             if (!base.Init())
                 return false;
 
-            _Window.Title = CSettings.GetFullVersionText();
-
             // Application icon, the standard way: on every platform set OpenTK's NativeWindow.Icon from
             // the multi-size Vocaluxe.ico (or a Vocaluxe.png fallback) shipped next to the exe
             // (WM_SETICON on Windows, _NET_WM_ICON on X11). Best effort: a missing/undecodable file is a
             // logged no-op, never breaking startup.
             string appDirectory = AppContext.BaseDirectory;
+            byte[] iconRgba = null;
+            int iconW = 0, iconH = 0;
             try
             {
-                if (CAppIcon.TryLoadRgba(appDirectory, out byte[] iconRgba, out int iconW, out int iconH))
-                {
-                    CAppIcon.SetWindowIcon(_Window, iconRgba, iconW, iconH);
-                }
-                else
-                {
+                // Loaded once, then applied per window below.
+                if (!CAppIcon.TryLoadRgba(appDirectory, out iconRgba, out iconW, out iconH))
                     CLog.Warning("CAppIcon: no Vocaluxe.ico/Vocaluxe.png next to the exe; the window keeps its default icon");
-                }
             }
             catch (Exception e)
             {
-                CLog.Warning(e, "setting the window icon failed; the window keeps its default icon");
+                CLog.Warning(e, "loading the app icon failed; the window keeps its default icon");
+                iconRgba = null;
+            }
+
+            // Title, icon and event wiring are applied to every window (multi-window primary, plan v3 §6);
+            // in single-window mode this is exactly one window, i.e. today's wiring.
+            for (int i = 0; i < _GetPanelCount(); i++)
+            {
+                NativeWindow win = _MultiWindow() ? _Windows.Slots[i].Window : _Window;
+                win.Title = CSettings.GetFullVersionText();
+
+                if (iconRgba != null)
+                    try
+                    {
+                        CAppIcon.SetWindowIcon(win, iconRgba, iconW, iconH);
+                    }
+                    catch (Exception e)
+                    {
+                        CLog.Warning(e, "setting the window icon failed; the window keeps its default icon");
+                    }
+
+                // OpenTK 4.9.4 types these window events as single-arg Action<T> delegates (not
+                // (sender, e)), so the lambdas below take one argument.
+                win.Closing += _OnClosing;
+                win.Resize += _OnResize;
+                win.MouseMove += e => _OnMouseMove(win, e);
+                win.MouseWheel += e => _OnMouseWheel(win, e);
+                win.MouseDown += e => _OnMouseDown(win, e);
+                win.MouseUp += e => _OnMouseUp(win, e);
+                win.KeyDown += e =>
+                {
+                    _Windows?.SetLostFocusKey(win, _MapKey(e.Key));
+                    _OnKeyDown(e);
+                };
+                win.KeyUp += e =>
+                {
+                    _Windows?.SetLostFocusKey(win, VKeys.None);
+                    _OnKeyUp(e);
+                };
+                win.TextInput += e => _OnTextInput(win, e);
+                win.FocusedChanged += e => _OnLostFocus(win, e);
             }
 
 #if WIN
@@ -282,31 +443,35 @@ namespace Vocaluxe.Lib.Draw
             }
 #endif
 
-            _Window.Closing += _OnClosing;
-            _Window.Resize += _OnResize;
-            _Window.MouseMove += _OnMouseMove;
-            _Window.MouseWheel += _OnMouseWheel;
-            _Window.MouseDown += _OnMouseDown;
-            _Window.MouseUp += _OnMouseUp;
-            _Window.KeyDown += _OnKeyDown;
-            _Window.KeyUp += _OnKeyUp;
-            _Window.TextInput += _OnTextInput;
-
-            _Window.CenterWindow();
+            if (_MultiWindow())
+                _Windows.ApplyLayout(false); // windowed start: centered panel size per assigned monitor
+            else
+                _Window.CenterWindow();
 
             return true;
         }
 
         protected override void _ShowWindow()
         {
-            _Window.IsVisible = true;
+            if (_MultiWindow())
+                _Windows.ShowAll();
+            else
+                _Window.IsVisible = true;
         }
 
         public override void MainLoop()
         {
-            _Window.IsVisible = true;
+            if (_MultiWindow())
+                _Windows.ShowAll();
+            else
+                _Window.IsVisible = true;
+
             base.MainLoop();
-            _Window.IsVisible = false;
+
+            if (_MultiWindow())
+                _Windows.HideAll();
+            else
+                _Window.IsVisible = false;
         }
     }
 }

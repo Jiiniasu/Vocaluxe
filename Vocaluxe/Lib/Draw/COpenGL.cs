@@ -87,8 +87,16 @@ namespace Vocaluxe.Lib.Draw
 
         public COpenGL()
         {
-            int w = CConfig.Config.Graphics.ScreenW * CConfig.Config.Graphics.NumScreens;
-            int h = CConfig.Config.Graphics.ScreenH;
+            int panels = CConfig.Config.Graphics.NumScreens;
+            bool multi = CConfig.Config.Graphics.MultiWindow == EOffOn.TR_CONFIG_ON;
+            int panelW = CConfig.Config.Graphics.ScreenW;
+            int panelH = CConfig.Config.Graphics.ScreenH;
+
+            // Multi-window primary (plan v3 §4): N windows of one panel each, all sharing a single GL
+            // context (textures live once in VRAM). Single-window mode (MultiWindow = OFF, or after the
+            // F1 mixed-GPU downgrade below): today's one giant window of ScreenW * NumScreens.
+            int w = multi ? panelW : panelW * panels;
+            int h = panelH;
 
             var settings = new NativeWindowSettings
             {
@@ -116,7 +124,47 @@ namespace Vocaluxe.Lib.Draw
             _Window = new NativeWindow(settings);
             _Window.MakeCurrent();
 
+            if (multi)
+            {
+                try
+                {
+                    _Windows = new CWindowManager(_Window, panels, settings);
+
+                    // F1 (plan v3 §5): a shared context cannot span two GPUs - on a mixed-GPU machine the
+                    // session runs as the legacy single giant window instead.
+                    if (_Windows.ProbeRenderers())
+                        _DowngradeToSingleWindow("mixed GPUs detected (shared contexts cannot span GPUs)");
+                }
+                catch (Exception e)
+                {
+                    // Shared-context creation failures (ICD quirks) must never break startup (plan v3 §12
+                    // R1): fall back to today's single giant window session.
+                    CLog.Error("Multi-window setup failed, falling back to the single giant window: " + e);
+                    _DowngradeToSingleWindow("shared-context window creation failed");
+                }
+            }
+
             _NonPowerOf2TextureSupported = false;
+        }
+
+        /// <summary>
+        ///     Undoes a multi-window attempt and continues the session in single-window mode
+        ///     (today's MultiWindow = OFF path).
+        /// </summary>
+        private void _DowngradeToSingleWindow(string reason)
+        {
+            if (_Windows != null)
+            {
+                // The primary (slot 0) becomes the giant window - only the shared-context children close.
+                _Windows.CloseAll(keepPrimary: true);
+                _Windows = null;
+            }
+
+            _Window.MakeCurrent();
+            _Window.ClientSize = new Vector2i(CConfig.Config.Graphics.ScreenW * CConfig.Config.Graphics.NumScreens, CConfig.Config.Graphics.ScreenH);
+            CLog.Warning("Multi-window is disabled for this session (" + reason + "). Running the single giant window. " +
+                         "Set Graphics.MultiWindow = OFF to silence this message.");
+            CGraphics.SetSessionNotice("Multi-window disabled for this session (" + reason + "). Running the single giant window.");
         }
 
         /*
@@ -149,16 +197,40 @@ namespace Vocaluxe.Lib.Draw
 
         protected override void _DoResize()
         {
-            _H = _Window.ClientSize.Y;
-            _W = _Window.ClientSize.X;
             _CurrentAlignment = CConfig.Config.Graphics.ScreenAlignment;
 
-            if (CConfig.Config.Graphics.Stretch != EOffOn.TR_CONFIG_ON)
+            if (_MultiWindow())
             {
-                _AdjustAspect(true);
+                // Per-slot letterbox (plan v3 §4.3/§4.5): each window shows one panel, so it letterboxes to
+                // the panel aspect. Each panel's viewport/projection itself is applied per pass in
+                // _OnBeforeDraw(panel) (all windows share one GL context and one state).
+                for (int i = 0; i < _Windows.Count; i++)
+                {
+                    CWindowManager.Slot s = _Windows.Slots[i];
+                    int winW = s.Window.ClientSize.X;
+                    int winH = s.Window.ClientSize.Y;
+                    int x = 0, y = 0, vw = winW, vh = winH;
+                    if (CConfig.Config.Graphics.Stretch != EOffOn.TR_CONFIG_ON)
+                        _AdjustAspect(true, winW, winH, out x, out y, out vw, out vh);
+
+                    // Slot is a class: this mutates the stored slot in place (no list write-back, which would
+                    // bump the list version and invalidate any in-flight enumeration - see CWindowManager).
+                    s.LetterX = x;
+                    s.LetterY = y;
+                    s.LetterW = vw;
+                    s.LetterH = vh;
+                }
+                return;
             }
 
-            _AdjustNewBorders();
+            _H = _Window.ClientSize.Y;
+            _W = _Window.ClientSize.X;
+            if (CConfig.Config.Graphics.Stretch != EOffOn.TR_CONFIG_ON)
+            {
+                _AdjustAspect(true, _W, _H, out _X, out _Y, out _W, out _H);
+            }
+
+            _AdjustNewBorders(0);
             GL.Viewport(_X, _Y, _W, _H);
         }
 
@@ -166,6 +238,33 @@ namespace Vocaluxe.Lib.Draw
         {
             if (!base.Init())
                 return false;
+
+            // The fixed-function base state (enables, blend func, pixel store, depth, clear color) is
+            // PER-CONTEXT state: context sharing shares objects (textures, FBOs, ...) but NOT the current
+            // state (verified empirically: the primary window's context had Texture2D/DepthTest disabled
+            // while the shared child's context had them enabled, so the primary rendered every textured
+            // quad as a white color quad). Every context that renders a panel must receive the base
+            // state - applying it once to the "current" context is not enough once children exist.
+            if (_MultiWindow())
+            {
+                for (int i = 0; i < _Windows.Count; i++)
+                    _ApplyBaseGLState(_Windows.Slots[i].Window);
+                _Window.MakeCurrent(); // Leave the primary current, as in single-window startup.
+            }
+            else
+                _ApplyBaseGLState(_Window);
+
+            GL.GenFramebuffers(1, out _FBO);
+
+            return true;
+        }
+
+        /// <summary>
+        ///     Applies the one-time fixed-function base state to the given window's context (plan v3 §4.4).
+        /// </summary>
+        private void _ApplyBaseGLState(NativeWindow win)
+        {
+            win.MakeCurrent();
 
             // Init Texturing
             GL.Enable(EnableCap.Texture2D);
@@ -177,10 +276,6 @@ namespace Vocaluxe.Lib.Draw
             GL.DepthFunc(DepthFunction.Lequal);
             GL.Enable(EnableCap.DepthTest);
             GL.ClearColor(0f, 0f, 0f, 1f);
-
-            GL.GenFramebuffers(1, out _FBO);
-
-            return true;
         }
 
         public override void Close()
@@ -189,30 +284,51 @@ namespace Vocaluxe.Lib.Draw
             GL.DeleteFramebuffers(1, ref _FBO);
         }
 
-        protected override void _OnBeforeDraw()
+        protected override void _OnBeforeDraw(int panel)
         {
-            //Nothing to do
+            if (!_MultiWindow())
+            {
+                // Single-window mode: today's behavior - the viewport/projecton are applied by
+                // _DoResize and the border-change poll.
+                return;
+            }
+
+            // Multi-window primary (plan v3 §4.4): this pass must be fully self-contained because all
+            // windows share one GL context and therefore one GL state (viewport, matrices). Make the
+            // slot current, set its (letterboxed) viewport, the panel's canvas-strip projection, and the
+            // identity modelview.
+            CWindowManager.Slot s = _Windows.Slots[panel];
+            s.Window.MakeCurrent();
+            GL.Viewport(s.LetterX, s.LetterY, s.LetterW, s.LetterH);
+            _AdjustNewBorders(panel);
+            GL.MatrixMode(MatrixMode.Modelview);
+            GL.LoadIdentity();
         }
 
-        protected override void _OnAfterDraw()
+        protected override void _OnAfterDraw(int panel)
         {
-            _Window.Context.SwapBuffers();
-            NativeWindow.ProcessWindowEvents(false);
-            // Reliably end the main loop when the user closes the window. The Closing event alone
-            // is not dependable with a manually-driven OpenTK 4 NativeWindow, so also poll the GLFW
-            // "should close" flag every frame. Once _Run is false, CDraw.MainLoop returns and
-            // Program._CloseProgram shuts everything down (Environment.Exit).
-            if (_Window.IsExiting)
-                _Run = false;
+            if (_MultiWindow())
+                _Windows.Slots[panel].Window.Context.SwapBuffers();
+            else
+                _Window.Context.SwapBuffers();
+            // Window event flushing + the "should close" poll live in CDrawBaseGlfw._ProcessEvents,
+            // called once per frame after the last swap - the same sequence as before this change.
         }
 
         public int GetScreenWidth()
         {
+            // Single-window: the window width (today). Multi-window: the whole canvas
+            // (RenderW * NumScreens), so the CUtility._Add mouse remap becomes the identity for the
+            // panel-local coordinates emitted by the per-window handlers (plan v3 §6).
+            if (_MultiWindow())
+                return CSettings.RenderW * CConfig.Config.Graphics.NumScreens;
             return _Window.ClientSize.X;
         }
 
         public int GetScreenHeight()
         {
+            if (_MultiWindow())
+                return CSettings.RenderH;
             return _Window.ClientSize.Y;
         }
 
@@ -221,65 +337,153 @@ namespace Vocaluxe.Lib.Draw
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
         }
 
-        protected override void _AdjustNewBorders()
+        protected override void _AdjustNewBorders(int panel)
         {
+            int screens = CConfig.Config.Graphics.NumScreens;
+            float rw = CSettings.RenderW;
+
+            float left, right;
+            if (_MultiWindow() && screens > 1)
+            {
+                // This panel's canvas strip, borders only on the canvas' outer edges - exactly the giant
+                // window's border placement (plan v3 §4.3).
+                left = panel * rw - (panel == 0 ? CConfig.Config.Graphics.BorderLeft : 0);
+                right = (panel + 1) * rw + (panel == screens - 1 ? CConfig.Config.Graphics.BorderRight : 0);
+            }
+            else
+            {
+                // Single-window mode (and multi with n == 1): the whole canvas incl. the border margins -
+                // exactly today's ortho.
+                left = -CConfig.Config.Graphics.BorderLeft;
+                right = CConfig.Config.Graphics.BorderRight + rw * screens;
+            }
+
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadIdentity();
-            GL.Ortho(-CConfig.Config.Graphics.BorderLeft, CConfig.Config.Graphics.BorderRight + CSettings.RenderW * CConfig.Config.Graphics.NumScreens, CConfig.Config.Graphics.BorderBottom + CSettings.RenderH,
+            GL.Ortho(left, right, CConfig.Config.Graphics.BorderBottom + CSettings.RenderH,
                      -CConfig.Config.Graphics.BorderTop, CSettings.ZNear, CSettings.ZFar);
+        }
+
+        /// <summary>
+        ///     Captures the whole logical canvas (all panels) as bottom-up BGRA pixels (GL orientation):
+        ///     single-window mode reads the (giant) window exactly as before; multi-window mode reads one
+        ///     panel per window and stitches the panels side by side (plan v3 §7).
+        /// </summary>
+        private byte[] _CaptureCanvas(out int width, out int height)
+        {
+            if (!_MultiWindow())
+            {
+                width = _Window.ClientSize.X;
+                height = _Window.ClientSize.Y;
+                byte[] pixels = new byte[4 * width * height];
+                GL.ReadPixels(0, 0, width, height, PixelFormat.Bgra, PixelType.UnsignedByte, pixels);
+                return pixels;
+            }
+
+            int count = _Windows.Count;
+
+            // Each slot is read at its own client area (monitors may differ in size in fullscreen);
+            // the canvas is stitched bottom-aligned (GL orientation).
+            int canvasW = 0;
+            int canvasH = 0;
+            for (int i = 0; i < count; i++)
+            {
+                canvasW += _Windows.Slots[i].Window.ClientSize.X;
+                canvasH = Math.Max(canvasH, _Windows.Slots[i].Window.ClientSize.Y);
+            }
+
+            width = canvasW;
+            height = canvasH;
+            byte[] canvas = new byte[4 * canvasW * canvasH];
+            int offsetX = 0;
+            for (int i = 0; i < count; i++)
+            {
+                CWindowManager.Slot s = _Windows.Slots[i];
+                int w = s.Window.ClientSize.X;
+                int h = s.Window.ClientSize.Y;
+                offsetX += w;
+                if (w == 0 || h == 0)
+                    continue;
+
+                // A captured backbuffer is only guaranteed to hold valid content at the moment it was
+                // just rendered. _CaptureCanvas is normally called between MainLoop frames - i.e. AFTER
+                // this slot's SwapBuffers - where the backbuffer content is undefined (observed: a pure
+                // black canvas). Render exactly the per-panel pass the MainLoop runs for this slot and
+                // read before the present; the present then shows the content that was just captured,
+                // so it is a visual no-op.
+                _PanelIndex = i;
+                _OnBeforeDraw(i);
+                _ClearScreen();
+                _DrawScene();
+                byte[] panel = new byte[4 * w * h];
+                GL.ReadPixels(0, 0, w, h, PixelFormat.Bgra, PixelType.UnsignedByte, panel);
+                _OnAfterDraw(i);
+                _PanelIndex = -1;
+
+                // Stitch bottom-up rows verbatim; only the x offset differs.
+                for (int row = 0; row < h && row < canvasH; row++)
+                    System.Buffer.BlockCopy(panel, row * w * 4, canvas, row * canvasW * 4 + (offsetX - w) * 4, w * 4);
+            }
+
+            return canvas;
         }
 
         public void MakeScreenShot()
         {
             string file = CHelper.GetUniqueFileName(Path.Combine(CSettings.DataFolder, CSettings.FolderNameScreenshots), "Screenshot.png");
 
-            int width = GetScreenWidth();
-            int height = GetScreenHeight();
+            int width, height;
+            byte[] screen = _CaptureCanvas(out width, out height);
 
-            using (var screen = new SKBitmap(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Unpremul)))
+            // OpenGL's origin is bottom-left, so flip vertically before saving.
+            // The pixel buffer is seeded with SKImage.FromPixels: in SkiaSharp 3, SKBitmap.Bytes is no
+            // longer the bitmap's pixel store, so the pre-3.0 "BlockCopy into SKBitmap.Bytes +
+            // DrawBitmap" idiom seeds a blank bitmap (verified: produced an all-transparent PNG).
+            using (var flipped = new SKBitmap(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Unpremul)))
+            using (var canvas = new SKCanvas(flipped))
             {
-                GL.ReadPixels(0, 0, width, height, PixelFormat.Bgra, PixelType.UnsignedByte, screen.GetPixels());
+                canvas.Translate(0, height);
+                canvas.Scale(1, -1);
 
-                // OpenGL's origin is bottom-left, so flip vertically before saving.
-                using (var flipped = new SKBitmap(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Unpremul)))
-                using (var canvas = new SKCanvas(flipped))
-                {
-                    canvas.Translate(0, height);
-                    canvas.Scale(1, -1);
-                    canvas.DrawBitmap(screen, 0, 0);
-                    using (var encoded = SKImage.FromBitmap(flipped).Encode(SKEncodedImageFormat.Png, 100))
-                        File.WriteAllBytes(file, encoded.ToArray());
-                }
+                using (var data = SKData.CreateCopy(screen))
+                using (var source = SKImage.FromPixels(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Unpremul), data, width * 4))
+                    canvas.DrawImage(source, 0, 0);
+
+                using (var encoded = SKImage.FromBitmap(flipped).Encode(SKEncodedImageFormat.Png, 100))
+                    File.WriteAllBytes(file, encoded.ToArray());
             }
         }
 
         public CTextureRef CopyScreen()
         {
-            //TODO: Check if _W,_H needs to be used or not
-            Size size = new Size(GetScreenWidth(), GetScreenHeight());
-            COGLTexture texture = _CreateTexture(size);
+            // A CPU read-back + write is used instead of CopyTexSubImage2D so the semantics are identical
+            // in single-window and multi-window mode (the "screen" captured is always the whole canvas).
+            int width, height;
+            byte[] data = _CaptureCanvas(out width, out height);
 
-            GL.BindTexture(TextureTarget.Texture2D, texture.Name);
-            GL.CopyTexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, 0, 0, size.Width, size.Height); //TODO: Use _X,_Y and _W,_H?
-            GL.BindTexture(TextureTarget.Texture2D, 0);
+            //TODO: Check if _W,_H needs to be used or not
+            Size size = new Size(width, height);
+            COGLTexture texture = _CreateTexture(size);
+            _WriteDataToTexture(texture, data);
 
             return _GetTextureReference(size, texture);
         }
 
         public void CopyScreen(ref CTextureRef textureRef)
         {
+            int width, height;
+            byte[] data = _CaptureCanvas(out width, out height);
+
             COGLTexture texture;
             //Check for actual texture sizes as it may be downsized compared to OrigSize
-            if (!_GetTexture(textureRef, out texture) || texture.DataSize.Width != GetScreenWidth() || texture.DataSize.Height != GetScreenHeight())
+            if (!_GetTexture(textureRef, out texture) || texture.DataSize.Width != width || texture.DataSize.Height != height)
             {
                 RemoveTexture(ref textureRef);
                 textureRef = CopyScreen();
             }
             else
             {
-                GL.BindTexture(TextureTarget.Texture2D, texture.Name);
-                GL.CopyTexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, 0, 0, GetScreenWidth(), GetScreenHeight());
-                GL.BindTexture(TextureTarget.Texture2D, 0);
+                _WriteDataToTexture(texture, data);
             }
         }
 
@@ -292,6 +496,8 @@ namespace Vocaluxe.Lib.Draw
             {
                 SRectF newrect = rect;
                 newrect.X += CSettings.RenderW * i;
+                if (!_PanelVisible(newrect))
+                    continue; // multi-window: this copy belongs to another panel's window
 
                 GL.Enable(EnableCap.Blend);
                 GL.Color4(color.R, color.G, color.B, color.A * CGraphics.GlobalAlpha);
@@ -321,6 +527,8 @@ namespace Vocaluxe.Lib.Draw
             {
                 SRectF newrect = rect;
                 newrect.X += CSettings.RenderW * i;
+                if (!_PanelVisible(newrect))
+                    continue; // multi-window: this copy belongs to another panel's window
 
                 if (newrect.H < height)
                     height = newrect.H;
