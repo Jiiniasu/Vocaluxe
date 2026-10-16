@@ -646,9 +646,10 @@ namespace Vocaluxe.Lib.Draw
 
         protected override void _DrawTexture(COGLTexture texture, SDrawCoords dc, SColorF color, bool isReflection = false, float fadeFrom = 1f, float fadeTo = 0f)
         {
-            // Align textures to full pixels to reduce artefacts. Glyph quads arrive pre-snapped to
-            // their shared baseline row (CGlyph.SnapToBaselineRow), so for text this is a no-op in
-            // y; it still snaps generic (non-glyph) textures and the x edges.
+            // Align textures to full pixels to reduce artefacts. Text arrives as ONE line texture per
+            // text (CFontLine), so this rounds the single line quad's corners once - shifting the whole
+            // line by at most half a pixel, which cannot create any relative drift between the letters
+            // (the per-glyph wavy-word quantization the old per-glyph pipeline had is gone by design).
             dc.Wx1 = (float)Math.Round(dc.Wx1);
             dc.Wy1 = (float)Math.Round(dc.Wy1);
             dc.Wx2 = (float)Math.Round(dc.Wx2);

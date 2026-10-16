@@ -15,13 +15,14 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using VocaluxeLib;
+using VocaluxeLib.Draw;
 using VocaluxeLib.Log;
 using VocaluxeLib.Menu;
 using VocaluxeLib.Xml;
@@ -54,8 +55,9 @@ namespace Vocaluxe.Base.Fonts
         public static void Close()
         {
             foreach (SFontFamily font in _FontFamilies)
-                font.Dispose();
+                font.Dispose(); // CFontStyle.Dispose drops the style's cached CFontLine textures
             _FontFamilies.Clear();
+            CFontLine.Close();
             _IsInitialized = false;
         }
 
@@ -84,68 +86,41 @@ namespace Vocaluxe.Base.Fonts
         /// <param name="color">The text color</param>
         public static void DrawText(string text, CFont font, float x, float y, float z, SColorF color, bool allMonitors = true)
         {
-            if (font.Height <= 0f || text == "")
+            if (text == null || text == "" || font.Height <= 0f)
                 return;
 
             CFontStyle fontStyle = _GetFontStyle(font);
-
-            float dx = x;
-            foreach (char chr in text)
-            {
-                fontStyle.DrawGlyph(chr, font.Height, dx, y, z, color, allMonitors);
-                dx += fontStyle.GetWidth(chr, font.Height);
-            }
+            CFontLine line = CFontLine.Get(fontStyle, text, font.Height);
+            CDraw.DrawTexture(line.Texture, new SRectF(x, y, line.DrawWidth(font.Height), font.Height, z), color, false, allMonitors);
         }
 
         public static void DrawTextReflection(string text, CFont font, float x, float y, float z, SColorF color, float rspace, float rheight, float mirrorLine = 0f, float fadeOrigin = 0f, float fadeSpan = 0f)
         {
-            if (font.Height <= 0f || text == "")
+            if (text == null || text == "" || font.Height <= 0f)
                 return;
 
             CFontStyle fontStyle = _GetFontStyle(font);
+            CFontLine line = CFontLine.Get(fontStyle, text, font.Height);
+            SRectF rect = new SRectF(x, y, line.DrawWidth(font.Height), font.Height, z);
 
-            float dx = x;
-            foreach (char chr in text)
-            {
-                fontStyle.DrawGlyphReflection(chr, font.Height, dx, y, z, color, rspace, rheight, mirrorLine, fadeOrigin, fadeSpan);
-                dx += fontStyle.GetWidth(chr, font.Height);
-            }
+            // The single line texture mirrors as one object (uniform distance to the mirror line, one
+            // fade ramp) instead of mirroring each glyph's own ink box at a different position - which
+            // is also what CText's mirrorLine math (the line box bottom) assumed all along.
+            CDraw.DrawTextureReflection(line.Texture, rect, color, rect, rspace, rheight, true, mirrorLine, fadeOrigin, fadeSpan);
         }
 
         public static void DrawText(string text, CFont font, float x, float y, float z, SColorF color, float begin, float end)
         {
-            if (font.Height <= 0f || text == "")
+            if (text == null || text == "" || font.Height <= 0f)
                 return;
-
-            float w = GetTextWidth(text, font);
-            if (w <= 0f)
+            if (begin >= end)
                 return;
-
-            float xStart = x + w * begin;
-            float xEnd = x + w * end;
-            float xCur = x;
 
             CFontStyle fontStyle = _GetFontStyle(font);
-
-            foreach (char chr in text)
-            {
-                float w2 = fontStyle.GetWidth(chr, font.Height);
-                float b = (xStart - xCur) / w2;
-
-                if (b < 1f)
-                {
-                    if (b < 0f)
-                        b = 0f;
-                    float e = (xEnd - xCur) / w2;
-                    if (e > 0f)
-                    {
-                        if (e > 1f)
-                            e = 1f;
-                        fontStyle.DrawGlyph(chr, font.Height, xCur, y, z, color, b, e);
-                    }
-                }
-                xCur += w2;
-            }
+            CFontLine line = CFontLine.Get(fontStyle, text, font.Height);
+            // The karaoke reveal is a plain X-clip of the one line texture (fraction of the whole width,
+            // same mapping the old per-glyph slice used over the same total width) - no per-glyph steps.
+            CDraw.DrawTexture(line.Texture, new SRectF(x, y, line.DrawWidth(font.Height), font.Height, z), color, begin, end);
         }
         #endregion DrawText
 
@@ -194,14 +169,33 @@ namespace Vocaluxe.Base.Fonts
 
         public static float GetTextWidth(string text, CFont font)
         {
+            if (text == null || text == "" || font.Height <= 0f)
+                return 0f;
+
             CFontStyle fontStyle = _GetFontStyle(font);
-            return text.Sum(chr => fontStyle.GetWidth(chr, font.Height));
+            int bucket = fontStyle.GetRasterBucket(font.Height);
+            // Same box convention as CFontLine uses for the texture/quad: the whole-line advance
+            // (kerning included - the font engine measures the string, not a per-character sum) plus
+            // the outline bleed, scaled to exactly the height the line will be drawn at. Keeping the
+            // two in lock-step means centering and the karaoke clip line up with the drawn pixels.
+            using (var skFont = new SKFont(fontStyle.GetTypeface(), bucket))
+            {
+                float outlineSize = fontStyle.Outline * bucket;
+                SKFontMetrics metrics = skFont.Metrics;
+                float fullH = metrics.Descent - metrics.Ascent;
+                SKRect tightBounds;
+                float advance = skFont.MeasureText(text, out tightBounds);
+                return (advance + outlineSize) * font.Height / (fullH + outlineSize);
+            }
         }
 
         public static float GetTextHeight(string text, CFont font)
         {
-            CFontStyle fontStyle = _GetFontStyle(font);
-            return text == "" ? 0 : text.Select(chr => fontStyle.GetHeight(chr, font.Height)).Max();
+            // The line box height is exactly the requested font height for every non-empty line (the
+            // same the legacy per-glyph box reported: all glyphs of a line shared the ascent->descent height).
+            if (text == null || text == "" || font.Height <= 0f)
+                return 0f;
+            return font.Height;
         }
 
         private static int _GetFontIndex(string fontName)
@@ -296,11 +290,6 @@ namespace Vocaluxe.Base.Fonts
                 }
             }
 
-            using (CBenchmark.Time("Build Glyphs"))
-            {
-                _BuildGlyphs();
-            }
-
             return true;
         }
 
@@ -348,20 +337,5 @@ namespace Vocaluxe.Base.Fonts
             }
         }
 
-        private static void _BuildGlyphs()
-        {
-            const string text = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-
-            foreach (SFontFamily fontFamily in _FontFamilies)
-            {
-                foreach (char chr in text)
-                {
-                    fontFamily.Normal.GetOrAddGlyph(chr, -1);
-                    fontFamily.Bold.GetOrAddGlyph(chr, -1);
-                    fontFamily.Italic.GetOrAddGlyph(chr, -1);
-                    fontFamily.BoldItalic.GetOrAddGlyph(chr, -1);
-                }
-            }
-        }
     }
 }

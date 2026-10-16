@@ -17,13 +17,16 @@
 
 using SkiaSharp;
 using System;
-using System.Collections.Generic;
 using VocaluxeLib;
-using VocaluxeLib.Draw;
 using VocaluxeLib.Log;
 
 namespace Vocaluxe.Base.Fonts
 {
+    /// <summary>
+    ///     One font style of a font family: the font file, the outline settings and the shared typeface.
+    ///     Text lines are rasterized on demand per style/text/height by <see cref="CFontLine" /> (the
+    ///     standard single-texture-per-line path) which caches the textures and disposes them here.
+    /// </summary>
     class CFontStyle : IDisposable
     {
         private readonly string _FilePath;
@@ -31,8 +34,8 @@ namespace Vocaluxe.Base.Fonts
         public readonly float Outline; //0..1, 0=not outline 1=100% outline
         public readonly SColorF OutlineColor;
         private readonly float _MaxGlyphHeight;
-        private readonly Dictionary<char, CGlyph> _Glyphs = new Dictionary<char, CGlyph>();
         private SKTypeface _Typeface;
+        private bool _Disposed;
 
         public CFontStyle(string file, EStyle style, float outline, SColorF outlineColor)
         {
@@ -65,25 +68,24 @@ namespace Vocaluxe.Base.Fonts
         }
 
         /// <summary>
-        ///     True if this style should be rendered bold (synthesized via SKFont.Embolden).
+        ///     Height bucket (px) to rasterize a line drawn at <paramref name="height" /> at: always at
+        ///     least the requested height (so the texture is only ever downsampled onto the quad - a
+        ///     uniform resample keeps every relative glyph position exact) and quantized so that
+        ///     resizing the text by a few pixels reuses the same texture (theme editor).
         /// </summary>
-        public bool IsBold
+        internal int GetRasterBucket(float height)
         {
-            get { return _Style == EStyle.Bold || _Style == EStyle.BoldItalic; }
-        }
-
-        /// <summary>
-        ///     True if this style should be rendered italic (synthesized via a skew transform).
-        /// </summary>
-        public bool IsItalic
-        {
-            get { return _Style == EStyle.Italic || _Style == EStyle.BoldItalic; }
+            if (height < _MaxGlyphHeight + 50f)
+                return (int)_MaxGlyphHeight;
+            return (int)(Math.Ceiling(height / 50f) * 50f);
         }
 
         /// <summary>
         ///     Loads (once) and returns the SkiaSharp typeface for this font file.
-        ///     Bold/italic are synthesized at render time (see <see cref="CGlyph" />), matching the
-        ///     previous GDI+ behaviour of deriving all styles from a single font family.
+        ///     Bold/italic are NOT synthesized (Embolden/SkewX): the loaded face file already IS the
+        ///     requested style (FreeSans / FreeSansBold / FreeSansOblique / FreeSansBoldOblique) and
+        ///     synthesizing would double-apply both, which over-weighted the bold text and over-slanted
+        ///     the italic glyphs until their ink overhung the advance and got clipped by neighbors.
         /// </summary>
         public SKTypeface GetTypeface()
         {
@@ -103,82 +105,16 @@ namespace Vocaluxe.Base.Fonts
             return _Typeface;
         }
 
-        public void DrawGlyph(char chr, float fontHeight, float x, float y, float z, SColorF color, bool allMonitors = true)
-        {
-            CTextureRef texture;
-            SRectF rect;
-            GetOrAddGlyph(chr, fontHeight).GetTextureAndRect(fontHeight, x, y, z, out texture, out rect);
-            CDraw.DrawTexture(texture, rect, color, false, allMonitors);
-        }
-
-        public void DrawGlyph(char chr, float fontHeight, float x, float y, float z, SColorF color, float begin, float end)
-        {
-            CTextureRef texture;
-            SRectF rect;
-            GetOrAddGlyph(chr, fontHeight).GetTextureAndRect(fontHeight, x, y, z, out texture, out rect);
-            CDraw.DrawTexture(texture, rect, color, begin, end);
-        }
-
-        public void DrawGlyphReflection(char chr, float fontHeight, float x, float y, float z, SColorF color, float rspace, float rheight, float mirrorLine = 0f, float fadeOrigin = 0f, float fadeSpan = 0f)
-        {
-            CTextureRef texture;
-            SRectF rect;
-            GetOrAddGlyph(chr, fontHeight).GetTextureAndRect(fontHeight, x, y, z, out texture, out rect);
-
-            // mirrorLine = 0: classic reflection at the glyph's own bottom (net48 behaviour).
-            // mirrorLine > 0: mirror about the shared object mirror line (e.g. the button's),
-            // so the letter keeps the same distance to the mirror line as in the original,
-            // and - when the object passes its fade ramp - fades like the object at that depth.
-            CDraw.DrawTextureReflection(texture, rect, color, rect, rspace, rheight, true, mirrorLine, fadeOrigin, fadeSpan);
-        }
-
-        public float GetWidth(char chr, float height)
-        {
-            return GetOrAddGlyph(chr, height).GetWidth(height);
-        }
-
-        public float GetHeight(char chr, float height)
-        {
-            return GetOrAddGlyph(chr, height).GetHeight(height);
-        }
-
-        public CGlyph GetOrAddGlyph(char chr, float height)
-        {
-            CGlyph glyph;
-            if (!_Glyphs.TryGetValue(chr, out glyph))
-            {
-                float maxHeight = (height < 0 || _MaxGlyphHeight + 50 >= height) ? _MaxGlyphHeight : (float)Math.Round(height / 50) * 50;
-                glyph = new CGlyph(chr, this, maxHeight);
-                _Glyphs.Add(chr, glyph);
-            }
-            if (glyph.MaxHeight + 50 < height)
-            {
-                glyph.UnloadTexture();
-                glyph = new CGlyph(chr, this, (float)Math.Round(height / 50) * 50);
-                _Glyphs[chr] = glyph;
-            }
-            return glyph;
-        }
-
-        private void _UnloadGlyphs()
-        {
-            foreach (CGlyph glyph in _Glyphs.Values)
-                glyph.UnloadTexture();
-            _Glyphs.Clear();
-        }
-
-        private bool _Disposed;
-
         public void Dispose()
         {
             if (!_Disposed)
             {
+                CFontLine.UnloadStyle(this);
                 if (_Typeface != null)
                 {
                     _Typeface.Dispose();
                     _Typeface = null;
                 }
-                _UnloadGlyphs();
                 _Disposed = true;
             }
             GC.SuppressFinalize(this);
