@@ -163,10 +163,35 @@ namespace Vocaluxe.Base.Fonts
             texture = _Texture;
             float factor = _GetFactor(fontHeight);
             x += _DrawBounding.X * factor;
-            y += _DrawBounding.Y * factor;
             float h = _DrawBounding.Height * factor;
             float w = _DrawBounding.Width * factor;
+
+            // Baseline-anchored pixel snap (see SnapToBaselineRow): every glyph of a line shares
+            // one float baseline; snapping around it keeps that on a single shared pixel row
+            // instead of letting the per-corner rounding in COpenGL._DrawTexture quantize it
+            // differently per glyph (the "wavy words").
+            SnapToBaselineRow(y, h, _BaselineY * factor, out y, out h);
+
             rect = new SRectF(x, y, w, h, z);
+        }
+
+        /// <summary>
+        ///     Snaps a glyph quad to the pixel grid with the baseline as the anchor. The per-glyph
+        ///     tight ink boxes sit at different fractional positions on the shared float baseline,
+        ///     so rounding the quad's top and bottom independently (as COpenGL._DrawTexture does)
+        ///     moves the rendered baseline by up to half a pixel per glyph - the wavy-words effect
+        ///     (measured on FreeSans @30px: min -0.31px / max +0.40px across the word "singing").
+        ///     Snapping to the shared baseline row instead keeps the corners on the pixel grid the
+        ///     alignment was created for (COpenGL's rounding then becomes a no-op in y) while every
+        ///     glyph of the line lands on exactly the same baseline pixel row. Pure function:
+        ///     baselineOffset is the baseline's distance below the quad top (always non-negative,
+        ///     at most h).
+        /// </summary>
+        internal static void SnapToBaselineRow(float y, float h, float baselineOffset, out float newY, out float newH)
+        {
+            float row = (float)Math.Round(y + baselineOffset);
+            newY = row - (float)Math.Round(baselineOffset);
+            newH = (float)Math.Round(baselineOffset) + (float)Math.Round(h - baselineOffset);
         }
 
         private static SKColor _ToSkColor(SColorF c)

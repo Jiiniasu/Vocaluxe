@@ -17,7 +17,9 @@
 
 using NUnit.Framework;
 using SkiaSharp;
+using System;
 using System.IO;
+using Vocaluxe.Base.Fonts;
 
 namespace Tests.Vocaluxe
 {
@@ -31,6 +33,54 @@ namespace Tests.Vocaluxe
     [TestFixture]
     public class CImagingTest
     {
+        // Glyph wobble regression: per-glyph tight ink boxes sit at different fractional
+        // positions on the shared float baseline; COpenGL's per-corner rounding then quantized
+        // each glyph's baseline independently (measured on FreeSans @30px: -0.31px..+0.40px
+        // drift across the word "singing") - the wavy lyrics. SnapToBaselineRow must keep the
+        // shared baseline on exactly one pixel row for the whole line, with corners still on
+        // the pixel grid (which is what that rounding was created for).
+        [Test]
+        public void TestSnapToBaselineRow_SharedBaselineLandsOnOnePixelRow()
+        {
+            const float baseline = 24.339f; // the line's shared float baseline
+            const float offI = 17.199f;    // measured 'i': baseline 17.199px below its quad top
+            const float offG = 12.309f;    // measured 'g'
+            const float hI = 18.05f;
+            const float hG = 18.42f;
+
+            CGlyph.SnapToBaselineRow(baseline - offI, hI, offI, out float yI, out float newHI);
+            CGlyph.SnapToBaselineRow(baseline - offG, hG, offG, out float yG, out float newHG);
+
+            float snappedOffI = (float)Math.Round(offI);
+            float snappedOffG = (float)Math.Round(offG);
+
+            // Both baselines land on the one shared row (the correctly-rounded float baseline)
+            Assert.AreEqual((float)Math.Round(baseline), yI + snappedOffI);
+            Assert.AreEqual(yI + snappedOffI, yG + snappedOffG);
+
+            // Corners stay on the pixel grid
+            Assert.AreEqual((float)(int)yI, yI);
+            Assert.AreEqual((float)(int)(yI + newHI), yI + newHI);
+            Assert.AreEqual((float)(int)yG, yG);
+            Assert.AreEqual((float)(int)(yG + newHG), yG + newHG);
+
+            // Heights stay within half a pixel of the float heights (aspect preserved)
+            Assert.Less(Math.Abs(newHI - hI), 1f);
+            Assert.Less(Math.Abs(newHG - hG), 1f);
+        }
+
+        // Idempotent under COpenGL._DrawTexture's own corner rounding: glyph quads arrive
+        // pre-snapped, so that rounding can no longer move anything.
+        [Test]
+        public void TestSnapToBaselineRow_IdempotentUnderCornerRounding()
+        {
+            const float off = 17.199f;
+            CGlyph.SnapToBaselineRow(24.339f - off, 18.05f, off, out float y, out float h);
+
+            Assert.AreEqual(y, (float)Math.Round(y));
+            Assert.AreEqual(y + h, (float)Math.Round(y + h));
+        }
+
         private static byte[] _EncodePng(int width, int height, SKColor fill)
         {
             using (var bmp = new SKBitmap(width, height))
