@@ -54,7 +54,7 @@ jobs:
         # is set in Directory.Build.props when CI=true). This step additionally catches the whitespace,
         # using-order and other formatting findings only the formatter reports, so every checkout is
         # byte-reproducible across machines and platforms.
-        run: dotnet format Vocaluxe.slnx --verify-no-changes --nologo
+        run: dotnet format Vocaluxe.slnx --verify-no-changes
 
       - name: Build PitchTracker (Release x64)
         # Must run before the dotnet build/publish: _StageUnmanagedNatives copies the DLL from
