@@ -25,6 +25,7 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Runtime.InteropServices;
 using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
@@ -83,8 +84,6 @@ namespace Vocaluxe.Lib.Draw
 
     class COpenGL : CDrawBaseGlfw<COGLTexture>, IDraw
     {
-        private int _FBO;
-
         public COpenGL()
         {
             int panels = CConfig.Config.Graphics.NumScreens;
@@ -254,8 +253,6 @@ namespace Vocaluxe.Lib.Draw
             else
                 _ApplyBaseGLState(_Window);
 
-            GL.GenFramebuffers(1, out _FBO);
-
             return true;
         }
 
@@ -281,7 +278,6 @@ namespace Vocaluxe.Lib.Draw
         public override void Close()
         {
             base.Close();
-            GL.DeleteFramebuffers(1, ref _FBO);
         }
 
         protected override void _OnBeforeDraw(int panel)
@@ -607,26 +603,52 @@ namespace Vocaluxe.Lib.Draw
             return texture;
         }
 
-        private void _ClearTexture(COGLTexture texture)
+        /// <summary>
+        ///     Returns the texture's tightly packed BGRA data as a full power-of-two buffer: the
+        ///     data region (<see cref="COGLTexture.DataSize"/>) copied verbatim and the pad (up to
+        ///     <see cref="COGLTexture.Size"/>) filled by edge-replicating the outermost data texel.
+        ///     This is the <c>ClampToEdge</c> equivalent for power-of-two textures. It replaces the
+        ///     former zero-cleared pad so that a sample straddling the data/pad boundary (which
+        ///     happens whenever the window renders at a non-1:1 scale and the boundary falls
+        ///     mid-pixel) reads the edge colour instead of transparent black - removing the 1px dark
+        ///     "hairline" seam at sprite joins such as the rating bar's cap/fill edge.
+        /// </summary>
+        private static byte[] _EdgeReplicatedPotData(COGLTexture texture, byte[] data)
         {
-            if (texture.DataSize.Equals(texture.Size))
-                return;
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, _FBO);
-            GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D,
-                                    texture.Name, 0);
-            GL.ClearColor(0f, 0f, 0f, 0f);
-            GL.Clear(ClearBufferMask.ColorBufferBit);
-            GL.ClearColor(0f, 0f, 0f, 1f);
-            GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0);
+            int dw = texture.DataSize.Width;
+            int dh = texture.DataSize.Height;
+            int pw = texture.Size.Width;
+            int ph = texture.Size.Height;
+            if (dw == pw && dh == ph)
+                return data; // already power-of-two, no pad to fill
+
+            byte[] padded = new byte[pw * ph * 4];
+            for (int y = 0; y < ph; y++)
+            {
+                int sy = (y < dh) ? y : dh - 1; // bottom pad repeats the last data row
+                int srcRow = sy * dw;
+                int dstRow = y * pw;
+                for (int x = 0; x < pw; x++)
+                {
+                    int sx = (x < dw) ? x : dw - 1; // right pad repeats the last data column
+                    int s = (srcRow + sx) * 4;
+                    int d = (dstRow + x) * 4;
+                    padded[d] = data[s];
+                    padded[d + 1] = data[s + 1];
+                    padded[d + 2] = data[s + 2];
+                    padded[d + 3] = data[s + 3];
+                }
+            }
+            return padded;
         }
 
         protected override void _WriteDataToTexture(COGLTexture texture, byte[] data)
         {
             Debug.Assert(texture.Name > 0);
-            _ClearTexture(texture);
+            byte[] upload = _EdgeReplicatedPotData(texture, data);
             GL.BindTexture(TextureTarget.Texture2D, texture.Name);
 
-            GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, texture.DataSize.Width, texture.DataSize.Height, PixelFormat.Bgra, PixelType.UnsignedByte, data);
+            GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, texture.Size.Width, texture.Size.Height, PixelFormat.Bgra, PixelType.UnsignedByte, upload);
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 
             GL.BindTexture(TextureTarget.Texture2D, 0);
@@ -635,10 +657,12 @@ namespace Vocaluxe.Lib.Draw
         protected override void _WriteDataToTexture(COGLTexture texture, IntPtr data)
         {
             Debug.Assert(texture.Name > 0);
-            _ClearTexture(texture);
+            byte[] bytes = new byte[4 * texture.DataSize.Width * texture.DataSize.Height];
+            Marshal.Copy(data, bytes, 0, bytes.Length);
+            byte[] upload = _EdgeReplicatedPotData(texture, bytes);
             GL.BindTexture(TextureTarget.Texture2D, texture.Name);
 
-            GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, texture.DataSize.Width, texture.DataSize.Height, PixelFormat.Bgra, PixelType.UnsignedByte, data);
+            GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, texture.Size.Width, texture.Size.Height, PixelFormat.Bgra, PixelType.UnsignedByte, upload);
             GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
 
             GL.BindTexture(TextureTarget.Texture2D, 0);
