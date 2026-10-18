@@ -122,9 +122,14 @@ namespace Vocaluxe.Lib.Sound.Playback.PortAudio
                 {
                     if (_Paused)
                     {
+                        //Freeze the position clock BEFORE the (blocking) Stop() call: the callback
+                        //already sees _Paused and emits silence, so the audible audio stops now.
+                        //Stopping the clock afterwards let the position over-run for the whole Stop()
+                        //duration (tens to hundreds of ms on slow backends like ASIO) - the song
+                        //"skipped ahead ~a beat" when the user pressed pause.
+                        _SyncTimer.Pause();
                         try { _Stream.Stop(); }
                         catch (Exception ex) { CLog.Error(ex, "StopStream (playback) error:"); }
-                        _SyncTimer.Pause();
                     }
                     else
                     {
