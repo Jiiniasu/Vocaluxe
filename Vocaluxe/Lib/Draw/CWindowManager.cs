@@ -237,9 +237,12 @@ namespace Vocaluxe.Lib.Draw
         }
 
         /// <summary>
-        ///     Places every window: slot i is assigned to monitor i % monitorCount (extra panels cascade on
-        ///     the same monitor). Fullscreen (Windows): borderless and 1px taller per monitor client area
-        ///     (the existing DWM-freeze workaround, CDrawBaseWindows.cs); elsewhere: native fullscreen.
+        ///     Places every window. Fullscreen: each window follows the monitor it currently occupies (the
+        ///     one with the largest overlap with the window - the same rule the single-window path of
+        ///     CDrawBaseGlfw uses); if that probe fails (headless/exotic display server) it falls back to
+        ///     monitor i % monitorCount (extra panels cascade on the same monitor). Fullscreen (Windows):
+        ///     borderless and 1px taller per monitor client area (the existing DWM-freeze workaround,
+        ///     CDrawBaseWindows.cs); elsewhere: native fullscreen.
         ///     Windowed: centered panel size on the assigned monitor (or the work area when headless).
         ///     NOTE: fires Resize/Border events per window; any re-entrant handler must be safe to run
         ///     mid-iteration (slot state is mutated in place, see class documentation).
@@ -260,11 +263,41 @@ namespace Vocaluxe.Lib.Draw
             }
             RebuildPending = false;
 
+            string mapping = "";
             for (int i = 0; i < _Slots.Count; i++)
             {
                 Slot s = _Slots[i];
-                int monitorIndex = MonitorForSlot(i, monitors.Count);
-                MonitorInfo monitor = (monitorIndex >= 0) ? monitors[monitorIndex] : null;
+                int fallbackIndex = MonitorForSlot(i, monitors.Count);
+                MonitorInfo fallback = (fallbackIndex >= 0) ? monitors[fallbackIndex] : null;
+
+                MonitorInfo monitor;
+                if (fullscreen)
+                {
+                    // Fullscreen follows the window's current position: OpenTK resolves the monitor with
+                    // the largest overlap with the window rectangle (or the GLFW monitor when the window is
+                    // already in native fullscreen). At startup the windows sit exactly where the round-robin
+                    // windowed layout centered them, so startup still assigns them in monitor order; once the
+                    // user has dragged a panel onto another monitor, toggling fullscreen follows the window.
+                    try
+                    {
+                        monitor = Monitors.GetMonitorFromWindow(s.Window);
+                    }
+                    catch (Exception e)
+                    {
+                        // This probe can fail where GetMonitors() above does not (or both); fall back to the
+                        // round-robin assignment, or to plain centering when no monitors are available.
+                        CLog.Warning("Multi-window: could not resolve the monitor of panel " + s.PanelIndex +
+                                     ", falling back to round-robin assignment: " + e);
+                        monitor = fallback;
+                    }
+                }
+                else
+                {
+                    monitor = fallback;
+                }
+
+                mapping = (mapping.Length > 0 ? mapping + ", " : "") + "panel " + s.PanelIndex + " -> " +
+                          (monitor != null ? "'" + monitor.Name + "'" : "(no monitor, centered)");
 
                 if (monitor != null && fullscreen)
                 {
@@ -303,7 +336,7 @@ namespace Vocaluxe.Lib.Draw
             }
 
             CLog.Information("Multi-window layout: " + _Slots.Count + " window(s), " + monitors.Count + " monitor(s)" +
-                             (fullscreen ? ", fullscreen" : ", windowed") + ".");
+                             (fullscreen ? ", fullscreen" : ", windowed") + ": " + mapping + ".");
         }
 
         /// <summary>Enters (per-slot) fullscreen, saving the windowed state for restore.</summary>
