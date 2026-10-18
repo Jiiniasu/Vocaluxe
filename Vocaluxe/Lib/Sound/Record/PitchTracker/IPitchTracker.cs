@@ -88,5 +88,15 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
         /// </param>
         /// <returns>Current note index (0 = C2, 12 = C3, ...)</returns>
         public abstract int GetNote(out float maxVolume, float[] weights);
+
+        /// <summary>
+        ///     Returns the sub-note exact tone of the last GetNote call (fractional = cent precision)
+        ///     Only valid right after a successful call to GetNote()
+        /// </summary>
+        /// <returns>Current exact tone index (0 = C2, 12 = C3, ...), -1 if no tone was detected</returns>
+        public virtual float GetExactNote()
+        {
+            return -1f;
+        }
     }
 }

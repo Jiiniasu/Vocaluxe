@@ -28,6 +28,7 @@ DllExport void PtAKF_SetVolumeThreshold(PtAKF* analyzer, float threshold);
 DllExport float PtAKF_GetVolumeThreshold(PtAKF* analyzer);
 DllExport void PtAKF_InputByte(PtAKF* analyzer, char* data, int sampleCt);
 DllExport int PtAKF_GetNote(PtAKF* analyzer, float* maxVolume, float* weights);
+DllExport float PtAKF_GetLastNoteExact(PtAKF* analyzer);
 
 DllExport PtDyWa* PtDyWa_Create(unsigned step);
 DllExport void PtDyWa_Free(PtDyWa* analyzer);

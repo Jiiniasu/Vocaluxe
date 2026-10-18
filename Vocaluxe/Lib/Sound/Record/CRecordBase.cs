@@ -118,6 +118,11 @@ namespace Vocaluxe.Lib.Sound.Record
             return _Buffer[player].ToneAbs;
         }
 
+        public float GetToneExact(int player)
+        {
+            return _Initialized ? _Buffer[player].ToneExact : -1f;
+        }
+
         public int GetTone(int player)
         {
             return _Initialized ? _Buffer[player].Tone : 0;

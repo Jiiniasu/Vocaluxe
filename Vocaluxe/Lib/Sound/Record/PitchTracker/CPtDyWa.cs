@@ -46,6 +46,7 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
         #endregion
 
         private IntPtr _Instance;
+        private float _LastExactNote = -1f;
 
         public CPtDyWa(uint step = 200)
         {
@@ -59,9 +60,16 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
 
         public override int GetNote(out float maxVolume, float[] weights)
         {
-            int note = (int)Math.Round(PtDyWa_FindNote(_Instance, out maxVolume));
+            float exact = (float)PtDyWa_FindNote(_Instance, out maxVolume);
+            _LastExactNote = exact;
+            int note = (int)Math.Round(exact);
             _SetWeights(note, weights);
             return note;
+        }
+
+        public override float GetExactNote()
+        {
+            return _LastExactNote;
         }
 
         public override int GetNumHalfTones()

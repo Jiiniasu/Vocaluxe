@@ -72,6 +72,11 @@ namespace Vocaluxe.Base
             return _Record.GetToneAbs(player);
         }
 
+        public static float GetToneExact(int player)
+        {
+            return _Record.GetToneExact(player);
+        }
+
         public static int GetTone(int player)
         {
             return _Record.GetTone(player);

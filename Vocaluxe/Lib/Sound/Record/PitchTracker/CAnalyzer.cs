@@ -57,6 +57,7 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
 
         private IntPtr _Instance;
         private float _VolumeTreshold;
+        private float _LastExactNote = -1f;
 
         public CAnalyzer(uint step = 200)
         {
@@ -74,10 +75,20 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
             Analyzer_Process(_Instance);
             maxVolume = Analyzer_GetPeak(_Instance);
             if (maxVolume < _VolumeTreshold)
+            {
+                _LastExactNote = -1f;
                 return -1;
-            int note = (int)Math.Round(Analyzer_FindNote(_Instance, 60, 1800));
+            }
+            float exact = (float)Analyzer_FindNote(_Instance, 60, 1800);
+            _LastExactNote = exact;
+            int note = (int)Math.Round(exact);
             _SetWeights(note, weights);
             return note;
+        }
+
+        public override float GetExactNote()
+        {
+            return _LastExactNote;
         }
 
         public bool Output(float[] data, float rate)

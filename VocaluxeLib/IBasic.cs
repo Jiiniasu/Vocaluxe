@@ -215,6 +215,7 @@ namespace VocaluxeLib
     public interface IRecording
     {
         int GetToneAbs(int player);
+        float GetToneExact(int player);
         bool ToneValid(int player);
     }
 

@@ -47,6 +47,9 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
 
         [DllImport("PitchTracker.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int PtAKF_GetNote(IntPtr analyzer, [Out] out float maxVolume, [Out] float[] weights);
+
+        [DllImport("PitchTracker.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern float PtAKF_GetLastNoteExact(IntPtr analyzer);
         #endregion
 
         private IntPtr _Instance;
@@ -75,6 +78,11 @@ namespace Vocaluxe.Lib.Sound.Record.PitchTracker
         public override int GetNote(out float maxVolume, float[] weights)
         {
             return PtAKF_GetNote(_Instance, out maxVolume, weights);
+        }
+
+        public override float GetExactNote()
+        {
+            return PtAKF_GetLastNoteExact(_Instance);
         }
 
         protected override void _Dispose(bool disposing)

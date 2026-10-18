@@ -102,6 +102,13 @@ namespace Vocaluxe.Lib.Sound.Record
         int GetToneAbs(int player);
 
         /// <summary>
+        ///     Get the sub-note exact tone for a player. The fractional part gives cent precision.
+        /// </summary>
+        /// <param name="player">0-based player index</param>
+        /// <returns>Exact tone between 0 and NumHalftones-1, -1 if no tone was detected</returns>
+        float GetToneExact(int player);
+
+        /// <summary>
         ///     Get the current tone value for a player
         /// </summary>
         /// <param name="player">0-based player index</param>

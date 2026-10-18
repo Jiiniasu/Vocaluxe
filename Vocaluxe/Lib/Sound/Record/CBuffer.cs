@@ -55,6 +55,11 @@ namespace Vocaluxe.Lib.Sound.Record
 
         public int ToneAbs { get; private set; }
 
+        /// <summary>
+        ///     Sub-note exact tone (fractional part gives cent precision), -1 if no tone was detected
+        /// </summary>
+        public float ToneExact { get; private set; }
+
         public int Tone { get; set; }
 
         public float MaxVolume
@@ -79,6 +84,7 @@ namespace Vocaluxe.Lib.Sound.Record
         {
             ToneValid = false;
             ToneAbs = 0;
+            ToneExact = -1f;
             Tone = 0;
             for (int i = 0; i < ToneWeigths.Length; i++)
                 ToneWeigths[i] = 0f;
@@ -102,10 +108,14 @@ namespace Vocaluxe.Lib.Sound.Record
             {
                 ToneAbs = tone;
                 Tone = ToneAbs % 12;
+                ToneExact = _PitchTracker.GetExactNote();
                 ToneValid = true;
             }
             else
+            {
+                ToneExact = -1f;
                 ToneValid = false;
+            }
         }
 
         public void Dispose()

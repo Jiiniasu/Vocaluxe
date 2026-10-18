@@ -719,6 +719,11 @@ namespace Vocaluxe.Base
             return CRecord.GetToneAbs(player);
         }
 
+        public float GetToneExact(int player)
+        {
+            return CRecord.GetToneExact(player);
+        }
+
         public bool ToneValid(int player)
         {
             return CRecord.ToneValid(player);

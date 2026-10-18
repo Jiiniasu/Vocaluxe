@@ -100,6 +100,12 @@ int PtAKF_GetNote(PtAKF* analyzer, float* maxVolume, float* weights){
 	return analyzer->GetNote(maxVolume, weights);
 }
 
+float PtAKF_GetLastNoteExact(PtAKF* analyzer){
+	if(!analyzer)
+		return -1.f;
+	return analyzer->GetLastNoteExact();
+}
+
 PtDyWa* PtDyWa_Create(unsigned step){
 	return new PtDyWa(step);
 }

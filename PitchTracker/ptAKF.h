@@ -32,6 +32,8 @@ public:
 	}
 
 	int GetNote(float* restrict maxVolume, float* restrict weights);
+	/// Returns the sub-note exact tone of the last GetNote call (0 = C2), -1 if no tone was detected
+	float GetLastNoteExact(){ return _LastExactTone; }
 	void SetVolumeThreshold(float threshold);
 	float GetVolumeThreshold(){return _VolTreshold;}
 	static int GetNumHalfTones(){ return _MaxHalfTone + 1;}
@@ -57,12 +59,18 @@ private:
 	float _LastMaxVol;
 	int _LastTones[_SmoothCt];
 	int _LastToneIndex;
+	// Exact (sub-note) results, aligned with the int result of the same call
+	float _ExactTone;
+	float _LastExactTone;
+	float _LastExactTones[_SmoothCt];
 #ifdef USE_FFT
 	float _AKFValues[_SampleCt*2];
 #endif
 
 	int _GetNote(float samples[_SampleCt], float* restrict maxVolume, float weights[_MaxHalfTone+1]);
 	int _GetSmoothTone();
+	float _GetSmoothExactTone();
+	float _RefineExactTone(float samples[_SampleCt], float samplesWindowed[_SampleCt], float periodBest);
 
 	float _AnalyzeBySampleCt(float samples[_SampleCt], float samplesWindowed[_SampleCt], float samplesPerPeriodD);
 	inline float _AnalyzeByTone(float samples[_SampleCt], float samplesWindowed[_SampleCt], int toneIndex);

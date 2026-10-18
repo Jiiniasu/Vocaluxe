@@ -60,8 +60,13 @@ PtAKF::PtAKF(unsigned step){
 	_Step = step;
 	_VolTreshold = 0.01f;
 	_LastMaxVol = 0.f;
+	_ExactTone = -1.f;
+	_LastExactTone = -1.f;
 	for(int i = 0; i < _SmoothCt; i++)
+	{
 		_LastTones[i] = -1;
+		_LastExactTones[i] = -1.f;
+	}
 	_LastToneIndex = 0;
 }
 
@@ -89,8 +94,10 @@ int PtAKF::GetNote(float* restrict maxVolume, float* restrict weights){
 			if(++_LastToneIndex >= _SmoothCt)
 				_LastToneIndex = 0;
 			_LastTones[_LastToneIndex] = note;
+			_LastExactTones[_LastToneIndex] = _ExactTone;
 		}while(_AnalysisBuf.read(AnaylsisBuf, AnaylsisBuf + _SampleCt));
 		note = _GetSmoothTone();
+		_LastExactTone = _GetSmoothExactTone();
 		_LastMaxVol = *maxVolume;
 	}else{
 		*maxVolume = _LastMaxVol * 0.85f;
@@ -119,6 +126,68 @@ int PtAKF::_GetSmoothTone(){
 	if(ct % 2 == 0)
 		return (tones[ct/2] + tones[ct/2-1]) / 2; //For even cts get the mean of the 2 middle tones
 	return tones[ct/2]; //For odd cts get the median (middle tone)
+}
+
+float PtAKF::_GetSmoothExactTone(){
+	float tones[_SmoothCt];
+	int ct = 0;
+	for(int i=0; i < _SmoothCt; i++){
+		int j;
+		float tone = _LastExactTones[i];
+		if(tone < 0)
+			continue;
+		for(j = ct; j > 0; j--){
+			if(tones[j-1] > tone)
+				tones[j] = tones[j-1];
+			else break;
+		}
+		tones[j] = tone;
+		ct++;
+	}
+	if(ct == 0)
+		return -1.f; //Nothing detected
+	if(ct % 2 == 0)
+		return (tones[ct/2] + tones[ct/2-1]) / 2; //For even cts get the mean of the 2 middle tones
+	return tones[ct/2]; //For odd cts get the median (middle tone)
+}
+
+float PtAKF::_RefineExactTone(float samples[_SampleCt], float samplesWindowed[_SampleCt], float periodBest){
+	// Find the exact maximum of the combined AKF/AMDF score - the very criterion
+	// with which the coarse winner was selected - around periodBest with a
+	// golden section search. This needs no assumption about the lobe shape (which
+	// can be cusp-shaped and asymmetric around the best integer sample) and converges
+	// to sub-sample precision. The coarse winner sits on a 1/3 tone grid, so the
+	// true lobe is at most half a grid step (1/6 tone) away; a +/-1/2 tone window
+	// covers that with margin while the next lobe of the score (a full tone or a
+	// harmonic, i.e. at least 1 tone = 5.9% of the period away) stays outside it.
+	const float gr = (sqrtf(5.f) - 1.f) * 0.5f; //Golden section ratio (0.618...)
+	float lo = periodBest * powf(2.f, -0.5f / 12.f); //highest pitch edge of the window
+	float hi = periodBest * powf(2.f, 0.5f / 12.f); //lowest pitch edge of the window
+	float c = hi - (hi - lo) * gr;
+	float d = lo + (hi - lo) * gr;
+	float fc = _AnalyzeBySampleCt(samples, samplesWindowed, c);
+	float fd = _AnalyzeBySampleCt(samples, samplesWindowed, d);
+	for(int i = 0; i < 30; i++){
+		if(fc > fd){
+			//Maximum lies in [lo, d]
+			hi = d;
+			d = c;
+			fd = fc;
+			c = hi - (hi - lo) * gr;
+			fc = _AnalyzeBySampleCt(samples, samplesWindowed, c);
+		}else{
+			//Maximum lies in [c, hi]
+			lo = c;
+			c = d;
+			fc = fd;
+			d = lo + (hi - lo) * gr;
+			fd = _AnalyzeBySampleCt(samples, samplesWindowed, d);
+		}
+	}
+	float period = (lo + hi) * 0.5f;
+	// Convert period to a continuous tone: f = 48000 / period (48000 = base sample rate),
+	// tone = 12 * log2(f / 65.4064) with 65.4064 = C2
+	return 12.f * log2f(48000.f / period / 65.4064f);
 }
 
 void PtAKF::InitPeaks(SPeak peaks[_MaxPeaks]){
@@ -159,8 +228,10 @@ int PtAKF::_GetNote(float samples[_SampleCt], float* restrict maxVolume, float w
 	//maxVolumeL /= 32767.f;
 	*maxVolume = maxVolumeL;
 
-	if(maxVolumeL < _VolTreshold)
+	if(maxVolumeL < _VolTreshold){
+		_ExactTone = -1.f;
 		return -1;
+	}
 
 	float samplesWindowed[_SampleCt * 2];
 
@@ -211,8 +282,10 @@ int PtAKF::_GetNote(float samples[_SampleCt], float* restrict maxVolume, float w
 			}
 			lastWeight = curWeight;
 		}
-		if(lastValidTone < 0)
+		if(lastValidTone < 0){
+			_ExactTone = -1.f;
 			return -1;
+		}
 		//Set all invalid weights to 0
 		for(int toneIndex = lastValidTone + 1;toneIndex <= _MaxHalfTone; toneIndex++){
 			weights[toneIndex] = 0.f;
@@ -246,8 +319,10 @@ int PtAKF::_GetNote(float samples[_SampleCt], float* restrict maxVolume, float w
 	// and a 'wrong' peak that is exactly at another tone which might become higher than the one at the 'right' tone
 
 	maxWeight = peaks[_MaxPeaks-1].weight;
-	if(maxWeight < 0.00001f) // Just a small number to check for zero values
+	if(maxWeight < 0.00001f){ // Just a small number to check for zero values
+		_ExactTone = -1.f;
 		return -1;
+	}
 	int maxTone = peaks[_MaxPeaks-1].toneIndex;
 	int maxToneFine = -1;
 	for(int i = _MaxPeaks - numPeaks; i < _MaxPeaks; i++){
@@ -297,8 +372,14 @@ int PtAKF::_GetNote(float samples[_SampleCt], float* restrict maxVolume, float w
 
 	//if(maxWeight - minWeight > 0.025){
 	if(maxAKF >= 0.33f * energy){
+		float bestPeriod = (maxToneFine < 0) ? static_cast<float>(_SamplesPerPeriodPerTone[maxTone])
+			: _SamplesPerPeriodPerToneFine[maxTone * 2 + maxToneFine];
+		_ExactTone = _RefineExactTone(samples, samplesWindowed, bestPeriod);
 		return maxTone;
-	}else return -1;
+	}else{
+		_ExactTone = -1.f;
+		return -1;
+	}
 }
 
 float PtAKF::_AnalyzeByTone(float samples[_SampleCt], float samplesWindowed[_SampleCt], int toneIndex){
