@@ -30,6 +30,10 @@ namespace VocaluxeLib.Menu.SingNotes
         private readonly SThemeSingBar _Theme;
         private readonly int _PartyModeID;
         private readonly int _Player;
+        /// <summary>
+        ///     Fixed pixel height of a tone row, independent of the pitch window
+        /// </summary>
+        private readonly float _ToneHeightFixed;
         public readonly SRectF Rect;
         private readonly SColorF _PlayerColor;
         private readonly SColorF _NoteLinesColor;
@@ -111,8 +115,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private readonly Stopwatch _Timer = new Stopwatch();
         private readonly Stopwatch _ToneHelperTimer = new Stopwatch();
-        private readonly Stopwatch _TrailSpawnTimer = new Stopwatch();
-        private readonly List<SRectF> _VoiceTrail = new List<SRectF>();
+        private readonly CVoiceTrail _VoiceTrail;
         private readonly List<CParticleEffect> _GoldenStars = new List<CParticleEffect>();
         private readonly List<CParticleEffect> _Flares = new List<CParticleEffect>();
         private readonly List<CParticleEffect> _PerfectNoteEffect = new List<CParticleEffect>();
@@ -184,8 +187,8 @@ namespace VocaluxeLib.Menu.SingNotes
 
             // Fixed scroll speed (pixels per beat), independent of the voice range of the song.
             // The reference is the tone height of the default 11 note-lines bar.
-            float refToneHeight = Rect.H / CBase.Settings.GetNumNoteLines();
-            _NoteWidth = refToneHeight * 2f * CBase.Config.GetNoteSpeed();
+            _ToneHeightFixed = Rect.H / CBase.Settings.GetNumNoteLines();
+            _NoteWidth = _ToneHeightFixed * 2f * CBase.Config.GetNoteSpeed();
 
             // Home window: the whole voice if the song fits within two octaves,
             // otherwise the preferred two-octave window (never under one octave)
@@ -203,6 +206,9 @@ namespace VocaluxeLib.Menu.SingNotes
                 _CurrentToneText.Z = Rect.Z;
                 _CurrentToneText.AllMonitors = false;
             }
+
+            // Dots of the voice trail roughly overlap so the trail looks continuous
+            _VoiceTrail = new CVoiceTrail(Math.Max(8f, _ToneHeightFixed * 0.5f));
         }
 
         public void SetLine(int line)
@@ -215,12 +221,26 @@ namespace VocaluxeLib.Menu.SingNotes
 
         public void Draw()
         {
-            _ApplyView(CBase.Game.GetCurrentBeatF());
+            float currentBeatF = CBase.Game.GetCurrentBeatF();
+            float beatDiff = currentBeatF - _LastBeatF;
+            _LastBeatF = currentBeatF;
+
+            _ApplyView(currentBeatF);
 
             _DrawJudgeLine(new SColorF(_NoteLinesColor, _NoteLinesColor.A));
 
+            bool toneHelper = CBase.Config.GetDrawToneHelper() == EOffOn.TR_CONFIG_ON;
+            float trailSpawnX = Rect.X + _JudgementLine;
+
             if (_CurrentLine == -1 || _CurrentLine >= _Lines.Length)
+            {
+                // No note line on the screen: the voice trail still scrolls and fades
+                if (toneHelper)
+                    _DrawVoiceTrail(currentBeatF, trailSpawnX);
+                else
+                    _VoiceTrail.Cull(Rect.X, trailSpawnX, _NoteWidth, currentBeatF);
                 return;
+            }
 
             CSongLine line = _Lines[_CurrentLine];
 
@@ -272,18 +292,13 @@ namespace VocaluxeLib.Menu.SingNotes
                 }
             }
 
-            if (CBase.Config.GetDrawToneHelper() == EOffOn.TR_CONFIG_ON)
+            if (toneHelper)
             {
-                for (int i = 0; i < _VoiceTrail.Count; i++)
-                {
-                    SRectF voice = _VoiceTrail[i];
-                    float currentBeatF = CBase.Game.GetCurrentBeatF();
-                    voice.X -= (currentBeatF - _LastBeatF) * _NoteWidth;
-                    _VoiceTrail[i] = voice;
-                    CBase.Drawing.DrawTexture(CBase.Themes.GetSkinTexture(_Theme.SkinGoldenStar, _PartyModeID), _VoiceTrail[i], new SColorF(Color.White, 0.6f + (CBase.Game.GetRandom(800) / 1000)), Rect, false, false);
-                }
+                _DrawVoiceTrail(currentBeatF, trailSpawnX);
                 _DrawToneHelper(line);
             }
+            else
+                _VoiceTrail.Cull(Rect.X, trailSpawnX, _NoteWidth, currentBeatF);
 
             if (sungLines.Count > 0 && sungLines[sungLines.Count - 1].PerfectLine)
             {
@@ -295,7 +310,6 @@ namespace VocaluxeLib.Menu.SingNotes
             _PerfectNoteEffect.RemoveAll(el => !el.IsAlive);
             _PerfectLineTwinkle.RemoveAll(el => !el.IsAlive);
             _GoldenStars.RemoveAll(el => !el.IsAlive);
-            _VoiceTrail.RemoveAll(el => el.Right < Rect.X);
 
             foreach (CParticleEffect perfline in _PerfectLineTwinkle)
                 perfline.Draw();
@@ -311,11 +325,9 @@ namespace VocaluxeLib.Menu.SingNotes
 
             foreach (CParticleEffect perfnote in _PerfectNoteEffect)
             {
-                perfnote.X -= (CBase.Game.GetCurrentBeatF() - _LastBeatF) * _NoteWidth;
+                perfnote.X -= beatDiff * _NoteWidth;
                 perfnote.Draw();
             }
-
-            _LastBeatF = CBase.Game.GetCurrentBeatF();
         }
 
         /// <summary>
@@ -649,9 +661,12 @@ namespace VocaluxeLib.Menu.SingNotes
         private void _DrawToneHelper(CSongLine line)
         {
             float fadetime = 200;
-            int absTonePlayer = CBase.Record.GetToneAbs(_Player) + 24;
-            int tonePlayer = absTonePlayer % 12;
-            int octavePlayer = absTonePlayer / 12;
+            // Sub-cent exact tone where available, the last whole tone as fallback
+            //(e.g. while fading out, the exact tone is no longer valid)
+            float exactTone = CBase.Record.GetToneExact(_Player);
+            float absTonePlayer = (exactTone >= 0f) ? exactTone + 24f : CBase.Record.GetToneAbs(_Player) + 24f;
+            int tonePlayer = (int)(absTonePlayer % 12);
+            int octavePlayer = (int)(absTonePlayer / 12);
 
             if (!CBase.Record.ToneValid(_Player))
             {
@@ -678,7 +693,7 @@ namespace VocaluxeLib.Menu.SingNotes
             }
 
             //The tone helper has a fixed size and must not scale with the window
-            float toneHeight = Rect.H / CBase.Settings.GetNumNoteLines();
+            float toneHeight = _ToneHeightFixed;
 
             float toneHelperHeight = toneHeight * 2;
 
@@ -730,23 +745,67 @@ namespace VocaluxeLib.Menu.SingNotes
 
                 _CurrentToneText.Draw();
             }
+        }
 
-            if (!_TrailSpawnTimer.IsRunning)
-                _TrailSpawnTimer.Start();
-
-            if (CBase.Record.ToneValid(_Player) && _TrailSpawnTimer.ElapsedMilliseconds > 10)
+        /// <summary>
+        ///     Spawns the next dot of the voice trail while tone input is still present
+        ///     and draws the trail
+        /// </summary>
+        private void _DrawVoiceTrail(float beat, float trailSpawnX)
+        {
+            if (CBase.Record.ToneValid(_Player))
             {
-                var size = toneHeight - 4 + (CBase.Game.GetRandom(800) / 100);
-                var heightvariance = toneHeight / 6;
-                var voiceTrailRect = new SRectF(
-                    Rect.X + _JudgementLine - toneHeight / 2,
-                    (Rect.Y + (_SemiToneHeight * (_ViewTop - absTonePlayer + 1)) - (size / 2)) + (-heightvariance + (CBase.Game.GetRandom((int)heightvariance * 200) / 100)),
-                    size,
-                    size,
-                    Rect.Z);
-                _VoiceTrail.Add(voiceTrailRect);
-                _TrailSpawnTimer.Reset();
+                float tone = CBase.Record.GetToneExact(_Player);
+
+                if (tone >= 0f)
+                {
+                    // The octave context of the current target note (if any), like the tone helper
+                    float? targetTone = null;
+                    if (_CurrentLine != -1 && _CurrentLine < _Lines.Length)
+                    {
+                        CSongLine line = _Lines[_CurrentLine];
+                        int note = line.FindPreviousNote(CBase.Game.GetCurrentBeat());
+                        if (note < 0)
+                            note = 0;
+                        targetTone = line.Notes[note].Tone;
+                    }
+
+                    float size = _ToneHeightFixed - 4 + CBase.Game.GetRandom(800) / 100f;
+                    float heightvariance = _ToneHeightFixed / 6;
+                    float jitter = -heightvariance + CBase.Game.GetRandom((int)heightvariance * 200) / 100f;
+                    float phase = (float)(CBase.Game.GetRandomDouble() * 2f * Math.PI);
+
+                    _VoiceTrail.TrySpawn(beat, _NoteWidth, _MapTrailTone(tone, targetTone), size, jitter, phase);
+                }
             }
+
+            _VoiceTrail.Draw(CBase.Themes.GetSkinTexture(_Theme.SkinGoldenStar, _PartyModeID), Rect, trailSpawnX, _NoteWidth, beat, _ViewTop, _SemiToneHeight);
+        }
+
+        /// <summary>
+        ///     Maps the exact sung tone into the visible pitch window so the trail always
+        ///     stays inside the play area: first into the octave context of the current target
+        ///     note (same as the tone helper), then shifted an octave if still outside the window
+        /// </summary>
+        private float _MapTrailTone(float tone, float? targetTone)
+        {
+            if (targetTone.HasValue)
+            {
+                float target = targetTone.Value;
+                while (tone - target > 6)
+                    tone -= 12;
+                while (tone - target < -6)
+                    tone += 12;
+            }
+
+            // The window is always at least one octave wide, so this converges in at most one shift
+            while (tone < _ViewBottom)
+                tone += 12;
+
+            while (tone >= _ViewTop)
+                tone -= 12;
+
+            return tone;
         }
 
         private void _DrawNote(SRectF rect, SColorF color, CTextureRef noteBegin, CTextureRef noteMiddle, CTextureRef noteEnd, float factor)
