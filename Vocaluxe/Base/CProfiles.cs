@@ -331,6 +331,11 @@ namespace Vocaluxe.Base
                 return Guid.Empty;
 
             profile.ID = Guid.NewGuid();
+            // Same default-avatar behavior as the queued AddProfile path - without an avatar the
+            // profile would serialize an empty <Avatar /> element (and the avatar selection would
+            // have nothing to show).
+            if (profile.Avatar == null && _Avatars.Count > 0)
+                profile.Avatar = _Avatars.Values.First();
             _Profiles.Add(profile.ID, profile);
             _ProfilesChanged = true;
             return profile.ID;

@@ -62,6 +62,11 @@ Output
 /TestResults
 /PitchTracker/bin
 /PitchTracker/obj
+/PitchTracker/**/*.o
+/PitchTracker/*.o
+/PitchTracker/libPitchTracker.dll.so
+/Vocaluxe/Lib/Video/Acinerella/*.o
+/Vocaluxe/Lib/Video/Acinerella/libacinerella.so
 /Tests/bin
 /Logs
 # Legacy tooling trees that exist on disk (net48 package-restore cache, the old PhoneGap shell);

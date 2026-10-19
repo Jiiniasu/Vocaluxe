@@ -113,7 +113,8 @@
           - PitchTracker: the sibling C++ vcxproj. Build it first (Visual Studio 2022+ with the C++
             workload):  msbuild PitchTracker\PitchTracker.vcxproj /p:Configuration=Release /p:Platform=x64
         A missing native is a hard error on Windows - never ship a game that would die on first
-        decode/record/DB use. On non-Windows the natives come from the makefiles, so this is skipped. -->
+        decode/record/DB use. On Linux the check is _CheckLinuxNatives' job; on macOS the RID
+        packages carry the natives. -->
    <Target Name="_StageUnmanagedNatives" BeforeTargets="Build;Publish">
     <PropertyGroup>
       <_UnmanagedDst>$(MSBuildThisFileDirectory)..\Output\libs\unmanaged</_UnmanagedDst>
@@ -135,6 +136,21 @@
     <Copy Condition="'$(OS)' == 'Windows_NT'"
           SourceFiles="@(_UnmanagedNative)"
           DestinationFolder="$(_UnmanagedDst)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- Linux parity for the Windows "never ship without natives" contract. The NuGet package natives
+        (portaudio, SkiaSharp, SQLite, GLFW) need no staging: the SDK copies the runtimes/&lt;rid&gt;/native
+        assets into the build output even for a plain no-RID `dotnet build`, and the runtime probes
+        Output/runtimes/linux-x64/native for every DllImport. PitchTracker and acinerella are the
+        exception - they are built from local sources by the makefiles (see the root makefile) and
+        are not checked in, so on a fresh checkout the game would build fine and die at startup with
+        a DllNotFoundException. Gate the build instead, and point at the fix. -->
+  <Target Name="_CheckLinuxNatives" BeforeTargets="Build;Publish"
+          Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\Output\libPitchTracker.dll.so')"
+           Text="Missing Output\libPitchTracker.dll.so - run 'make -C PitchTracker' first (see the root makefile)." />
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\Output\libacinerella.so')"
+           Text="Missing Output\libacinerella.so - run 'make -C Vocaluxe/Lib/Video/Acinerella' first (see the root makefile)." />
   </Target>
 
   <!-- After the PortAudioSharp2 runtime package has laid its stock portaudio.dll down, replace

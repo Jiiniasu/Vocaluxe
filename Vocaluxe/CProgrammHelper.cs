@@ -105,12 +105,16 @@ namespace Vocaluxe
 
         private static void _EnsureDataFolderExists()
         {
-            if (!Directory.Exists(CSettings.DataFolder))
+            // Program.cs creates the data folder early (before the log is initialized), so
+            // "!Directory.Exists(DataFolder)" can never detect a first start. Seed the default
+            // profiles when the profiles folder itself is still missing instead - they show up
+            // but can still be edited or removed (an emptied folder is left alone on purpose).
+            string profilePath = Path.Combine(CSettings.DataFolder, CSettings.FolderNameProfiles);
+            if (!Directory.Exists(profilePath))
             {
                 Directory.CreateDirectory(CSettings.DataFolder);
                 // copy default profiles to DataFolder instead of adding ProgramFolder to CConfig.ProfileFolders
                 // because we want to be able to edit them, but might not have permission to write to ProgramFolder
-                string profilePath = Path.Combine(CSettings.DataFolder, CSettings.FolderNameProfiles);
                 Directory.CreateDirectory(profilePath);
                 DirectoryInfo defaultProfileDir = new DirectoryInfo(Path.Combine(CSettings.ProgramFolder, CSettings.FolderNameProfiles));
                 FileInfo[] files = defaultProfileDir.GetFiles();

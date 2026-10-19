@@ -66,7 +66,9 @@ namespace VocaluxeLib.Profile
         public string AvatarFileName
         // ReSharper restore UnusedMember.Global
         {
-            get { return Path.GetFileName(Avatar.FileName); }
+            // A profile may legitimately have no avatar (e.g. no avatar images are present);
+            // serializing it must not throw - a null name writes an empty <Avatar /> element.
+            get { return Avatar == null ? null : Path.GetFileName(Avatar.FileName); }
             set
             {
                 Avatar = CBase.Profiles.GetAvatarByFilename(value);

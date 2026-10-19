@@ -16,13 +16,13 @@
 #endregion
 
 #if LINUX && !MACOS
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
-using SkiaSharp;
 using Vocaluxe.Base;
 using VocaluxeLib.Draw;
 using VocaluxeLib.Log;
@@ -124,7 +124,7 @@ namespace Vocaluxe.Lib.Webcam
             }
 
             _Running = true;
-            _Thread = new Thread(_CaptureLoop) {IsBackground = true, Name = "WebcamCapture"};
+            _Thread = new Thread(_CaptureLoop) { IsBackground = true, Name = "WebcamCapture" };
             _Thread.Start();
         }
 

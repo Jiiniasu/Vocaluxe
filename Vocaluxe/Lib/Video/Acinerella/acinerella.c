@@ -83,7 +83,7 @@ struct _ac_video_decoder {
     ac_decoder decoder;
     int sought;
     double last_timecode;
-    AVCodec *pCodec;
+    const AVCodec *pCodec;
     AVCodecContext *pCodecCtx;
     AVFrame *pFrame;
     AVFrame *pFrameRGB;
@@ -97,7 +97,7 @@ struct _ac_audio_decoder {
     ac_decoder decoder;
     int sought;
     double last_timecode;
-    AVCodec *pCodec;
+    const AVCodec *pCodec;
     AVCodecContext *pCodecCtx;
     AVFrame *pFrame;
     SwrContext *pSwrCtx;
@@ -280,7 +280,7 @@ lp_ac_proberesult CALL_CONVT ac_probe_input_buffer(uint8_t *buf, int bufsize,
                                                    int *score_max)
 {
     AVProbeData pd;
-    AVInputFormat *fmt = NULL;
+    const AVInputFormat *fmt = NULL;
 
 #ifdef AC_NEED_REGISTER_ALL
     // Initialize FFMpeg libraries
@@ -384,10 +384,9 @@ static void cpymetadata(const AVFormatContext *ctx, const char *key, char *tar,
 {
     const AVDictionaryEntry *entry = av_dict_get(ctx->metadata, key, NULL, 0);
     if (entry) {
-        strncpy_s(tar, len, entry->value, len-1);
-        tar[len - 1] = '\0';
+        snprintf(tar, len, "%s", entry->value);
     } else {
-        strncpy_s(tar, len, "", len);
+        tar[0] = '\0';
     }
 }
 
@@ -600,7 +599,7 @@ void CALL_CONVT ac_get_stream_info(lp_ac_instance pacInstance, int nb,
             info->additional_info.audio_info.samples_per_second =
                 self->pFormatCtx->streams[nb]->codecpar->sample_rate;
             info->additional_info.audio_info.channel_count =
-                self->pFormatCtx->streams[nb]->codecpar->channels;
+                self->pFormatCtx->streams[nb]->codecpar->ch_layout.nb_channels;
 
             // Set bit depth
             switch (self->pFormatCtx->streams[nb]->codecpar->format) {
@@ -654,9 +653,8 @@ lp_ac_package CALL_CONVT ac_read_package(lp_ac_instance pacInstance)
     lp_ac_package_data pkt;	
     ERR(pkt = av_malloc(sizeof(ac_package_data)));
     memset(pkt, 0, sizeof(ac_package_data));
-    ERR(pkt->pPack = av_malloc(sizeof(AVPacket)));
-
-    av_init_packet(pkt->pPack);
+    // av_mallocz replaces the deprecated av_malloc + av_init_packet pair.
+    ERR(pkt->pPack = av_mallocz(sizeof(AVPacket)));
     pkt->pPack->data = NULL;
     pkt->pPack->size = 0;
 
@@ -818,14 +816,18 @@ void *ac_create_audio_decoder(lp_ac_instance pacInstance,
     ERR(pDecoder->pFrame = av_frame_alloc());
 
     // Fetch audio format, rate and channel layout -- under some circumstances,
-    // the layout is not known to the decoder, then a channel layout is guessed
+    // the layout is not known to the decoder, then a default layout is guessed
     // from the channel count.
     const enum AVSampleFormat fmt = pDecoder->pCodecCtx->sample_fmt;
     const int rate = pDecoder->pCodecCtx->sample_rate;
-    const int64_t layout =
-        pDecoder->pCodecCtx->channel_layout
-            ? pDecoder->pCodecCtx->channel_layout
-            : av_get_default_channel_layout(pDecoder->pCodecCtx->channels);
+
+    AVChannelLayout in_layout = pDecoder->pCodecCtx->ch_layout;
+    if (in_layout.order == AV_CHANNEL_ORDER_UNSPEC) {
+        int channels = in_layout.nb_channels;
+        if (channels <= 0)
+            channels = 2;
+        av_channel_layout_default(&in_layout, channels);
+    }
 
     // Initialize libswresample if needed
     if (av_sample_fmt_is_planar(fmt) || (fmt == AV_SAMPLE_FMT_S32) ||
@@ -834,8 +836,9 @@ void *ac_create_audio_decoder(lp_ac_instance pacInstance,
         if (out_fmt == AV_SAMPLE_FMT_DBL || out_fmt == AV_SAMPLE_FMT_S32) {
             out_fmt = AV_SAMPLE_FMT_FLT;
         }
-        ERR(pDecoder->pSwrCtx = swr_alloc_set_opts(NULL, layout, out_fmt, rate,
-                                               layout, fmt, rate, 0, NULL));
+        AVChannelLayout out_layout = in_layout;
+        AV_ERR(swr_alloc_set_opts2(&pDecoder->pSwrCtx, &out_layout, out_fmt, rate,
+                                   &in_layout, fmt, rate, 0, NULL));
         AV_ERR(swr_init(pDecoder->pSwrCtx));
     }
     return (void *)pDecoder;
@@ -956,7 +959,7 @@ int ac_decode_audio_package(lp_ac_package pPackage,
     const int sample_size =
         MIN(4, av_get_bytes_per_sample(pDecoder->pCodecCtx->sample_fmt));
     const int sample_count = pDecoder->pFrame->nb_samples;
-    const int channel_count = pDecoder->pFrame->channels;
+    const int channel_count = pDecoder->pFrame->ch_layout.nb_channels;
     const int buffer_size = sample_size * sample_count * channel_count;
     pDecoder->decoder.buffer_size = buffer_size;
 

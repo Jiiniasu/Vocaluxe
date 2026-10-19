@@ -420,7 +420,7 @@ namespace Vocaluxe
                     }
                 }
 #if LINUX
-                catch(FileNotFoundException){}
+                catch (FileNotFoundException) { }
 #endif
             }
             return assembly;

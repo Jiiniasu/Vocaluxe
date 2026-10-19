@@ -221,7 +221,7 @@ int PtAKF::_GetNote(float samples[_SampleCt], float* restrict maxVolume, float w
 
 	float maxVolumeL = 0;
 	for(int i = _SampleCt / 2; i < _SampleCt; i++){
-		float vol = abs(samples[i]);
+		float vol = abs_template(samples[i]);
 		if(vol > maxVolumeL)
 			maxVolumeL = vol;
 	}
