@@ -2,12 +2,12 @@ name: Build
 
 on:
   push:
-    # net10-port is the active branch (default branch SSIS-Remote is still net48;
-    # add/update branches here when the port supersedes it). Semver tags publish official releases.
-    branches: [ net10-port ]
+    # SSIS-Remote is the active (and default) branch since the .NET 10 port was merged into it
+    # and net10-port was retired (2026-10-19). Semver tags publish official releases.
+    branches: [ SSIS-Remote ]
     tags: [ 'v[0-9]+.[0-9]+.[0-9]+*', '[0-9]+.[0-9]+.[0-9]+*' ]
   pull_request:
-    branches: [ net10-port ]
+    branches: [ SSIS-Remote ]
 
   workflow_dispatch:
 
