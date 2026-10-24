@@ -116,9 +116,19 @@ namespace Vocaluxe.Lib.Draw
             // including harmless "feature not available on this platform" reports. On Wayland,
             // querying the window position is such a case (the protocol deliberately does not
             // expose it to clients), which killed startup during "Init Draw". Log instead of throw.
+            // The known-benign Wayland reports (position, icons) happen on every layout pass, so
+            // they are logged at Debug level instead of polluting the log as errors.
             GLFWProvider.SetErrorCallback((errorCode, description) =>
+            {
+                if (errorCode == OpenTK.Windowing.GraphicsLibraryFramework.ErrorCode.FeatureUnavailable &&
+                    description.StartsWith("Wayland:"))
+                {
+                    CLog.Debug("GLFW: " + errorCode + " - " + description);
+                    return;
+                }
                 CLog.Error("GLFW: {ErrorCode} - {Description}",
-                    CLog.Params(errorCode, description)));
+                    CLog.Params(errorCode, description));
+            });
 
             _Window = new NativeWindow(settings);
             _Window.MakeCurrent();

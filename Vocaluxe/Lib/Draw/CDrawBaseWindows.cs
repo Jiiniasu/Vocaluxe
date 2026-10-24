@@ -53,6 +53,11 @@ namespace Vocaluxe.Lib.Draw
         /// </summary>
         protected CWindowManager _Windows;
 
+        // True when the GLFW backend is Wayland (cached from Init): multi-window there runs with the
+        // swap interval forced to 0 (see CWindowManager) and needs software frame pacing instead of
+        // vsync.
+        private bool _Wayland;
+
         public override void Close()
         {
             base.Close();
@@ -141,6 +146,17 @@ namespace Vocaluxe.Lib.Draw
         protected override bool _MultiWindow()
         {
             return _Windows != null;
+        }
+
+        /// <summary>
+        ///     Multi-window on Wayland runs with the swap interval forced to 0 (CWindowManager) because a
+        ///     vsynced SwapBuffers blocks forever on a window the compositor is not presenting (full
+        ///     occlusion); the main loop must then pace itself in software even when the VSync setting is
+        ///     on.
+        /// </summary>
+        protected override bool _NeedsSoftwarePacing
+        {
+            get { return _MultiWindow() && _Wayland; }
         }
 
         /// <summary>
@@ -379,6 +395,12 @@ namespace Vocaluxe.Lib.Draw
         {
             if (!base.Init())
                 return false;
+
+            // The GLFW backend, not the desktop environment (under XWayland this is X11, where vsynced
+            // multi-window is fine). The windows exist by now (COpenGL's constructor), so the provider
+            // is initialized.
+            _Wayland = OpenTK.Windowing.GraphicsLibraryFramework.GLFW.GetPlatform()
+                       == OpenTK.Windowing.GraphicsLibraryFramework.Platform.Wayland;
 
             // Application icon, the standard way: on every platform set OpenTK's NativeWindow.Icon from
             // the multi-size Vocaluxe.ico (or a Vocaluxe.png fallback) shipped next to the exe

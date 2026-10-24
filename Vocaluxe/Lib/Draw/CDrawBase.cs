@@ -85,6 +85,13 @@ namespace Vocaluxe.Lib.Draw
         /// <summary>True in multi-window mode (one real window per panel); false means single giant window.</summary>
         protected virtual bool _MultiWindow() { return false; }
 
+        /// <summary>
+        ///     True when the presentation cannot rely on vsync for pacing (multi-window on Wayland runs
+        ///     with the swap interval forced to 0, see CDrawBaseGlfw). The main loop then paces itself in
+        ///     software even when the VSync setting is on.
+        /// </summary>
+        protected virtual bool _NeedsSoftwarePacing { get { return false; } }
+
         /// <summary>The scene pass for the panel currently being rendered.</summary>
         protected virtual bool _DrawScene() { return CGraphics.Draw(); }
 
@@ -672,7 +679,9 @@ namespace Vocaluxe.Lib.Draw
                 if (_WantRelayout())
                     _ApplyRelayout();
 
-                if (CConfig.Config.Graphics.VSync == EOffOn.TR_CONFIG_OFF)
+                // Software frame pacing: always when VSync is off, and whenever vsync cannot pace the
+                // loop (multi-window on Wayland runs swap-interval-0, _NeedsSoftwarePacing).
+                if (CConfig.Config.Graphics.VSync == EOffOn.TR_CONFIG_OFF || _NeedsSoftwarePacing)
                 {
                     if (CTime.IsRunning())
                     {

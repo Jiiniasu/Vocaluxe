@@ -112,6 +112,17 @@ namespace Vocaluxe.Lib.Draw
             _PanelW = template.ClientSize.X;
             _PanelH = template.ClientSize.Y;
 
+            // On Wayland the swap interval must stay 0 (no vsync) for every multi-window window: a
+            // window that is fully occluded by another stops receiving compositor frame callbacks,
+            // and a vsynced SwapBuffers blocks forever on the missing callback, freezing the whole
+            // render loop (reproduced: one swap blocked 9s until the occlusion cleared). With swap
+            // interval 0 the swap is a plain async commit that cannot block; the main loop then paces
+            // itself in software (CDrawBase._NeedsSoftwarePacing).
+            bool wayland = OpenTK.Windowing.GraphicsLibraryFramework.GLFW.GetPlatform()
+                           == OpenTK.Windowing.GraphicsLibraryFramework.Platform.Wayland;
+            if (wayland)
+                primary.VSync = VSyncMode.Off; // the caller left this context current
+
             Slot slot0 = new Slot
             {
                 Window = primary,
@@ -129,6 +140,8 @@ namespace Vocaluxe.Lib.Draw
                     template.StartVisible = false;
                     template.SharedContext = primary.Context;
                     win = new NativeWindow(template);
+                    if (wayland)
+                        win.VSync = VSyncMode.Off; // the constructor left this context current
                 }
                 catch
                 {
@@ -242,8 +255,10 @@ namespace Vocaluxe.Lib.Draw
         ///     CDrawBaseGlfw uses); if that probe fails (headless/exotic display server) it falls back to
         ///     monitor i % monitorCount (extra panels cascade on the same monitor). Fullscreen (Windows):
         ///     borderless and 1px taller per monitor client area (the existing DWM-freeze workaround,
-        ///     CDrawBaseWindows.cs); elsewhere: native fullscreen.
-        ///     Windowed: centered panel size on the assigned monitor (or the work area when headless).
+        ///     CDrawBaseWindows.cs); Wayland: borderless at first-monitor size in BOTH the windowed and the
+        ///     fullscreen pass (native fullscreen toplevels do not coexist there and the compositor decides
+        ///     placement at map time - see the branch); other: native fullscreen.
+        ///     Windowed elsewhere: centered panel size on the assigned monitor (or the work area when headless).
         ///     NOTE: fires Resize/Border events per window; any re-entrant handler must be safe to run
         ///     mid-iteration (slot state is mutated in place, see class documentation).
         /// </summary>
@@ -263,6 +278,19 @@ namespace Vocaluxe.Lib.Draw
             }
             RebuildPending = false;
 
+            // Fullscreen follows the window's current position: OpenTK resolves the monitor with the
+            // largest overlap with the window rectangle (or the GLFW monitor when the window is already in
+            // native fullscreen). At startup the windows sit exactly where the round-robin windowed layout
+            // centered them, so startup still assigns them in monitor order; once the user has dragged a
+            // panel onto another monitor, toggling fullscreen follows the window. On Wayland the probe is
+            // deliberately skipped: the compositor owns placement there, the window position is not
+            // queryable, and probing an occluded window is exactly what wedged the render loop.
+            // The check keys off the GLFW backend (not the desktop environment: under XWayland this
+            // reports X11, whose native fullscreen path below is the right one).
+            bool wayland = OpenTK.Windowing.GraphicsLibraryFramework.GLFW.GetPlatform()
+                           == OpenTK.Windowing.GraphicsLibraryFramework.Platform.Wayland;
+            bool probe = !wayland && fullscreen;
+
             string mapping = "";
             for (int i = 0; i < _Slots.Count; i++)
             {
@@ -271,72 +299,100 @@ namespace Vocaluxe.Lib.Draw
                 MonitorInfo fallback = (fallbackIndex >= 0) ? monitors[fallbackIndex] : null;
 
                 MonitorInfo monitor;
-                if (fullscreen)
+                try
                 {
-                    // Fullscreen follows the window's current position: OpenTK resolves the monitor with
-                    // the largest overlap with the window rectangle (or the GLFW monitor when the window is
-                    // already in native fullscreen). At startup the windows sit exactly where the round-robin
-                    // windowed layout centered them, so startup still assigns them in monitor order; once the
-                    // user has dragged a panel onto another monitor, toggling fullscreen follows the window.
-                    try
-                    {
-                        monitor = Monitors.GetMonitorFromWindow(s.Window);
-                    }
-                    catch (Exception e)
-                    {
-                        // This probe can fail where GetMonitors() above does not (or both); fall back to the
-                        // round-robin assignment, or to plain centering when no monitors are available.
-                        CLog.Warning("Multi-window: could not resolve the monitor of panel " + s.PanelIndex +
-                                     ", falling back to round-robin assignment: " + e);
-                        monitor = fallback;
-                    }
+                    monitor = probe ? Monitors.GetMonitorFromWindow(s.Window) : fallback;
                 }
-                else
+                catch (Exception e)
                 {
+                    // The probe can fail where GetMonitors() above does not (or both); fall back to the
+                    // round-robin assignment, or to plain centering when no monitors are available.
+                    CLog.Warning("Multi-window: could not resolve the monitor of panel " + s.PanelIndex +
+                                 ", falling back to round-robin assignment: " + e);
                     monitor = fallback;
                 }
 
                 mapping = (mapping.Length > 0 ? mapping + ", " : "") + "panel " + s.PanelIndex + " -> " +
                           (monitor != null ? "'" + monitor.Name + "'" : "(no monitor, centered)");
 
+#if WIN
                 if (monitor != null && fullscreen)
                 {
-#if WIN
                     // Same workaround as the single-window path of CDrawBaseGlfw: borderless and 1px taller
                     // than the client area, so exclusive promotion cannot freeze the window.
                     s.Window.WindowBorder = WindowBorder.Hidden;
                     s.Window.WindowState = WindowState.Normal;
                     s.Window.Location = monitor.ClientArea.Min;
                     s.Window.ClientSize = new Vector2i(monitor.ClientArea.Size.X, monitor.ClientArea.Size.Y + 1);
-#else
-                    s.Window.WindowState = WindowState.Fullscreen;
-#endif
-                }
-                else if (monitor != null)
-                {
-                    // Extra panels cascade on the same monitor so they stay visible in windowed mode
-                    Vector2i offset = StackOffset(i, monitors.Count);
-                    Vector2i location = CenteredPanelLocation(monitor.ClientArea.Min,
-                                                              monitor.ClientArea.Size,
-                                                              new Vector2i(_PanelW, _PanelH),
-                                                              offset);
-
-                    s.Window.WindowBorder = WindowBorder.Resizable;
-                    s.Window.WindowState = WindowState.Normal;
-                    s.Window.ClientSize = new Vector2i(_PanelW, _PanelH);
-                    s.Window.Location = location;
                 }
                 else
                 {
-                    s.Window.WindowBorder = WindowBorder.Resizable;
-                    s.Window.WindowState = WindowState.Normal;
-                    s.Window.ClientSize = new Vector2i(_PanelW, _PanelH);
-                    s.Window.CenterWindow();
+                    _PlaceWindowed(s, monitor, i, monitors.Count);
                 }
+#else
+                if (wayland && monitors.Count > 0)
+                {
+                    // On Wayland (e.g. GNOME) a pair of native fullscreen toplevels on different outputs
+                    // does not coexist: the compositor stops compositing the non-active one (and the render
+                    // loop can stall on it), and windowed placement cannot be requested at all (the
+                    // compositor owns it). Fake fullscreen instead: a borderless window at monitor size
+                    // composites as an ordinary toplevel and coexists with the other slots.
+                    //
+                    // The size comes from the FIRST monitor, not the slot's assigned one: the compositor
+                    // (not the app) chooses the output, and it does not place a window on an output smaller
+                    // than the window - so sizing to the first (usually primary) monitor steers each window
+                    // to a same-sized output and keeps all panels at the same scale.
+                    //
+                    // This must also be the windowed pass (fullscreen == false): the compositor decides
+                    // placement when the window is MAPPED, and the windows are shown in the windowed state
+                    // before the fullscreen pass runs. Mapping them at panel size first stacks them on the
+                    // first monitor, where they stay after the later enlarge.
+                    s.Window.WindowBorder = WindowBorder.Hidden;
+                    s.Window.WindowState = WindowState.Normal;
+                    s.Window.ClientSize = monitors[0].ClientArea.Size;
+                }
+                else if (monitor != null && fullscreen)
+                {
+                    // X11/Cocoa: MakeFullscreen pins the window to the monitor resolved above (the window's
+                    // current monitor, or the round-robin fallback); WindowState = Fullscreen would instead
+                    // re-resolve the window's current monitor itself.
+                    s.Window.MakeFullscreen(monitor.Handle);
+                }
+                else
+                {
+                    _PlaceWindowed(s, monitor, i, monitors.Count);
+                }
+#endif
             }
 
             CLog.Information("Multi-window layout: " + _Slots.Count + " window(s), " + monitors.Count + " monitor(s)" +
                              (fullscreen ? ", fullscreen" : ", windowed") + ": " + mapping + ".");
+        }
+
+        /// <summary>
+        ///     Windowed placement (WIN and non-Wayland non-WIN paths): resizable, panel-sized, centered on
+        ///     the assigned monitor (extra panels cascade on it so they stay visible) - or centered on the
+        ///     work area when no monitor is known (headless).
+        /// </summary>
+        private void _PlaceWindowed(Slot s, MonitorInfo monitor, int slot, int monitorCount)
+        {
+            s.Window.WindowBorder = WindowBorder.Resizable;
+            s.Window.WindowState = WindowState.Normal;
+            s.Window.ClientSize = new Vector2i(_PanelW, _PanelH);
+
+            if (monitor != null)
+            {
+                Vector2i offset = StackOffset(slot, monitorCount);
+                Vector2i location = CenteredPanelLocation(monitor.ClientArea.Min,
+                                                          monitor.ClientArea.Size,
+                                                          new Vector2i(_PanelW, _PanelH),
+                                                          offset);
+                s.Window.Location = location;
+            }
+            else
+            {
+                s.Window.CenterWindow();
+            }
         }
 
         /// <summary>Enters (per-slot) fullscreen, saving the windowed state for restore.</summary>
