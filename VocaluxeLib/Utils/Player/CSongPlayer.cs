@@ -112,6 +112,16 @@ namespace VocaluxeLib.Utils.Player
             return null;
         }
 
+        /// <summary>
+        ///     The blurred "glass twin" of the last decoded video frame (see CVideoStream.GlassTexture),
+        ///     null when there is no video or the glass blur is disabled. Call after GetVideoTexture()
+        ///     so it matches the frame that was just drawn.
+        /// </summary>
+        public CTextureRef GetVideoGlassTexture()
+        {
+            return _Video == null ? null : _Video.GlassTexture;
+        }
+
         public void SetPreviewStart(float start)
         {
             _PreviewStart = start;

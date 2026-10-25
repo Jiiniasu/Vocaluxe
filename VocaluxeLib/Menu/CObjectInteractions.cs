@@ -257,10 +257,28 @@ namespace VocaluxeLib.Menu
 
             items.Sort((s1, s2) => s2.Z.CompareTo(s1.Z));
 
+            // Pass 1: backgrounds first - they register themselves as the glass backdrop (see CBackground)
             for (int i = 0; i < items.Count; i++)
             {
                 IMenuElement el = _GetElement(items[i].ID);
-                el.Draw();
+                if (el is CBackground)
+                    el.Draw();
+            }
+
+            // Pass 2: frosted-glass backdrops, drawn behind all remaining elements (see IGlass)
+            for (int i = 0; i < _Statics.Count; i++)
+            {
+                CStatic cs = _Statics[i];
+                if (cs.Glass && cs.Visible)
+                    CBase.Glass?.DrawGlass(cs);
+            }
+
+            // Pass 3: all remaining elements in Z order
+            for (int i = 0; i < items.Count; i++)
+            {
+                IMenuElement el = _GetElement(items[i].ID);
+                if (!(el is CBackground))
+                    el.Draw();
             }
         }
         #endregion Drawing

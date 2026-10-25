@@ -416,6 +416,10 @@ namespace Vocaluxe.Base
         {
             return CBackgroundMusic.GetVideoTexture();
         }
+        public CTextureRef GetVideoGlassTexture()
+        {
+            return CBackgroundMusic.GetVideoGlassTexture();
+        }
         public int GetSongID()
         {
             return CBackgroundMusic.GetSongID();

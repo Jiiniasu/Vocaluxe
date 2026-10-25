@@ -830,9 +830,13 @@ namespace Vocaluxe.Screens
                     SRectF bounds = CSettings.RenderRect;
                     SRectF rect = CHelper.FitInBounds(bounds, background.OrigAspect, aspect);
                     CDraw.DrawTexture(background, rect, background.Color, bounds);
+                    if (background == _CurrentVideo.Texture)
+                        CBase.Glass?.SetBackground(null, _CurrentVideo.GlassTexture);
+                    else
+                        CBase.Glass?.SetBackground(background, null);
                 }
                 else if (_SlideShow != null)
-                    _SlideShow.Draw();
+                    _SlideShow.Draw(); // registers itself with the glass (see CBackground)
             }
 
             base.Draw();

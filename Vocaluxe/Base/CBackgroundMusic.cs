@@ -295,6 +295,11 @@ namespace Vocaluxe.Base
             return _CurPlayer.GetVideoTexture();
         }
 
+        public static CTextureRef GetVideoGlassTexture()
+        {
+            return _CurPlayer.GetVideoGlassTexture();
+        }
+
         public static int GetSongID()
         {
             return _CurPlayer.SongID;

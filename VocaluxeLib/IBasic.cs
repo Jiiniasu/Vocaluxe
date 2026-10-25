@@ -129,6 +129,7 @@ namespace VocaluxeLib
         void Stop();
 
         CTextureRef GetVideoTexture();
+        CTextureRef GetVideoGlassTexture();
 
         int GetSongID();
 
