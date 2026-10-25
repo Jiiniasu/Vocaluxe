@@ -80,10 +80,6 @@ namespace Vocaluxe.Screens
                         CGraphics.FadeTo(EScreen.Credits);
                         break;
 
-                    case Keys.T:
-                        CGraphics.FadeTo(EScreen.Test);
-                        break;
-
                     case Keys.Enter:
                         if (_Buttons[_ButtonSing].Selected)
                         {

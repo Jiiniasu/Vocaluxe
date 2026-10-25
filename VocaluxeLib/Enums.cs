@@ -350,7 +350,6 @@ namespace VocaluxeLib
     {
         Unknown = -1,
 
-        Test,
         Load,
         Main,
         Song,

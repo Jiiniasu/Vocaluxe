@@ -61,9 +61,6 @@ namespace Vocaluxe.Base
         public static void Init()
         {
             // Add Screens, must be the same order as in EScreens!
-            using (CBenchmark.Time("Build Screen List"))
-
-                _Screens.Add(new CScreenTest());
             _Screens.Add(new CScreenLoad());
             _Screens.Add(new CScreenMain());
             _Screens.Add(new CScreenSong());
