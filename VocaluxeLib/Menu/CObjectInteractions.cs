@@ -47,7 +47,6 @@ namespace VocaluxeLib.Menu
         protected readonly COrderedDictionaryLite<CParticleEffect> _ParticleEffects;
         protected readonly COrderedDictionaryLite<CProgressBar> _ProgressBars;
         protected readonly COrderedDictionaryLite<CMeta> _Metas;
-        private readonly SColorF _HighlightColor = new SColorF(1, 0, 0, 0);
 
         protected CObjectInteractions()
         {
@@ -185,88 +184,6 @@ namespace VocaluxeLib.Menu
             return true;
         }
 
-        public virtual bool HandleInputThemeEditor(SKeyEvent keyEvent)
-        {
-            int dx = 0;
-            int dy = 0;
-            if (!keyEvent.KeyPressed)
-            {
-                switch (keyEvent.Key)
-                {
-                    case Keys.Up:
-                        dy = -1;
-                        break;
-                    case Keys.Down:
-                        dy = 1;
-                        break;
-                    case Keys.Right:
-                        dx = 1;
-                        break;
-                    case Keys.Left:
-                        dx = -1;
-                        break;
-                    case Keys.Tab:
-                        _NextElement(keyEvent);
-                        return true;
-                    default:
-                        return false;
-                }
-            }
-            else
-                return false;
-
-            if ((keyEvent.Mod & EModifier.Ctrl) != EModifier.Ctrl)
-            {
-                dx *= 5;
-                dy *= 5;
-            }
-
-            if ((keyEvent.Mod & EModifier.Alt) == EModifier.Alt)
-                _MoveElement(dx, dy);
-            else if ((keyEvent.Mod & EModifier.Shift) == EModifier.Shift)
-                _ResizeElement(dx, dy);
-            else
-            {
-                if (_IsSelectionValid())
-                    _GetElement(_Selection).Highlighted = false;
-                if (_NextElement(keyEvent))
-                    _GetElement(_Selection).Highlighted = true;
-            }
-
-            return true;
-        }
-
-        public virtual bool HandleMouseThemeEditor(SMouseEvent mouseEvent)
-        {
-            if (_IsSelectionValid())
-                _GetElement(_Selection).Highlighted = false;
-
-            Point mouse = new Point(mouseEvent.X, mouseEvent.Y);
-            if ((mouseEvent.Mod & EModifier.Ctrl) != EModifier.Ctrl)
-            {
-                // Clip to raster
-                mouse.X = (int)(Math.Round((double)mouse.X / 5) * 5);
-                mouse.Y = (int)(Math.Round((double)mouse.Y / 5) * 5);
-            }
-
-            int mouseDX = mouse.X - _PrevMouse.X;
-            int mouseDY = mouse.Y - _PrevMouse.Y;
-
-            _PrevMouse.X = mouseEvent.X;
-            _PrevMouse.Y = mouseEvent.Y;
-
-            if (mouseEvent.LBH)
-            {
-                if (mouseEvent.Mod == EModifier.Shift)
-                    _ResizeElement(mouseDX, mouseDX);
-                else
-                    _MoveElement(mouseDX, mouseDY);
-            }
-            else
-                ProcessMouseMove(mouseEvent.X, mouseEvent.Y);
-
-            return true;
-        }
         #endregion MenuHandler
 
         private bool _IsSelectionValid()
@@ -343,8 +260,6 @@ namespace VocaluxeLib.Menu
             for (int i = 0; i < items.Count; i++)
             {
                 IMenuElement el = _GetElement(items[i].ID);
-                if (el.Highlighted)
-                    CBase.Drawing.DrawRect(_HighlightColor, el.MaxRect);
                 el.Draw();
             }
         }
@@ -734,7 +649,7 @@ namespace VocaluxeLib.Menu
         private bool _IsSelectable(int element)
         {
             IMenuElement el = _GetElement(element);
-            return el != null && (el.Selectable || CBase.Settings.GetProgramState() == EProgramState.EditTheme);
+            return el != null && el.Selectable;
         }
 
         private SRectF _GetRect(CInteraction element)
@@ -752,21 +667,5 @@ namespace VocaluxeLib.Menu
             return _GetElement(_Elements[element]).Rect.Z;
         }
         #endregion
-
-        #region Theme Handling
-        private void _MoveElement(int stepX, int stepY)
-        {
-            IMenuElement el = _GetElement(_Selection);
-            if (el != null)
-                el.MoveElement(stepX, stepY);
-        }
-
-        private void _ResizeElement(int stepW, int stepH)
-        {
-            IMenuElement el = _GetElement(_Selection);
-            if (el != null)
-                el.ResizeElement(stepW, stepH);
-        }
-        #endregion Theme Handling
     }
 }

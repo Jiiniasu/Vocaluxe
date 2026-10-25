@@ -198,11 +198,5 @@ namespace VocaluxeLib.Menu.SingNotes
         {
             return _Theme;
         }
-
-        #region ThemeEdit
-        public void MoveElement(int stepX, int stepY) { }
-
-        public void ResizeElement(int stepW, int stepH) { }
-        #endregion ThemeEdit
     }
 }

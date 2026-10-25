@@ -231,31 +231,5 @@ namespace VocaluxeLib.Menu
         {
             return _Theme;
         }
-
-        #region ThemeEdit
-        public void MoveElement(int stepX, int stepY)
-        {
-            X += stepX;
-            Y += stepY;
-
-            _Theme.Rect.X += stepX;
-            _Theme.Rect.Y += stepY;
-        }
-
-        public void ResizeElement(int stepW, int stepH)
-        {
-            W += stepW;
-            if (W <= 0)
-                W = 1;
-
-            _Theme.Rect.W = Rect.W;
-
-            H += stepH;
-            if (H <= 0)
-                H = 1;
-
-            _Theme.Rect.H = Rect.H;
-        }
-        #endregion ThemeEdit
     }
 }

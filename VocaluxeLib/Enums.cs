@@ -308,8 +308,7 @@ namespace VocaluxeLib
     public enum EProgramState
     {
         Start,
-        Normal,
-        EditTheme
+        Normal
     }
 
     public enum EGameMode

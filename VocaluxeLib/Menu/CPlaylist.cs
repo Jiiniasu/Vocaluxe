@@ -183,7 +183,6 @@ namespace VocaluxeLib.Menu
             get { return _Active; }
             set { _Active = value; }
         }
-        public bool Highlighted { get; set; }
         private bool _Selected;
         public bool Selected
         {
@@ -1166,34 +1165,5 @@ namespace VocaluxeLib.Menu
             if (_ButtonPlaylistDelete.Rect.Y + _ButtonPlaylistDelete.Rect.H > _CompleteRect.Y + _CompleteRect.H)
                 _CompleteRect.H = _ButtonPlaylistDelete.Rect.H + _ButtonPlaylistDelete.Rect.Y - _CompleteRect.Y;
         }
-
-        #region ThemeEdit
-        public void MoveElement(int stepX, int stepY)
-        {
-            SRectF rect = MaxRect;
-            rect.X += stepX;
-            rect.Y += stepY;
-            MaxRect = rect;
-
-            _Theme.Rect.X += stepX;
-            _Theme.Rect.Y += stepY;
-        }
-
-        public void ResizeElement(int stepW, int stepH)
-        {
-            SRectF rect = MaxRect;
-            rect.W += stepW;
-            if (rect.W <= 0)
-                rect.W = 1;
-
-            rect.H += stepH;
-            if (rect.H <= 0)
-                rect.H = 1;
-            MaxRect = rect;
-
-            _Theme.Rect.W = Rect.W;
-            _Theme.Rect.H = Rect.H;
-        }
-        #endregion ThemeEdit
     }
 }

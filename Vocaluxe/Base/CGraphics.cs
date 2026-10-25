@@ -150,20 +150,6 @@ namespace Vocaluxe.Base
                 menu.ReloadSkin();
         }
 
-        public static void SaveTheme()
-        {
-            foreach (CMenu screen in _Screens)
-            {
-                if (screen.ThemePath == null || screen.ThemeName == "ScreenTest")
-                    continue;
-
-                screen.SaveTheme();
-            }
-
-            foreach (IMenu popup in _PopupScreens)
-                popup.SaveTheme();
-        }
-
         public static void InitFirstScreen()
         {
             CurrentScreen.OnShow();
@@ -183,16 +169,8 @@ namespace Vocaluxe.Base
             CBackgroundMusic.Update();
             CProfiles.Update();
 
-            if (CSettings.ProgramState != EProgramState.EditTheme)
-            {
-                run &= _HandleInputs(keys, mouse);
-                run &= _Update();
-            }
-            else
-            {
-                run &= _HandleInputThemeEditor(keys, mouse);
-                run &= _Update();
-            }
+            run &= _HandleInputs(keys, mouse);
+            run &= _Update();
 
             return run;
         }
@@ -443,9 +421,7 @@ namespace Vocaluxe.Base
                     }
                 }
 
-                if (keyEvent.ModShift && (keyEvent.Key == Keys.F1))
-                    CSettings.ProgramState = EProgramState.EditTheme;
-                else if (keyEvent.ModAlt && (keyEvent.Key == Keys.Enter))
+                if (keyEvent.ModAlt && (keyEvent.Key == Keys.Enter))
                     CConfig.Config.Graphics.FullScreen = (CConfig.Config.Graphics.FullScreen == EOffOn.TR_CONFIG_ON) ? EOffOn.TR_CONFIG_OFF : EOffOn.TR_CONFIG_ON;
                 else if (keyEvent.ModAlt && (keyEvent.Key == Keys.P))
                     CDraw.MakeScreenShot();
@@ -519,39 +495,6 @@ namespace Vocaluxe.Base
                     resume &= CurrentScreen.HandleMouse(mouseEvent);
             }
             return resume;
-        }
-
-        private static bool _HandleInputThemeEditor(CKeys keys, CMouse mouse)
-        {
-            SKeyEvent keyEvent = new SKeyEvent();
-            SMouseEvent mouseEvent = new SMouseEvent();
-
-            while (keys.PollEvent(ref keyEvent))
-            {
-                if (keyEvent.ModShift && (keyEvent.Key == Keys.F1))
-                {
-                    CSettings.ProgramState = EProgramState.Normal;
-                    CurrentScreen.NextElement();
-                }
-                else if (keyEvent.ModAlt && (keyEvent.Key == Keys.Enter))
-                    CConfig.Config.Graphics.FullScreen = (CConfig.Config.Graphics.FullScreen == EOffOn.TR_CONFIG_ON) ? EOffOn.TR_CONFIG_OFF : EOffOn.TR_CONFIG_ON;
-                else if (keyEvent.ModAlt && (keyEvent.Key == Keys.P))
-                    CDraw.MakeScreenShot();
-                else
-                {
-                    if (_Fading == null)
-                        CurrentScreen.HandleInputThemeEditor(keyEvent);
-                }
-            }
-
-            while (mouse.PollEvent(ref mouseEvent))
-            {
-                if (_Fading == null)
-                    CurrentScreen.HandleMouseThemeEditor(mouseEvent);
-
-                _UpdateMousePosition(mouseEvent.X, mouseEvent.Y);
-            }
-            return true;
         }
 
         private static void _UpdateMousePosition(int x, int y)

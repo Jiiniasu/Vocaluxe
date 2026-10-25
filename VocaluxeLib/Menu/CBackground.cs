@@ -296,11 +296,5 @@ namespace VocaluxeLib.Menu
             return false;
         }
         #endregion internal
-
-        #region ThemeEdit
-        public void MoveElement(int stepX, int stepY) { }
-
-        public void ResizeElement(int stepW, int stepH) { }
-        #endregion ThemeEdit
     }
 }

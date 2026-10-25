@@ -443,27 +443,5 @@ namespace VocaluxeLib.Menu.SongMenu
                 _AutoplayTimer.Start();
             }
         }
-
-        #region ThemeEdit
-        public void MoveElement(int stepX, int stepY)
-        {
-            X += stepX;
-            Y += stepY;
-            Init();
-        }
-
-        public void ResizeElement(int stepW, int stepH)
-        {
-            W += stepW;
-            if (W < 100)
-                W = 100;
-
-            H += stepH;
-            if (H < 100)
-                H = 100;
-
-            Init();
-        }
-        #endregion ThemeEdit
     }
 }

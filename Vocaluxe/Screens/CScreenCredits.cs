@@ -355,8 +355,6 @@ namespace Vocaluxe.Screens
 
         public override void ReloadTheme(string xmlPath) { }
 
-        public override void SaveTheme() { }
-
         public override void UnloadSkin() { }
 
         public override void ReloadSkin() { }

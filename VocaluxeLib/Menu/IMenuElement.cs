@@ -29,10 +29,7 @@ namespace VocaluxeLib.Menu
         SRectF MaxRect { get; set; }
         bool Selectable { get; }
         bool Visible { get; set; }
-        bool Highlighted { get; set; }
         bool Selected { get; set; }
-        void MoveElement(int stepX, int stepY);
-        void ResizeElement(int stepW, int stepH);
 
         void Draw();
     }

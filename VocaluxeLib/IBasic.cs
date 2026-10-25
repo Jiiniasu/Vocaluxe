@@ -79,8 +79,6 @@ namespace VocaluxeLib
         float GetZFar();
         float GetZNear();
 
-        EProgramState GetProgramState();
-
         int GetToneMin();
         int GetToneMax();
 
@@ -160,7 +158,6 @@ namespace VocaluxeLib
     public interface IGraphics
     {
         void ReloadTheme();
-        void SaveTheme();
         void FadeTo(EScreen nextScreen);
         void FadeTo(IMenu nextScreen);
 

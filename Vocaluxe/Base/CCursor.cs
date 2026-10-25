@@ -64,7 +64,7 @@ namespace Vocaluxe.Base
                     _Fading = null;
             }
 
-            if (Visible && (CSettings.ProgramState == EProgramState.EditTheme || ShowCursor))
+            if (Visible && ShowCursor)
                 CDraw.DrawTexture(_Cursor);
         }
 

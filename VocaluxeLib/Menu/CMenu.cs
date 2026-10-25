@@ -253,23 +253,6 @@ namespace VocaluxeLib.Menu
                 themeList.Add((TT)el.GetTheme());
         }
 
-        public virtual void SaveTheme()
-        {
-            if (string.IsNullOrEmpty(ThemePath))
-                return;
-            _ReadThemeSubElements();
-
-            try
-            {
-                CXmlSerializer serializer = new CXmlSerializer();
-                serializer.Serialize(Path.Combine(ThemePath, ThemeName + ".xml"), Theme);
-            }
-            catch (Exception e)
-            {
-                CLog.Error("Error while saving theme-file: " + ThemeName + " " + e.Message, true);
-            }
-        }
-
         private void _ReadThemeSubElements()
         {
             // Load changed/added theme elements into theme struct
@@ -435,23 +418,6 @@ namespace VocaluxeLib.Menu
         // ReSharper restore UnusedMember.Global
         #endregion Create Elements
 
-        public override bool HandleInputThemeEditor(SKeyEvent keyEvent)
-        {
-            if (!keyEvent.KeyPressed)
-            {
-                switch (keyEvent.Key)
-                {
-                    case Keys.S:
-                        CBase.Graphics.SaveTheme();
-                        return true;
-                    case Keys.R:
-                        _ReloadThemeEditMode();
-                        return true;
-                }
-            }
-            return base.HandleInputThemeEditor(keyEvent);
-        }
-
         public abstract bool UpdateGame();
 
         public virtual void ApplyVolume() { }
@@ -495,15 +461,5 @@ namespace VocaluxeLib.Menu
                 bg.Pause();
         }
 
-        #region Theme Handling
-        private void _ReloadThemeEditMode()
-        {
-            CBase.Themes.Reload();
-            CBase.Graphics.ReloadTheme();
-
-            OnShow();
-            OnShowFinish();
-        }
-        #endregion Theme Handling
     }
 }

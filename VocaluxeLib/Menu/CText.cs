@@ -321,7 +321,7 @@ namespace VocaluxeLib.Menu
 
         private void _Draw(bool force)
         {
-            if (!force && !Visible && CBase.Settings.GetProgramState() != EProgramState.EditTheme)
+            if (!force && !Visible)
                 return;
 
             // Update Text
@@ -343,9 +343,6 @@ namespace VocaluxeLib.Menu
                 float fadeSpan = (_FadeOrigin > 0f) ? _FadeSpan : _ReflectionHeight;
                 CBase.Fonts.DrawTextReflection(_Text, CalculatedFont, Rect.X, Rect.Y, Z, color, _ReflectionSpace, _ReflectionHeight, mirrorLine, fadeOrigin, fadeSpan);
             }
-
-            if (Selected && (CBase.Settings.GetProgramState() == EProgramState.EditTheme))
-                CBase.Drawing.DrawRect(new SColorF(0.5f, 1f, 0.5f, 0.5f), new SRectF(Rect.X, Rect.Y, Rect.W, Rect.H, Z));
         }
 
         public void Draw(float begin, float end)
@@ -359,9 +356,6 @@ namespace VocaluxeLib.Menu
             {
                 // TODO
             }
-
-            if (Selected && (CBase.Settings.GetProgramState() == EProgramState.EditTheme))
-                CBase.Drawing.DrawRect(new SColorF(0.5f, 1f, 0.5f, 0.5f), new SRectF(X, Y, Rect.W, Rect.H, Z));
         }
 
         public void DrawRelative(float rx, float ry, float reflectionHeight = 0f, float reflectionSpace = 0f, float rectHeight = 0f)
@@ -441,26 +435,6 @@ namespace VocaluxeLib.Menu
         {
             return _Theme;
         }
-
-        #region ThemeEdit
-        public void MoveElement(int stepX, int stepY)
-        {
-            X += stepX;
-            Y += stepY;
-
-            _Theme.X = X;
-            _Theme.Y = Y;
-        }
-
-        public void ResizeElement(int stepW, int stepH)
-        {
-            _Theme.FontHeight += stepH;
-            if (_Theme.FontHeight <= 0)
-                _Theme.FontHeight = 1;
-            _Font.Height = _Theme.FontHeight;
-        }
-        #endregion ThemeEdit
-
         private void _UpdateTextPosition()
         {
             if (!_PositionNeedsUpdate)

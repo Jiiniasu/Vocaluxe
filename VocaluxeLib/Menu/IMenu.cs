@@ -24,15 +24,12 @@ namespace VocaluxeLib.Menu
         void Init();
 
         void LoadTheme(string xmlPath);
-        void SaveTheme();
         void ReloadSkin();
         void UnloadSkin();
         void ReloadTheme(string xmlPath);
 
         bool HandleInput(SKeyEvent keyEvent);
         bool HandleMouse(SMouseEvent mouseEvent);
-        bool HandleInputThemeEditor(SKeyEvent keyEvent);
-        bool HandleMouseThemeEditor(SMouseEvent mouseEvent);
 
         bool UpdateGame();
         void Draw();

@@ -224,11 +224,6 @@ namespace Vocaluxe.Base
             return CSettings.ZNear;
         }
 
-        public EProgramState GetProgramState()
-        {
-            return CSettings.ProgramState;
-        }
-
         public int GetToneMin()
         {
             return CSettings.ToneMin;
@@ -493,11 +488,6 @@ namespace Vocaluxe.Base
         public void ReloadTheme()
         {
             CGraphics.ReloadTheme();
-        }
-
-        public void SaveTheme()
-        {
-            CGraphics.SaveTheme();
         }
 
         public void FadeTo(EScreen nextScreen)

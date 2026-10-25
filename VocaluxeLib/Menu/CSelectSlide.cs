@@ -546,7 +546,7 @@ namespace VocaluxeLib.Menu
 
         public void Draw()
         {
-            if (!Visible && CBase.Settings.GetProgramState() != EProgramState.EditTheme)
+            if (!Visible)
                 return;
 
             if (Selected)
@@ -554,7 +554,7 @@ namespace VocaluxeLib.Menu
             else
                 CBase.Drawing.DrawTexture(_Texture, Rect, _Color);
 
-            if (_Selection > 0 || CBase.Settings.GetProgramState() == EProgramState.EditTheme)
+            if (_Selection > 0)
             {
                 if (_ArrowLeftSelected)
                     CBase.Drawing.DrawTexture(_SelTextureArrowLeft, RectArrowLeft, _SelColorArrow);
@@ -562,7 +562,7 @@ namespace VocaluxeLib.Menu
                     CBase.Drawing.DrawTexture(_TextureArrowLeft, RectArrowLeft, _ColorArrow);
             }
 
-            if (_Selection < _Values.Count - 1 || CBase.Settings.GetProgramState() == EProgramState.EditTheme)
+            if (_Selection < _Values.Count - 1)
             {
                 if (_ArrowRightSelected)
                     CBase.Drawing.DrawTexture(_SelTextureArrowRight, RectArrowRight, _SelColorArrow);
@@ -621,84 +621,5 @@ namespace VocaluxeLib.Menu
             UnloadSkin();
             LoadSkin();
         }
-
-        #region ThemeEdit
-        public void MoveElement(int stepX, int stepY)
-        {
-            if (_ArrowLeftSelected)
-            {
-                RectArrowLeft.X += stepX;
-                RectArrowLeft.Y += stepY;
-
-                _Theme.RectArrowLeft.X += stepX;
-                _Theme.RectArrowLeft.Y += stepY;
-            }
-            else if (_ArrowRightSelected)
-            {
-                RectArrowRight.X += stepX;
-                RectArrowRight.Y += stepY;
-
-                _Theme.RectArrowRight.X += stepX;
-                _Theme.RectArrowRight.Y += stepY;
-            }
-            else
-            {
-                X += stepX;
-                Y += stepY;
-
-                _Theme.Rect.X += stepX;
-                _Theme.Rect.Y += stepY;
-                _Theme.RectArrowLeft.X += stepX;
-                _Theme.RectArrowLeft.Y += stepY;
-                _Theme.RectArrowRight.X += stepX;
-                _Theme.RectArrowRight.Y += stepY;
-            }
-        }
-
-        public void ResizeElement(int stepW, int stepH)
-        {
-            if (!_ArrowLeftSelected && !_ArrowRightSelected)
-            {
-                W += stepW;
-                if (W <= 0)
-                    W = 1;
-
-                H += stepH;
-                if (H <= 0)
-                    H = 1;
-
-                _Theme.Rect.W = Rect.W;
-                _Theme.Rect.H = Rect.H;
-            }
-
-            if (_ArrowLeftSelected)
-            {
-                RectArrowLeft.W += stepW;
-                if (RectArrowLeft.W <= 0)
-                    RectArrowLeft.W = 1;
-
-                RectArrowLeft.H += stepH;
-                if (RectArrowLeft.H <= 0)
-                    RectArrowLeft.H = 1;
-
-                _Theme.RectArrowLeft.W = RectArrowLeft.W;
-                _Theme.RectArrowLeft.H = RectArrowLeft.H;
-            }
-
-            if (_ArrowRightSelected)
-            {
-                RectArrowRight.W += stepW;
-                if (RectArrowRight.W <= 0)
-                    RectArrowRight.W = 1;
-
-                RectArrowRight.H += stepH;
-                if (RectArrowRight.H <= 0)
-                    RectArrowRight.H = 1;
-
-                _Theme.RectArrowRight.W = RectArrowRight.W;
-                _Theme.RectArrowRight.H = RectArrowRight.H;
-            }
-        }
-        #endregion ThemeEdit
     }
 }

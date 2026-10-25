@@ -20,7 +20,6 @@ namespace VocaluxeLib.Menu
     public abstract class CMenuElementBase
     {
         public bool Visible { get; set; }
-        public bool Highlighted { get; set; }
         public virtual bool Selected { get; set; }
 
         public virtual SRectF Rect
