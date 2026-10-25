@@ -729,5 +729,87 @@ namespace Vocaluxe.Lib.Draw
             GL.Disable(EnableCap.Blend);
             GL.BindTexture(TextureTarget.Texture2D, 0);
         }
+
+        protected override void _DrawGlassTexture(COGLTexture texture, SDrawCoords dc, COGLTexture mask, SDrawCoords maskDc, SColorF color)
+        {
+            // Align to full pixels like _DrawTexture to reduce artefacts
+            dc.Wx1 = (float)Math.Round(dc.Wx1);
+            dc.Wy1 = (float)Math.Round(dc.Wy1);
+            dc.Wx2 = (float)Math.Round(dc.Wx2);
+            dc.Wy2 = (float)Math.Round(dc.Wy2);
+            if (mask != null)
+            {
+                maskDc.Wx1 = (float)Math.Round(maskDc.Wx1);
+                maskDc.Wy1 = (float)Math.Round(maskDc.Wy1);
+                maskDc.Wx2 = (float)Math.Round(maskDc.Wx2);
+                maskDc.Wy2 = (float)Math.Round(maskDc.Wy2);
+            }
+
+            // The glass quad chains two GL_MODULATE stages: unit0 multiplies the color with the twin
+            // (blurred background), unit1 multiplies the result with the mask. GL_MULTIPLY is not exposed
+            // by the legacy bindings, but the masks are white in RGB, so MODULATE is identical to it.
+            TextureUnit prevUnit = (TextureUnit)GL.GetInteger(GetPName.ActiveTexture);
+            GL.ActiveTexture(TextureUnit.Texture0);
+            int prevMode0;
+            GL.GetTexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, out prevMode0);
+            GL.ActiveTexture(TextureUnit.Texture1);
+            int prevMode1;
+            GL.GetTexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, out prevMode1);
+
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (int)TextureEnvMode.Modulate);
+            GL.BindTexture(TextureTarget.Texture2D, texture.Name);
+
+            if (mask != null)
+            {
+                GL.ActiveTexture(TextureUnit.Texture1);
+                GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (int)TextureEnvMode.Modulate);
+                GL.BindTexture(TextureTarget.Texture2D, mask.Name);
+            }
+
+            GL.Enable(EnableCap.Blend);
+            GL.MatrixMode(MatrixMode.Texture);
+            GL.PushMatrix();
+
+            GL.Begin(PrimitiveType.Quads);
+
+            GL.Color4(color.R, color.G, color.B, color.A * CGraphics.GlobalAlpha);
+            GL.TexCoord2(dc.Tx1, dc.Ty1);
+            GL.Vertex3(dc.Wx1, dc.Wy1, dc.Wz);
+            if (mask != null)
+                GL.MultiTexCoord2(TextureUnit.Texture1, maskDc.Tx1, maskDc.Ty1);
+
+            GL.TexCoord2(dc.Tx1, dc.Ty2);
+            GL.Vertex3(dc.Wx1, dc.Wy2, dc.Wz);
+            if (mask != null)
+                GL.MultiTexCoord2(TextureUnit.Texture1, maskDc.Tx1, maskDc.Ty2);
+
+            GL.TexCoord2(dc.Tx2, dc.Ty2);
+            GL.Vertex3(dc.Wx2, dc.Wy2, dc.Wz);
+            if (mask != null)
+                GL.MultiTexCoord2(TextureUnit.Texture1, maskDc.Tx2, maskDc.Ty2);
+
+            GL.TexCoord2(dc.Tx2, dc.Ty1);
+            GL.Vertex3(dc.Wx2, dc.Wy1, dc.Wz);
+            if (mask != null)
+                GL.MultiTexCoord2(TextureUnit.Texture1, maskDc.Tx2, maskDc.Ty1);
+
+            GL.End();
+
+            GL.PopMatrix();
+
+            GL.Disable(EnableCap.Blend);
+
+            //Unbind both units and restore the previous unit state so regular draws are unaffected
+            GL.ActiveTexture(TextureUnit.Texture1);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+            GL.ActiveTexture(prevUnit);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+            GL.ActiveTexture(TextureUnit.Texture0);
+            GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, prevMode0);
+            GL.ActiveTexture(TextureUnit.Texture1);
+            GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, prevMode1);
+            GL.ActiveTexture(prevUnit);
+        }
     }
 }

@@ -31,6 +31,10 @@ namespace VocaluxeLib.Menu
         public SRectF Rect;
         public SReflection? Reflection;
         public bool? AllMonitors;
+        [XmlAttribute(AttributeName = "Glass")]
+        public bool? Glass;
+        [XmlAttribute(AttributeName = "GlassMask")]
+        public string GlassMask;
     }
 
     public sealed class CStatic : CMenuElementBase, IMenuElement, IThemeable
@@ -67,6 +71,20 @@ namespace VocaluxeLib.Menu
 
         public bool AllMonitors = true;
 
+        /// <summary>
+        ///     Draw a frosted-glass backdrop behind this static (blurred background, darkened, shaped by the
+        ///     GlassMask or the own texture alpha). Theme-driven via the Glass attribute.
+        /// </summary>
+        public bool Glass;
+
+        private CTextureRef _GlassMaskTexture;
+        public CTextureRef GlassMask
+        {
+            get { return _GlassMaskTexture ?? CBase.Themes.GetSkinTexture(_Theme.GlassMask, _PartyModeID); }
+
+            set { _GlassMaskTexture = value; }
+        }
+
         public float Alpha = 1;
 
         public EAspect Aspect = EAspect.Stretch;
@@ -96,6 +114,8 @@ namespace VocaluxeLib.Menu
             ReflectionSpace = s.ReflectionHeight;
             ReflectionHeight = s.ReflectionSpace;
             AllMonitors = s.AllMonitors;
+            Glass = s.Glass;
+            _GlassMaskTexture = s._GlassMaskTexture;
 
             Alpha = s.Alpha;
             Visible = s.Visible;
@@ -181,6 +201,7 @@ namespace VocaluxeLib.Menu
                 ReflectionSpace = _Theme.Reflection.Value.Space;
                 ReflectionHeight = _Theme.Reflection.Value.Height;
             }
+            Glass = _Theme.Glass.HasValue && _Theme.Glass.Value;
         }
 
         public void ReloadSkin()

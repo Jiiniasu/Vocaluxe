@@ -135,6 +135,8 @@ namespace Vocaluxe.Base
 
             foreach (IMenu popup in _PopupScreens)
                 popup.ReloadTheme(CThemes.GetThemeScreensPath(popup.PartyModeID));
+
+            CBase.Glass?.OnSettingsChanged();
         }
 
         public static void ReloadSkin()

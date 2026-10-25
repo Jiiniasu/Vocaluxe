@@ -27,6 +27,11 @@ namespace VocaluxeLib.Draw
     {
         public int ID { get; private set; }
         /// <summary>
+        ///     Path of the file this texture was loaded from, null for generated textures (video frames,
+        ///     CPU-generated images). Serves as a stable key for per-file caches (unlike the per-reference ID).
+        /// </summary>
+        public string TexturePath;
+        /// <summary>
         ///     Size of original image (e.g. of bmp)
         /// </summary>
         public Size OrigSize;

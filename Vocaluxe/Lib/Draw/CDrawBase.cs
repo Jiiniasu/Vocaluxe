@@ -408,6 +408,69 @@ namespace Vocaluxe.Lib.Draw
         }
 
         /// <summary>
+        ///     Draws a glass (frosted-glass) panel: the twin texture (a blurred copy of the background) is
+        ///     modulated with the color and then masked by the alpha of a second texture, so the panel can
+        ///     be a rounded or otherwise non-rectangular shape.
+        /// </summary>
+        /// <param name="textureRef">Twin texture (the blurred background)</param>
+        /// <param name="rect">A SRectF struct containing the destination coordinates</param>
+        /// <param name="color">A SColorF struct containing the color the glass is tinted with</param>
+        /// <param name="maskRef">Mask texture (white with alpha shaping the panel), null for a plain rectangle</param>
+        /// <param name="maskRect">Destination rect for the mask (usually the same as rect)</param>
+        /// <param name="allMonitors">True if the glass should be drawn on all screens</param>
+        public void DrawGlassTexture(CTextureRef textureRef, SRectF rect, SColorF color, CTextureRef maskRef, SRectF maskRect, bool allMonitors = true)
+        {
+            if (Math.Abs(color.A) < 0.01)
+                return;
+            SDrawCoords dc;
+            SDrawCoords maskDc = new SDrawCoords();
+            TTextureType texture;
+            if (!_GetTexture(textureRef, out texture))
+                return;
+            TTextureType mask = null;
+            if (maskRef != null && !_GetTexture(maskRef, out mask))
+                return;
+
+            if (allMonitors)
+            {
+                for (int i = 0; i < CConfig.Config.Graphics.NumScreens; i++)
+                {
+                    SRectF newrect = rect;
+                    SRectF newmaskRect = maskRect;
+                    newrect.X += CSettings.RenderW * i;
+                    newmaskRect.X += CSettings.RenderW * i;
+                    if (!_PanelVisible(newrect))
+                        continue;
+                    if (!_CalcDrawCoords(texture, newrect, out dc))
+                        return;
+                    if (mask != null && !_CalcDrawCoords(mask, newmaskRect, out maskDc))
+                        return;
+                    _DrawGlassTexture(texture, dc, mask, maskDc, color);
+                }
+            }
+            else
+            {
+                if (!_PanelVisible(rect))
+                    return;
+                if (!_CalcDrawCoords(texture, rect, out dc))
+                    return;
+                if (mask != null && !_CalcDrawCoords(mask, maskRect, out maskDc))
+                    return;
+                _DrawGlassTexture(texture, dc, mask, maskDc, color);
+            }
+        }
+
+        /// <summary>
+        ///     Draws a glass (frosted-glass) panel with driver-specific fixed-function blending
+        /// </summary>
+        /// <param name="texture">Twin texture (the blurred background)</param>
+        /// <param name="dc">Coordinates of the twin quad</param>
+        /// <param name="mask">Mask texture shaping the panel, null for a plain rectangle</param>
+        /// <param name="maskDc">Coordinates of the mask quad (only valid when mask is non-null)</param>
+        /// <param name="color">Color to tint the glass with</param>
+        protected abstract void _DrawGlassTexture(TTextureType texture, SDrawCoords dc, TTextureType mask, SDrawCoords maskDc, SColorF color);
+
+        /// <summary>
         ///     Draws a reflection of a texture
         /// </summary>
         /// <param name="textureRef">The texture of which a reflection should be drawn</param>

@@ -365,5 +365,20 @@ namespace Vocaluxe.Base
         {
             _Draw.DrawTextureReflection(textureRef, rect, color, bounds, space, height, allMonitors, mirrorLine, fadeOrigin, fadeSpan);
         }
+
+        /// <summary>
+        ///     Draws a glass (frosted-glass) panel: a blurred background copy tinted by the color and
+        ///     shaped by the alpha of the mask texture
+        /// </summary>
+        /// <param name="texture">Twin texture (the blurred background)</param>
+        /// <param name="rect">Destination rect for the glass</param>
+        /// <param name="color">Color to tint the glass with</param>
+        /// <param name="mask">Mask texture (white with alpha shaping the panel), null for a plain rectangle</param>
+        /// <param name="maskRect">Destination rect for the mask (usually the same as rect)</param>
+        /// <param name="allMonitors">True if the glass should be drawn on all screens</param>
+        public static void DrawGlassTexture(CTextureRef texture, SRectF rect, SColorF color, CTextureRef mask, SRectF maskRect, bool allMonitors = true)
+        {
+            _Draw.DrawGlassTexture(texture, rect, color, mask, maskRect, allMonitors);
+        }
     }
 }

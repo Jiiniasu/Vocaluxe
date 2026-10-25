@@ -331,6 +331,7 @@ namespace Vocaluxe.Lib.Draw
                 id = _NextID++;
             }
             CTextureRef textureRef = new CTextureRef(id, origSize);
+            textureRef.TexturePath = texture.TexturePath;
             lock (_Textures)
             {
                 if (texture.RefCount == 0)

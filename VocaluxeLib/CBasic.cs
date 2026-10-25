@@ -15,6 +15,8 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using VocaluxeLib.Draw;
+
 namespace VocaluxeLib
 {
     public static class CBase
@@ -24,6 +26,7 @@ namespace VocaluxeLib
         public static IThemes Themes;
         public static IBackgroundMusic BackgroundMusic;
         public static IDrawing Drawing;
+        public static IGlass Glass;
         public static IGraphics Graphics;
         public static IFonts Fonts;
         public static ILanguage Language;

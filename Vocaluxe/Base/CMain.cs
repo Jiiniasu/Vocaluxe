@@ -21,6 +21,7 @@ using System.Collections.ObjectModel;
 using System.Drawing;
 using Vocaluxe.Base.Fonts;
 using Vocaluxe.Base.ThemeSystem;
+using Vocaluxe.Lib.Draw;
 using VocaluxeLib;
 using VocaluxeLib.Draw;
 using VocaluxeLib.Game;
@@ -56,6 +57,7 @@ namespace Vocaluxe.Base
         {
             CBase.Assign(_Config, _Settings, _Themes, _BackgroundMusic, _Draw, _Graphics, _Fonts, _Language,
                          _Game, _Profiles, _Record, _Songs, _Video, _Sound, _Cover, _DataBase, _Controller, _Playlist);
+            CBase.Glass = new CGlass();
         }
     }
 
@@ -450,6 +452,11 @@ namespace Vocaluxe.Base
         public void DrawTextureReflection(CTextureRef texture, SRectF rect, SColorF color, SRectF bounds, float reflectionSpace, float reflectionHeight, bool allMonitors = true)
         {
             CDraw.DrawTextureReflection(texture, rect, color, bounds, reflectionSpace, reflectionHeight, allMonitors);
+        }
+
+        public void DrawGlassTexture(CTextureRef texture, SRectF rect, SColorF color, CTextureRef mask, SRectF maskRect, bool allMonitors = true)
+        {
+            CDraw.DrawGlassTexture(texture, rect, color, mask, maskRect, allMonitors);
         }
 
         public CTextureRef AddTexture(string fileName)
