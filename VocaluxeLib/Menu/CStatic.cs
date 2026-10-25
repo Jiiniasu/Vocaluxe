@@ -15,6 +15,7 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Xml.Serialization;
 using VocaluxeLib.Draw;
@@ -33,7 +34,7 @@ namespace VocaluxeLib.Menu
         public bool? AllMonitors;
         [XmlAttribute(AttributeName = "Glass")]
         public bool? Glass;
-        [XmlAttribute(AttributeName = "GlassMask")]
+        [XmlAttribute(AttributeName = "GlassMask"), DefaultValue("")]
         public string GlassMask;
     }
 
