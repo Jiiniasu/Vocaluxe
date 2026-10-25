@@ -40,7 +40,7 @@ namespace Vocaluxe.Screens
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {
-            get { return 7; }
+            get { return 8; }
         }
 
         private const string _TextCategory = "TextCategory";
@@ -75,8 +75,6 @@ namespace Vocaluxe.Screens
         private string _SearchText = String.Empty;
         private bool _SearchActive;
 
-        private readonly List<string> _ButtonsJoker = new List<string>();
-        private readonly List<string> _TextsPlayer = new List<string>();
         private ESongOptionsView _CurSongOptionsView;
         private readonly List<EGameMode> _AvailableGameModes;
         private SScreenSongOptions _Sso;
@@ -105,11 +103,7 @@ namespace Vocaluxe.Screens
         {
             base.Init();
 
-            _ButtonsJoker.Clear();
-            for (int i = 0; i < CSettings.MaxScreenPlayer; i++)
-                _ButtonsJoker.Add("ButtonJoker" + (i + 1));
             var blist = new List<string>();
-            blist.AddRange(_ButtonsJoker);
             blist.Add(_ButtonOptionsClose);
             blist.Add(_ButtonOptionsPlaylist);
             blist.Add(_ButtonOptionsSing);
@@ -123,11 +117,7 @@ namespace Vocaluxe.Screens
             blist.Add(_ButtonOptionsRandomMedley);
             blist.Add(_ButtonOptionsStartMedley);
 
-            _TextsPlayer.Clear();
-            for (int i = 0; i < CSettings.MaxScreenPlayer; i++)
-                _TextsPlayer.Add("TextPlayer" + (i + 1));
             var tlist = new List<string>();
-            tlist.AddRange(_TextsPlayer);
             tlist.Add(_TextCategory);
             tlist.Add(_TextSelection);
             tlist.Add(_TextSearchBarTitle);
@@ -225,22 +215,6 @@ namespace Vocaluxe.Screens
                             break;
 
                         case Keys.Enter:
-                            if (_Sso.Selection.RandomOnly && _Sso.Selection.NumJokers != null)
-                            {
-                                for (int i = 0; i < _ButtonsJoker.Count; i++)
-                                {
-                                    if (i < _Sso.Selection.NumJokers.Length)
-                                    {
-                                        if (_Buttons[_ButtonsJoker[i]].Selected)
-                                        {
-                                            _SelectNextRandom(i);
-                                            return true;
-                                        }
-                                    }
-                                }
-                                if (_Buttons[_ButtonStart].Selected)
-                                    _HandlePartySongSelection(_SongMenu.GetPreviewSongNr());
-                            }
                             if (CSongs.NumSongsVisible > 0 && !_Sso.Selection.PartyMode)
                             {
                                 if (_SongMenu.GetPreviewSongNr() != -1)
@@ -302,7 +276,7 @@ namespace Vocaluxe.Screens
 
                             case Keys.R:
                                 if (keyEvent.Mod == EModifier.Ctrl && !_Sso.Selection.RandomOnly)
-                                    _SelectNextRandom(-1);
+                                    _SelectNextRandom();
                                 break;
 
                             case Keys.S:
@@ -315,35 +289,6 @@ namespace Vocaluxe.Screens
                                     _SearchActive = true;
                                 break;
 
-                            case Keys.D1:
-                            case Keys.NumPad1:
-                                _SelectNextRandom(0);
-                                break;
-
-                            case Keys.D2:
-                            case Keys.NumPad2:
-                                _SelectNextRandom(1);
-                                break;
-
-                            case Keys.D3:
-                            case Keys.NumPad3:
-                                _SelectNextRandom(2);
-                                break;
-
-                            case Keys.D4:
-                            case Keys.NumPad4:
-                                _SelectNextRandom(3);
-                                break;
-
-                            case Keys.D5:
-                            case Keys.NumPad5:
-                                _SelectNextRandom(4);
-                                break;
-
-                            case Keys.D6:
-                            case Keys.NumPad6:
-                                _SelectNextRandom(5);
-                                break;
                         }
                     }
                 }
@@ -462,7 +407,7 @@ namespace Vocaluxe.Screens
             }
 
             if (mouseEvent.MB && !_Sso.Selection.PartyMode)
-                return _SelectNextRandom(-1);
+                return _SelectNextRandom();
 
             if (mouseEvent.LD && !_Sso.Selection.PartyMode)
             {
@@ -567,26 +512,6 @@ namespace Vocaluxe.Screens
                         _ToggleSongOptions(ESongOptionsView.None);
                         _StartRandomMedley(_SelectSlides[_SelectSlideOptionsNumMedleySongs].Selection + 1, !CSongs.IsInCategory);
                         return true;
-                    }
-                    else if (_Sso.Selection.RandomOnly && _Sso.Selection.NumJokers != null)
-                    {
-                        if (_Buttons[_ButtonStart].Selected)
-                        {
-                            _HandlePartySongSelection(_SongMenu.GetPreviewSongNr());
-                            return true;
-                        }
-
-                        for (int i = 0; i < _ButtonsJoker.Count; i++)
-                        {
-                            if (i < _Sso.Selection.NumJokers.Length)
-                            {
-                                if (_Buttons[_ButtonsJoker[i]].Selected)
-                                {
-                                    _SelectNextRandom(i);
-                                    return true;
-                                }
-                            }
-                        }
                     }
                 }
 
@@ -757,16 +682,6 @@ namespace Vocaluxe.Screens
             CSongs.OnCategoryChanged -= _OnCategoryChanged;
         }
 
-        private void _HandlePartySongSelection(int songNr)
-        {
-            if (CSongs.IsInCategory && (songNr >= 0))
-            {
-                CSong song = CSongs.VisibleSongs[songNr];
-                if (song != null)
-                    CParty.SongSelected(song.ID);
-            }
-        }
-
         private void _UpdatePartyModeOptions()
         {
             if (!CSongs.IsInCategory)
@@ -805,55 +720,10 @@ namespace Vocaluxe.Screens
 
             _SongMenu.Update(_Sso);
 
-            if (_Sso.Selection.RandomOnly && _Sso.Selection.NumJokers != null)
-            {
-                //Show and select start button
-                _Buttons[_ButtonStart].Visible = true;
-                _SelectElement(_Buttons[_ButtonStart]);
+            if (_Sso.Selection.PartyMode)
+                _SongMenu.SmallView = false;
 
-                _SongMenu.SmallView = true;
-
-                for (int i = 0; i < CSettings.MaxScreenPlayer; i++)
-                {
-                    if (i < _Sso.Selection.NumJokers.Length)
-                    {
-                        _Buttons[_ButtonsJoker[i]].Visible = true;
-                        _Buttons[_ButtonsJoker[i]].Text.Text = _Sso.Selection.NumJokers[i].ToString();
-                        _Texts[_TextsPlayer[i]].Visible = true;
-
-                        bool nameExists = false;
-                        if (_Sso.Selection.TeamNames != null)
-                        {
-                            if (_Sso.Selection.TeamNames.Length > i)
-                            {
-                                _Texts[_TextsPlayer[i]].Text = _Sso.Selection.TeamNames[i];
-                                nameExists = true;
-                            }
-                        }
-
-                        if (!nameExists)
-                            _Texts[_TextsPlayer[i]].Text = i.ToString();
-                    }
-                    else
-                    {
-                        _Buttons[_ButtonsJoker[i]].Visible = false;
-                        _Texts[_TextsPlayer[i]].Visible = false;
-                    }
-                }
-            }
-            else
-            {
-                if (_Sso.Selection.PartyMode)
-                    _SongMenu.SmallView = false;
-
-                for (int i = 0; i < CSettings.MaxScreenPlayer; i++)
-                {
-                    _Buttons[_ButtonsJoker[i]].Visible = false;
-                    _Texts[_TextsPlayer[i]].Visible = false;
-                }
-
-                _Buttons[_ButtonStart].Visible = false;
-            }
+            _Buttons[_ButtonStart].Visible = false;
         }
 
         private void _StartSong(int songNr)
@@ -988,27 +858,9 @@ namespace Vocaluxe.Screens
                 CGraphics.FadeTo(EScreen.Names);
         }
 
-        private bool _SelectNextRandom(int teamNr)
+        private bool _SelectNextRandom()
         {
-            if (teamNr != -1 && _Sso.Selection.RandomOnly && _Sso.Selection.NumJokers != null)
-            {
-                bool result = false;
-                if (_Sso.Selection.NumJokers.Length > teamNr)
-                {
-                    if (_Sso.Selection.NumJokers[teamNr] > 0)
-                    {
-                        result = _SelectNextRandomSong() || _SelectNextRandomCategory();
-                        CParty.JokerUsed(teamNr);
-                        _Sso = CParty.GetSongSelectionOptions();
-                    }
-                }
-                return result;
-            }
-
-            if (teamNr == -1)
-                return _SelectNextRandomSong() || _SelectNextRandomCategory();
-
-            return false;
+            return _SelectNextRandomSong() || _SelectNextRandomCategory();
         }
 
         private bool _SelectNextRandomSong()

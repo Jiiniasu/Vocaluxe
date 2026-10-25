@@ -68,15 +68,5 @@ namespace VocaluxeLib.Songs
         ///     If true, it is not alled to change or leave the category. It's only valid if Tabs=On.
         /// </summary>
         public bool CategoryChangeAllowed;
-
-        /// <summary>
-        ///     The number of jokers left for each team
-        /// </summary>
-        public int[] NumJokers;
-
-        /// <summary>
-        ///     The Team Name of the teams (:>)
-        /// </summary>
-        public string[] TeamNames;
     }
 }

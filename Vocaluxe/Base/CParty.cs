@@ -38,8 +38,6 @@ namespace Vocaluxe.Base
                 RandomOnly = false,
                 PartyMode = false,
                 CategoryChangeAllowed = true,
-                NumJokers = null,
-                TeamNames = null,
                 SongIndex = -1,
                 CategoryIndex = -1
             },
@@ -91,15 +89,6 @@ namespace Vocaluxe.Base
         {
             _SongOptions.Sorting.SearchString = searchString;
             _SongOptions.Sorting.SearchActive = visible;
-        }
-
-        public static void JokerUsed(int teamNr)
-        {
-        }
-
-        public static void SongSelected(int songID)
-        {
-            CBase.Graphics.FadeTo(EScreen.Sing);
         }
 
         public static void FinishedSinging()
