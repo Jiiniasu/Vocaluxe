@@ -1,4 +1,4 @@
-#region license
+﻿#region license
 // This file is part of Vocaluxe.
 // 
 // Vocaluxe is free software: you can redistribute it and/or modify
@@ -102,7 +102,7 @@ namespace Vocaluxe.Lib.Video.Acinerella
             Finished = true;
         }
 
-        public bool GetFrame(ref CTextureRef frame, float time, out float videoTime)
+        public bool GetFrame(ref CTextureRef frame, ref CTextureRef glassFrame, float time, int glassStrength, out float videoTime)
         {
             if (Finished)
             {
@@ -127,7 +127,7 @@ namespace Vocaluxe.Lib.Video.Acinerella
             _Thread.SyncTime(time);
 
             bool finished;
-            _Thread.GetFrame(ref frame, ref time, out finished);
+            _Thread.GetFrame(ref frame, ref glassFrame, ref time, glassStrength, out finished);
             videoTime = time - _Gap;
 
             if (finished) //Only set, not reset

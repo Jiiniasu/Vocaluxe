@@ -1,4 +1,4 @@
-#region license
+﻿#region license
 // This file is part of Vocaluxe.
 // 
 // Vocaluxe is free software: you can redistribute it and/or modify
@@ -18,6 +18,7 @@
 using NUnit.Framework;
 using Vocaluxe.Base;
 using Vocaluxe.Lib.Sound.Record;
+using VocaluxeLib;
 using VocaluxeLib.Xml;
 
 namespace Tests.Vocaluxe
@@ -110,6 +111,32 @@ namespace Tests.Vocaluxe
 
             Assert.AreEqual("Not Plugged In Mic", restored.Record.MicConfig[1].DeviceName);
             Assert.AreEqual(1, restored.Record.MicConfig[1].Channel);
+        }
+
+        [Test]
+        public void TestGlassConfig_DefaultsAppliedForMissingFields()
+        {
+            //A configuration from a version without the glass entries must get the documented defaults
+            CConfig.SConfig restored = _Deserializer.DeserializeString<CConfig.SConfig>("<root />");
+
+            Assert.AreEqual(EOffOn.TR_CONFIG_ON, restored.Graphics.GlassBlur);
+            Assert.AreEqual(EGlassStrength.Medium, restored.Graphics.GlassStrength);
+            Assert.AreEqual(EGlassDarken.Medium, restored.Graphics.GlassDarken);
+        }
+
+        [Test]
+        public void TestGlassConfig_RoundTrip()
+        {
+            CConfig.Config.Graphics.GlassBlur = EOffOn.TR_CONFIG_OFF;
+            CConfig.Config.Graphics.GlassStrength = EGlassStrength.Max;
+            CConfig.Config.Graphics.GlassDarken = EGlassDarken.Heavy;
+
+            CConfig.SConfig restored;
+            _RoundTripConfig(out restored);
+
+            Assert.AreEqual(EOffOn.TR_CONFIG_OFF, restored.Graphics.GlassBlur);
+            Assert.AreEqual(EGlassStrength.Max, restored.Graphics.GlassStrength);
+            Assert.AreEqual(EGlassDarken.Heavy, restored.Graphics.GlassDarken);
         }
 
         private void _RoundTripConfig(out CConfig.SConfig restored)

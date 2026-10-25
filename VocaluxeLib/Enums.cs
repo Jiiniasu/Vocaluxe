@@ -285,6 +285,26 @@ namespace VocaluxeLib
         TR_CONFIG_LYRICSTYLE_SLIDE,
         TR_CONFIG_LYRICSTYLE_ZOOM
     }
+
+    /// Blur strength of the frosted-glass backdrops (value = percent, see CGlassBlur)
+    public enum EGlassStrength
+    {
+        Off = 0,
+        Low = 25,
+        Medium = 65,
+        High = 85,
+        Max = 100
+    }
+
+    /// Darkening of the frosted-glass backdrops (value = percent)
+    public enum EGlassDarken
+    {
+        None = 0,
+        Subtle = 15,
+        Medium = 30,
+        Strong = 50,
+        Heavy = 75
+    }
     #endregion Config
 
     public enum EStreamAction

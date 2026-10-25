@@ -23,6 +23,8 @@ namespace VocaluxeLib
     {
         public int ID { get; private set; }
         public CTextureRef Texture;
+        /// Blurred "glass twin" of the last frame for frosted-glass panels, null when glass blur is disabled
+        public CTextureRef GlassTexture;
         /// The actual position in s of the returned frame. Should be ~ time+VideoGap
         public float VideoTime;
 
@@ -48,6 +50,7 @@ namespace VocaluxeLib
         {
             ID = -1;
             CBase.Drawing.RemoveTexture(ref Texture);
+            CBase.Drawing.RemoveTexture(ref GlassTexture);
         }
 
         /// <summary>

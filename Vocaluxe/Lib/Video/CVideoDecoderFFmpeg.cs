@@ -16,6 +16,7 @@
 #endregion
 
 using System.Collections.Generic;
+using Vocaluxe.Base;
 using Vocaluxe.Lib.Video.Acinerella;
 using VocaluxeLib;
 
@@ -75,7 +76,11 @@ namespace Vocaluxe.Lib.Video
         {
             CDecoder decoder;
             if (_TryGetDecoder(stream, out decoder))
-                return decoder.GetFrame(ref stream.Texture, time, out stream.VideoTime);
+            {
+                //Glass twin is rebuilt per new frame by the decoder (see CGlassBlur for the budget)
+                int glassStrength = CConfig.Config.Graphics.GlassBlur == EOffOn.TR_CONFIG_ON ? (int)CConfig.Config.Graphics.GlassStrength : 0;
+                return decoder.GetFrame(ref stream.Texture, ref stream.GlassTexture, time, glassStrength, out stream.VideoTime);
+            }
             stream.VideoTime = 0;
             return false;
         }

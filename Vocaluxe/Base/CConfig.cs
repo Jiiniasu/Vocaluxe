@@ -111,6 +111,17 @@ namespace Vocaluxe.Base
             public EOffOn Stretch;
             [DefaultValue(0.4f), XmlRanged(0, 3)]
             public float FadeTime;
+            /// <summary>
+            ///     ON (default): video backgrounds additionally produce a blurred "glass twin" texture that
+            ///         frosted-glass UI panels (Static Glass="true") are drawn against, see CGlassBlur/CGlass.
+            ///     OFF: no glass twin is produced, glass panels fall back to a plain darken overlay.
+            /// </summary>
+            [DefaultValue(EOffOn.TR_CONFIG_ON)]
+            public EOffOn GlassBlur;
+            [DefaultValue(EGlassStrength.Medium)]
+            public EGlassStrength GlassStrength;
+            [DefaultValue(EGlassDarken.Medium)]
+            public EGlassDarken GlassDarken;
         }
 
         public struct SConfigTheme

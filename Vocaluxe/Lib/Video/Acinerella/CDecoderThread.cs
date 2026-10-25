@@ -16,10 +16,12 @@
 #endregion
 
 using System;
+using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Vocaluxe.Base;
+using Vocaluxe.Lib.Draw;
 using VocaluxeLib.Draw;
 using VocaluxeLib.Log;
 
@@ -193,10 +195,12 @@ namespace Vocaluxe.Lib.Video.Acinerella
         ///     Gets a frame
         /// </summary>
         /// <param name="frame">Referenz to texture where frame should be put in (can be null, then texture is created)</param>
+        /// <param name="glassFrame">Reference to the blurred "glass twin" texture (created/updated while glassStrength > 0, removed otherwise)</param>
         /// <param name="time">Maximum start time for frame</param>
+        /// <param name="glassStrength">Glass blur strength 0..100 (0 = disabled, no twin texture is produced)</param>
         /// <param name="finished">Set to whether there are no more frames (stream finished, no loop, future calls will always return false)</param>
         /// <returns>True if a new frame was gotten</returns>
-        public bool GetFrame(ref CTextureRef frame, ref float time, out bool finished)
+        public bool GetFrame(ref CTextureRef frame, ref CTextureRef glassFrame, ref float time, int glassStrength, out bool finished)
         {
             bool result;
             if (Math.Abs(_LastShownTime - time) < _FrameDuration && frame != null) //Check 1 frame difference
@@ -213,6 +217,22 @@ namespace Vocaluxe.Lib.Video.Acinerella
                         frame = CDraw.AddTexture(_Width, _Height, curFrame.Data);
                     else
                         CDraw.UpdateTexture(frame, _Width, _Height, curFrame.Data);
+                    if (glassStrength > 0)
+                    {
+                        //The blurred twin is rebuilt once per new frame (see CDecoderThread thread contract);
+                        //the upload inside Add/UpdateTexture consumes CGlassBlur's reused buffer synchronously.
+                        byte[] glassData = CGlassBlur.Process(curFrame.Data, _Width, _Height, glassStrength);
+                        if (glassData != null)
+                        {
+                            Size glassSize = CGlassBlur.CalcTargetSize(_Width, _Height);
+                            if (glassFrame == null)
+                                glassFrame = CDraw.AddTexture(glassSize.Width, glassSize.Height, glassData);
+                            else
+                                CDraw.UpdateTexture(glassFrame, glassSize.Width, glassSize.Height, glassData);
+                        }
+                    }
+                    else if (glassFrame != null)
+                        CDraw.RemoveTexture(ref glassFrame);
                     if (!_Paused)
                         curFrame.SetRead();
                     time = curFrame.Time;

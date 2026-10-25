@@ -32,6 +32,9 @@
     <FullScreen>TR_CONFIG_ON</FullScreen>
     <Stretch>TR_CONFIG_OFF</Stretch>
     <FadeTime>0.4</FadeTime>
+    <GlassBlur>TR_CONFIG_ON</GlassBlur>
+    <GlassStrength>Medium</GlassStrength>
+    <GlassDarken>Medium</GlassDarken>
   </Graphics>
   <Theme>
     <Name>Genius</Name>
