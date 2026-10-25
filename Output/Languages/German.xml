@@ -80,6 +80,16 @@
   <string name="TR_CONFIG_LYRICSPOSITION_TOP">Oben</string>
   <string name="TR_CONFIG_LYRICSPOSITION_BOTH">Oben und Unten</string>
   <string name="TR_CONFIG_LYRICSPOSITION_DYNAMIC">Dynamisch</string>
+  <string name="TR_CONFIG_GLASSSTRENGTH_OFF">Aus</string>
+  <string name="TR_CONFIG_GLASSSTRENGTH_LOW">Niedrig</string>
+  <string name="TR_CONFIG_GLASSSTRENGTH_MEDIUM">Mittel</string>
+  <string name="TR_CONFIG_GLASSSTRENGTH_HIGH">Hoch</string>
+  <string name="TR_CONFIG_GLASSSTRENGTH_MAX">Maximal</string>
+  <string name="TR_CONFIG_GLASSDARKEN_NONE">Keine</string>
+  <string name="TR_CONFIG_GLASSDARKEN_SUBTLE">Dezent</string>
+  <string name="TR_CONFIG_GLASSDARKEN_MEDIUM">Mittel</string>
+  <string name="TR_CONFIG_GLASSDARKEN_STRONG">Stark</string>
+  <string name="TR_CONFIG_GLASSDARKEN_HEAVY">Sehr stark</string>
   <string name="TR_SCREENLOAD_LOADING">Laden</string>
   <string name="TR_SCREENLOAD_TOTAL">Gesamt</string>
   <string name="TR_SCREENLOAD_SONGS">Lieder</string>
@@ -184,5 +194,8 @@
   <string name="TR_SCREENOVIDEO_VIDEOBACKGROUNDS">Video-Hintergründe</string>
   <string name="TR_SCREENOVIDEO_VIDEOINSONGS">Videos während des Singens</string>
   <string name="TR_SCREENOVIDEO_VIDEOSTOBACKGROUND">Aktuelles Hintergrundvideo anzeigen</string>
+  <string name="TR_SCREENOVIDEO_GLASS">Glas-Hintergründe</string>
+  <string name="TR_SCREENOVIDEO_GLASSSTRENGTH">Glas-Unschärfe</string>
+  <string name="TR_SCREENOVIDEO_GLASSDARKEN">Glas-Abdunkelung</string>
   <string name="TR_SCREENPVOLUMECONTROL_VOLUME">Lautstärke</string>
 </resources>

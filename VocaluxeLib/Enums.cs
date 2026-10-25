@@ -289,21 +289,25 @@ namespace VocaluxeLib
     /// Blur strength of the frosted-glass backdrops (value = percent, see CGlassBlur)
     public enum EGlassStrength
     {
-        Off = 0,
-        Low = 25,
-        Medium = 65,
-        High = 85,
-        Max = 100
+        // ReSharper disable InconsistentNaming
+        TR_CONFIG_GLASSSTRENGTH_OFF = 0,
+        TR_CONFIG_GLASSSTRENGTH_LOW = 25,
+        TR_CONFIG_GLASSSTRENGTH_MEDIUM = 65,
+        TR_CONFIG_GLASSSTRENGTH_HIGH = 85,
+        TR_CONFIG_GLASSSTRENGTH_MAX = 100
+        // ReSharper restore InconsistentNaming
     }
 
     /// Darkening of the frosted-glass backdrops (value = percent)
     public enum EGlassDarken
     {
-        None = 0,
-        Subtle = 15,
-        Medium = 30,
-        Strong = 50,
-        Heavy = 75
+        // ReSharper disable InconsistentNaming
+        TR_CONFIG_GLASSDARKEN_NONE = 0,
+        TR_CONFIG_GLASSDARKEN_SUBTLE = 15,
+        TR_CONFIG_GLASSDARKEN_MEDIUM = 30,
+        TR_CONFIG_GLASSDARKEN_STRONG = 50,
+        TR_CONFIG_GLASSDARKEN_HEAVY = 75
+        // ReSharper restore InconsistentNaming
     }
     #endregion Config
 

@@ -120,23 +120,23 @@ namespace Tests.Vocaluxe
             CConfig.SConfig restored = _Deserializer.DeserializeString<CConfig.SConfig>("<root />");
 
             Assert.AreEqual(EOffOn.TR_CONFIG_ON, restored.Graphics.GlassBlur);
-            Assert.AreEqual(EGlassStrength.Medium, restored.Graphics.GlassStrength);
-            Assert.AreEqual(EGlassDarken.Medium, restored.Graphics.GlassDarken);
+            Assert.AreEqual(EGlassStrength.TR_CONFIG_GLASSSTRENGTH_MEDIUM, restored.Graphics.GlassStrength);
+            Assert.AreEqual(EGlassDarken.TR_CONFIG_GLASSDARKEN_MEDIUM, restored.Graphics.GlassDarken);
         }
 
         [Test]
         public void TestGlassConfig_RoundTrip()
         {
             CConfig.Config.Graphics.GlassBlur = EOffOn.TR_CONFIG_OFF;
-            CConfig.Config.Graphics.GlassStrength = EGlassStrength.Max;
-            CConfig.Config.Graphics.GlassDarken = EGlassDarken.Heavy;
+            CConfig.Config.Graphics.GlassStrength = EGlassStrength.TR_CONFIG_GLASSSTRENGTH_MAX;
+            CConfig.Config.Graphics.GlassDarken = EGlassDarken.TR_CONFIG_GLASSDARKEN_HEAVY;
 
             CConfig.SConfig restored;
             _RoundTripConfig(out restored);
 
             Assert.AreEqual(EOffOn.TR_CONFIG_OFF, restored.Graphics.GlassBlur);
-            Assert.AreEqual(EGlassStrength.Max, restored.Graphics.GlassStrength);
-            Assert.AreEqual(EGlassDarken.Heavy, restored.Graphics.GlassDarken);
+            Assert.AreEqual(EGlassStrength.TR_CONFIG_GLASSSTRENGTH_MAX, restored.Graphics.GlassStrength);
+            Assert.AreEqual(EGlassDarken.TR_CONFIG_GLASSDARKEN_HEAVY, restored.Graphics.GlassDarken);
         }
 
         private void _RoundTripConfig(out CConfig.SConfig restored)

@@ -118,9 +118,9 @@ namespace Vocaluxe.Base
             /// </summary>
             [DefaultValue(EOffOn.TR_CONFIG_ON)]
             public EOffOn GlassBlur;
-            [DefaultValue(EGlassStrength.Medium)]
+            [DefaultValue(EGlassStrength.TR_CONFIG_GLASSSTRENGTH_MEDIUM)]
             public EGlassStrength GlassStrength;
-            [DefaultValue(EGlassDarken.Medium)]
+            [DefaultValue(EGlassDarken.TR_CONFIG_GLASSDARKEN_MEDIUM)]
             public EGlassDarken GlassDarken;
         }
 

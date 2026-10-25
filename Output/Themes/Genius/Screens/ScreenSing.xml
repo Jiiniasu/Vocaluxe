@@ -2,7 +2,7 @@
 <Screen xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Informations>
     <ScreenName>ScreenSing</ScreenName>
-    <ScreenVersion>9</ScreenVersion>
+    <ScreenVersion>10</ScreenVersion>
   </Informations>
   <Backgrounds/>
   <Statics>
@@ -28,7 +28,7 @@
         <Z>-1</Z>
       </Rect>
     </Static>
-    <Static Name="StaticLyrics">
+    <Static Name="StaticLyrics" Glass="true" GlassMask="GlassLyricsBar">
       <Skin />
       <Color Name="Invisible" />
       <Rect>
@@ -39,7 +39,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticLyricsDuet">
+    <Static Name="StaticLyricsDuet" Glass="true" GlassMask="GlassLyricsBar">
       <Skin />
       <Color Name="Invisible" />
       <Rect>
@@ -50,7 +50,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticLyricsTop">
+    <Static Name="StaticLyricsTop" Glass="true" GlassMask="GlassLyricsBar">
       <Skin />
       <Color Name="Invisible" />
       <Rect>
@@ -162,7 +162,7 @@
         <Z>-2.1</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP1N1">
+    <Static Name="StaticScoreP1N1" Glass="true">
       <Skin>NotePanelLarge</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -184,7 +184,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP1N2">
+    <Static Name="StaticScoreP1N2" Glass="true">
       <Skin>NotePanelLarge</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -206,7 +206,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP2N2">
+    <Static Name="StaticScoreP2N2" Glass="true">
       <Skin>NotePanelLarge</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -228,7 +228,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP1N3">
+    <Static Name="StaticScoreP1N3" Glass="true">
       <Skin>NotePanelLarge</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -250,7 +250,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP2N3">
+    <Static Name="StaticScoreP2N3" Glass="true">
       <Skin>NotePanelLarge</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -272,7 +272,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP3N3">
+    <Static Name="StaticScoreP3N3" Glass="true">
       <Skin>NotePanelLarge</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -294,7 +294,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP1N4">
+    <Static Name="StaticScoreP1N4" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -316,7 +316,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP2N4">
+    <Static Name="StaticScoreP2N4" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -338,7 +338,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP3N4">
+    <Static Name="StaticScoreP3N4" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -360,7 +360,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP4N4">
+    <Static Name="StaticScoreP4N4" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -382,7 +382,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP1N5">
+    <Static Name="StaticScoreP1N5" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -404,7 +404,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP2N5">
+    <Static Name="StaticScoreP2N5" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -426,7 +426,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP3N5">
+    <Static Name="StaticScoreP3N5" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -448,7 +448,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP4N5">
+    <Static Name="StaticScoreP4N5" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -470,7 +470,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP5N5">
+    <Static Name="StaticScoreP5N5" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -492,7 +492,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP1N6">
+    <Static Name="StaticScoreP1N6" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -514,7 +514,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP2N6">
+    <Static Name="StaticScoreP2N6" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -536,7 +536,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP3N6">
+    <Static Name="StaticScoreP3N6" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -558,7 +558,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP4N6">
+    <Static Name="StaticScoreP4N6" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -580,7 +580,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP5N6">
+    <Static Name="StaticScoreP5N6" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>
@@ -602,7 +602,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticScoreP6N6">
+    <Static Name="StaticScoreP6N6" Glass="true">
       <Skin>NotePanel</Skin>
       <Color Name="StaticColor" />
       <Rect>

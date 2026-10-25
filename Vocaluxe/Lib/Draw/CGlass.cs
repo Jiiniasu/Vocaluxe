@@ -93,7 +93,8 @@ namespace Vocaluxe.Lib.Draw
                 return;
 
             CTextureRef texture = cStatic.Texture;
-            if (texture == null)
+            //A glass static may be shaped by a mask alone, without a texture of its own (e.g. the lyrics bar)
+            if (texture == null && cStatic.GlassMask == null)
                 return;
 
             SRectF rect = _GlassRect(cStatic);
@@ -112,8 +113,13 @@ namespace Vocaluxe.Lib.Draw
             }
             else
             {
-                //No blur source available (e.g. BGM video without a file path): tint-only fallback
-                CBase.Drawing.DrawRect(color, rect, cStatic.AllMonitors);
+                //No blur source available (e.g. a plain color background): tint-only fallback,
+                //shaped by the mask when there is one
+                CTextureRef mask = _GetMask(cStatic, texture);
+                if (mask != null)
+                    CBase.Drawing.DrawTexture(mask, rect, color, cStatic.AllMonitors);
+                else
+                    CBase.Drawing.DrawRect(color, rect, cStatic.AllMonitors);
             }
         }
 

@@ -38,7 +38,7 @@ namespace Vocaluxe.Screens
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {
-            get { return 9; }
+            get { return 10; }
         }
 
         private struct STimeRect

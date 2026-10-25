@@ -33,8 +33,8 @@
     <Stretch>TR_CONFIG_OFF</Stretch>
     <FadeTime>0.4</FadeTime>
     <GlassBlur>TR_CONFIG_ON</GlassBlur>
-    <GlassStrength>Medium</GlassStrength>
-    <GlassDarken>Medium</GlassDarken>
+    <GlassStrength>TR_CONFIG_GLASSSTRENGTH_MEDIUM</GlassStrength>
+    <GlassDarken>TR_CONFIG_GLASSDARKEN_MEDIUM</GlassDarken>
   </Graphics>
   <Theme>
     <Name>Genius</Name>

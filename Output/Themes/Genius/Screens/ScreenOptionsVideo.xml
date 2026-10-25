@@ -2,7 +2,7 @@
 <Screen xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <Informations>
     <ScreenName>ScreenOptionsVideo</ScreenName>
-    <ScreenVersion>7</ScreenVersion>
+    <ScreenVersion>8</ScreenVersion>
   </Informations>
   <Backgrounds>
     <Background Name="Background1">
@@ -82,6 +82,48 @@
       <Style>Bold</Style>
       <Font>Outline</Font>
       <Text>TR_SCREENOVIDEO_VIDEOSTOBACKGROUND</Text>
+    </Text>
+    <Text Name="TextGlassBlur">
+      <X>75</X>
+      <Y>347</Y>
+      <Z>0</Z>
+      <H>27</H>
+      <MaxW>0</MaxW>
+      <Color Name="TextColor" />
+      <SelColor Name="TextSelColor" />
+      <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text>TR_SCREENOVIDEO_GLASS</Text>
+    </Text>
+    <Text Name="TextGlassStrength">
+      <X>75</X>
+      <Y>407</Y>
+      <Z>0</Z>
+      <H>27</H>
+      <MaxW>0</MaxW>
+      <Color Name="TextColor" />
+      <SelColor Name="TextSelColor" />
+      <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text>TR_SCREENOVIDEO_GLASSSTRENGTH</Text>
+    </Text>
+    <Text Name="TextGlassDarken">
+      <X>75</X>
+      <Y>467</Y>
+      <Z>0</Z>
+      <H>27</H>
+      <MaxW>0</MaxW>
+      <Color Name="TextColor" />
+      <SelColor Name="TextSelColor" />
+      <Align>Left</Align>
+      <ResizeAlign>Center</ResizeAlign>
+      <Style>Bold</Style>
+      <Font>Outline</Font>
+      <Text>TR_SCREENOVIDEO_GLASSDARKEN</Text>
     </Text>
   </Texts>
   <Buttons>
@@ -232,6 +274,132 @@
       <RectArrowRight>
         <X>1170</X>
         <Y>285</Y>
+        <W>40</W>
+        <H>40</H>
+        <Z>0</Z>
+      </RectArrowRight>
+      <Color Name="SelectSlideColor" />
+      <SelColor Name="SelectSlideSelColor" />
+      <ArrowColor Name="ArrowColor" />
+      <ArrowSelColor Name="ArrowSelColor" />
+      <TextColor Name="TextColorAlpha" />
+      <TextSelColor Name="TextSelColor" />
+      <TextH>27</TextH>
+      <TextRelativeX>50</TextRelativeX>
+      <TextRelativeY>0</TextRelativeY>
+      <TextMaxW>200</TextMaxW>
+      <TextFont>Outline</TextFont>
+      <TextStyle>Bold</TextStyle>
+      <NumVisible>3</NumVisible>
+    </SelectSlide>
+    <SelectSlide Name="SelectSlideGlassBlur">
+      <Skin/>
+      <SkinArrowLeft>SelectSlideArrowLeft</SkinArrowLeft>
+      <SkinArrowRight>SelectSlideArrowRight</SkinArrowRight>
+      <SkinSelected>SelectSlide</SkinSelected>
+      <SkinArrowLeftSelected>SelectSlideArrowLeft</SkinArrowLeftSelected>
+      <SkinArrowRightSelected>SelectSlideArrowRight</SkinArrowRightSelected>
+      <Rect>
+        <X>500</X>
+        <Y>340</Y>
+        <W>715</W>
+        <H>50</H>
+        <Z>0</Z>
+      </Rect>
+      <RectArrowLeft>
+        <X>505</X>
+        <Y>345</Y>
+        <W>40</W>
+        <H>40</H>
+        <Z>0</Z>
+      </RectArrowLeft>
+      <RectArrowRight>
+        <X>1170</X>
+        <Y>345</Y>
+        <W>40</W>
+        <H>40</H>
+        <Z>0</Z>
+      </RectArrowRight>
+      <Color Name="SelectSlideColor" />
+      <SelColor Name="SelectSlideSelColor" />
+      <ArrowColor Name="ArrowColor" />
+      <ArrowSelColor Name="ArrowSelColor" />
+      <TextColor Name="TextColorAlpha" />
+      <TextSelColor Name="TextSelColor" />
+      <TextH>27</TextH>
+      <TextRelativeX>50</TextRelativeX>
+      <TextRelativeY>0</TextRelativeY>
+      <TextMaxW>200</TextMaxW>
+      <TextFont>Outline</TextFont>
+      <TextStyle>Bold</TextStyle>
+      <NumVisible>3</NumVisible>
+    </SelectSlide>
+    <SelectSlide Name="SelectSlideGlassStrength">
+      <Skin/>
+      <SkinArrowLeft>SelectSlideArrowLeft</SkinArrowLeft>
+      <SkinArrowRight>SelectSlideArrowRight</SkinArrowRight>
+      <SkinSelected>SelectSlide</SkinSelected>
+      <SkinArrowLeftSelected>SelectSlideArrowLeft</SkinArrowLeftSelected>
+      <SkinArrowRightSelected>SelectSlideArrowRight</SkinArrowRightSelected>
+      <Rect>
+        <X>500</X>
+        <Y>400</Y>
+        <W>715</W>
+        <H>50</H>
+        <Z>0</Z>
+      </Rect>
+      <RectArrowLeft>
+        <X>505</X>
+        <Y>405</Y>
+        <W>40</W>
+        <H>40</H>
+        <Z>0</Z>
+      </RectArrowLeft>
+      <RectArrowRight>
+        <X>1170</X>
+        <Y>405</Y>
+        <W>40</W>
+        <H>40</H>
+        <Z>0</Z>
+      </RectArrowRight>
+      <Color Name="SelectSlideColor" />
+      <SelColor Name="SelectSlideSelColor" />
+      <ArrowColor Name="ArrowColor" />
+      <ArrowSelColor Name="ArrowSelColor" />
+      <TextColor Name="TextColorAlpha" />
+      <TextSelColor Name="TextSelColor" />
+      <TextH>27</TextH>
+      <TextRelativeX>50</TextRelativeX>
+      <TextRelativeY>0</TextRelativeY>
+      <TextMaxW>200</TextMaxW>
+      <TextFont>Outline</TextFont>
+      <TextStyle>Bold</TextStyle>
+      <NumVisible>3</NumVisible>
+    </SelectSlide>
+    <SelectSlide Name="SelectSlideGlassDarken">
+      <Skin/>
+      <SkinArrowLeft>SelectSlideArrowLeft</SkinArrowLeft>
+      <SkinArrowRight>SelectSlideArrowRight</SkinArrowRight>
+      <SkinSelected>SelectSlide</SkinSelected>
+      <SkinArrowLeftSelected>SelectSlideArrowLeft</SkinArrowLeftSelected>
+      <SkinArrowRightSelected>SelectSlideArrowRight</SkinArrowRightSelected>
+      <Rect>
+        <X>500</X>
+        <Y>460</Y>
+        <W>715</W>
+        <H>50</H>
+        <Z>0</Z>
+      </Rect>
+      <RectArrowLeft>
+        <X>505</X>
+        <Y>465</Y>
+        <W>40</W>
+        <H>40</H>
+        <Z>0</Z>
+      </RectArrowLeft>
+      <RectArrowRight>
+        <X>1170</X>
+        <Y>465</Y>
         <W>40</W>
         <H>40</H>
         <Z>0</Z>

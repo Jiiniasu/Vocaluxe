@@ -15,6 +15,8 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
+using System;
+using System.Linq;
 using Vocaluxe.Base;
 using VocaluxeLib;
 using VocaluxeLib.Menu;
@@ -26,12 +28,15 @@ namespace Vocaluxe.Screens
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {
-            get { return 7; }
+            get { return 8; }
         }
 
         private const string _SelectSlideVideoBackgrounds = "SelectSlideVideoBackgrounds";
         private const string _SelectSlideVideosInSongs = "SelectSlideVideosInSongs";
         private const string _SelectSlideVideosToBackground = "SelectSlideVideosToBackground";
+        private const string _SelectSlideGlassBlur = "SelectSlideGlassBlur";
+        private const string _SelectSlideGlassStrength = "SelectSlideGlassStrength";
+        private const string _SelectSlideGlassDarken = "SelectSlideGlassDarken";
 
         private const string _ButtonExit = "ButtonExit";
 
@@ -42,7 +47,8 @@ namespace Vocaluxe.Screens
             _ThemeButtons = new string[] { _ButtonExit };
             _ThemeSelectSlides = new string[]
                 {
-                    _SelectSlideVideoBackgrounds, _SelectSlideVideosInSongs, _SelectSlideVideosToBackground
+                    _SelectSlideVideoBackgrounds, _SelectSlideVideosInSongs, _SelectSlideVideosToBackground,
+                    _SelectSlideGlassBlur, _SelectSlideGlassStrength, _SelectSlideGlassDarken
                 };
         }
 
@@ -53,6 +59,13 @@ namespace Vocaluxe.Screens
             _SelectSlides[_SelectSlideVideoBackgrounds].SetValues<EOffOn>((int)CConfig.Config.Video.VideoBackgrounds);
             _SelectSlides[_SelectSlideVideosInSongs].SetValues<EOffOn>((int)CConfig.Config.Video.VideosInSongs);
             _SelectSlides[_SelectSlideVideosToBackground].SetValues<EOffOn>((int)CConfig.Config.Video.VideosToBackground);
+
+            //The glass enums have non-consecutive values (0-100 percent), so select by tag instead of by index
+            _SelectSlides[_SelectSlideGlassBlur].SetValues<EOffOn>((int)CConfig.Config.Graphics.GlassBlur);
+            _SelectSlides[_SelectSlideGlassStrength].AddValues(Enum.GetNames(typeof(EGlassStrength)), Enum.GetValues(typeof(EGlassStrength)).Cast<int>());
+            _SelectSlides[_SelectSlideGlassStrength].SelectedTag = (int)CConfig.Config.Graphics.GlassStrength;
+            _SelectSlides[_SelectSlideGlassDarken].AddValues(Enum.GetNames(typeof(EGlassDarken)), Enum.GetValues(typeof(EGlassDarken)).Cast<int>());
+            _SelectSlides[_SelectSlideGlassDarken].SelectedTag = (int)CConfig.Config.Graphics.GlassDarken;
         }
 
         public override bool HandleInput(SKeyEvent keyEvent)
@@ -119,7 +132,14 @@ namespace Vocaluxe.Screens
             CConfig.Config.Video.VideosInSongs = (EOffOn)_SelectSlides[_SelectSlideVideosInSongs].Selection;
             CConfig.Config.Video.VideosToBackground = (EOffOn)_SelectSlides[_SelectSlideVideosToBackground].Selection;
 
+            CConfig.Config.Graphics.GlassBlur = (EOffOn)_SelectSlides[_SelectSlideGlassBlur].Selection;
+            CConfig.Config.Graphics.GlassStrength = (EGlassStrength)_SelectSlides[_SelectSlideGlassStrength].SelectedTag;
+            CConfig.Config.Graphics.GlassDarken = (EGlassDarken)_SelectSlides[_SelectSlideGlassDarken].SelectedTag;
+
             CBackgroundMusic.VideoEnabled = CConfig.Config.Video.VideoBackgrounds == EOffOn.TR_CONFIG_ON && CConfig.Config.Video.VideosToBackground == EOffOn.TR_CONFIG_ON;
+
+            //The glass twins/masks were generated with the old settings: drop them so they are rebuilt
+            CBase.Glass?.OnSettingsChanged();
 
             CConfig.SaveConfig();
         }

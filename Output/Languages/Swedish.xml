@@ -80,6 +80,16 @@
   <string name="TR_CONFIG_LYRICSPOSITION_TOP">Överst</string>
   <string name="TR_CONFIG_LYRICSPOSITION_BOTH">Överst och nederst</string>
   <string name="TR_CONFIG_LYRICSPOSITION_DYNAMIC">Dynamisk</string>
+  <string name="TR_CONFIG_GLASSSTRENGTH_OFF">Off</string>
+  <string name="TR_CONFIG_GLASSSTRENGTH_LOW">Low</string>
+  <string name="TR_CONFIG_GLASSSTRENGTH_MEDIUM">Medium</string>
+  <string name="TR_CONFIG_GLASSSTRENGTH_HIGH">High</string>
+  <string name="TR_CONFIG_GLASSSTRENGTH_MAX">Max</string>
+  <string name="TR_CONFIG_GLASSDARKEN_NONE">None</string>
+  <string name="TR_CONFIG_GLASSDARKEN_SUBTLE">Subtle</string>
+  <string name="TR_CONFIG_GLASSDARKEN_MEDIUM">Medium</string>
+  <string name="TR_CONFIG_GLASSDARKEN_STRONG">Strong</string>
+  <string name="TR_CONFIG_GLASSDARKEN_HEAVY">Heavy</string>
   <string name="TR_SCREENLOAD_LOADING">Laddar</string>
   <string name="TR_SCREENLOAD_TOTAL">Totalt</string>
   <string name="TR_SCREENLOAD_SONGS">låtar</string>
@@ -185,5 +195,8 @@
   <string name="TR_SCREENOVIDEO_VIDEOBACKGROUNDS">Videobakgrund</string>
   <string name="TR_SCREENOVIDEO_VIDEOINSONGS">Video under spel</string>
   <string name="TR_SCREENOVIDEO_VIDEOSTOBACKGROUND">Visa video för aktuell bakgrundsmusik</string>
+  <string name="TR_SCREENOVIDEO_GLASS">Glass backdrops</string>
+  <string name="TR_SCREENOVIDEO_GLASSSTRENGTH">Glass blur strength</string>
+  <string name="TR_SCREENOVIDEO_GLASSDARKEN">Glass darkening</string>
   <string name="TR_SCREENPVOLUMECONTROL_VOLUME">Volym</string>
 </resources>
