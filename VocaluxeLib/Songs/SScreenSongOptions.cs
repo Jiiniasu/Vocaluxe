@@ -60,11 +60,6 @@ namespace VocaluxeLib.Songs
         public bool RandomOnly;
 
         /// <summary>
-        ///     If true, it is not allowed to go to MainScreen nor open the playlist nor open the song menu
-        /// </summary>
-        public bool PartyMode;
-
-        /// <summary>
         ///     If true, it is not alled to change or leave the category. It's only valid if Tabs=On.
         /// </summary>
         public bool CategoryChangeAllowed;

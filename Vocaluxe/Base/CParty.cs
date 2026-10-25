@@ -36,7 +36,6 @@ namespace Vocaluxe.Base
             Selection = new SSelectionOptions
             {
                 RandomOnly = false,
-                PartyMode = false,
                 CategoryChangeAllowed = true,
                 SongIndex = -1,
                 CategoryIndex = -1
