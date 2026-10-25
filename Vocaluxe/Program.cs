@@ -162,13 +162,6 @@ namespace Vocaluxe
                     }
                     CDraw.UpdateSplash(0.15f);
 
-                    //Init Webcam
-                    using (CBenchmark.Time("Init Webcam"))
-                    {
-                        if (!CWebcam.Init())
-                            throw new CLoadingException("webcam");
-                    }
-
                     // Init Background Music
                     using (CBenchmark.Time("Init Background Music"))
                     {
@@ -314,15 +307,6 @@ namespace Vocaluxe
             catch (Exception e)
             {
                 CLog.Error(e, "Error during shutdown! (CBackgroundMusic)");
-            }
-
-            try
-            {
-                CWebcam.Close();
-            }
-            catch (Exception e)
-            {
-                CLog.Error(e, "Error during shutdown! (CWebcam)");
             }
 
             try

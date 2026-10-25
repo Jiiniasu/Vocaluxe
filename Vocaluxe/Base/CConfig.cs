@@ -24,7 +24,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
 using Vocaluxe.Lib.Sound.Record;
-using Vocaluxe.Lib.Webcam;
 using VocaluxeLib;
 using VocaluxeLib.Log;
 using VocaluxeLib.Profile;
@@ -189,7 +188,6 @@ namespace Vocaluxe.Base
             public EOffOn VideosInSongs;
             [DefaultValue(EOffOn.TR_CONFIG_OFF)]
             public EOffOn VideosToBackground;
-            public SWebcamConfig? WebcamConfig;
         }
 
         public struct SConfigRecord

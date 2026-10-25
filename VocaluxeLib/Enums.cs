@@ -365,7 +365,6 @@ namespace VocaluxeLib
         OptionsSound,
         OptionsRecord,
         OptionsVideo,
-        OptionsVideoAdjustments,
         OptionsLyrics,
         OptionsTheme,
 

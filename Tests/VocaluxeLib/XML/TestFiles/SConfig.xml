@@ -89,7 +89,6 @@
     <VideoPreview>TR_CONFIG_ON</VideoPreview>
     <VideosInSongs>TR_CONFIG_ON</VideosInSongs>
     <VideosToBackground>TR_CONFIG_OFF</VideosToBackground>
-    <WebcamConfig />
   </Video>
   <Record>
     <MicConfig>

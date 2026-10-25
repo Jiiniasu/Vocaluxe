@@ -118,7 +118,6 @@ namespace Vocaluxe.Screens
 
         private CVideoStream _CurrentVideo;
         private EAspect _VideoAspect = EAspect.Crop;
-        private CTextureRef _CurrentWebcamFrameTexture;
         private CTextureRef _Background;
 
         private float _CurrentTime;
@@ -134,7 +133,6 @@ namespace Vocaluxe.Screens
         private Stopwatch _TimerDuetText2;
 
         private bool _PreviousPause;
-        private bool _Webcam;
 
         private CBackground _SlideShow;
 
@@ -252,16 +250,6 @@ namespace Vocaluxe.Screens
                                 _NextSong();
                         }
                         break;
-                    case Keys.W:
-                        if (CWebcam.IsDeviceAvailable())
-                        {
-                            _Webcam = !CWebcam.IsCapturing();
-                            if (_Webcam)
-                                CWebcam.Start();
-                            else
-                                CWebcam.Stop();
-                        }
-                        break;
                     case Keys.Enter:
                         if (CCloud.PauseSong)
                         {
@@ -356,7 +344,6 @@ namespace Vocaluxe.Screens
             _FadeOut = false;
 
             _CurrentVideo = null;
-            _CurrentWebcamFrameTexture = null;
             _CurrentBeat = -100;
             _CurrentTime = 0f;
             _FinishTime = 0f;
@@ -400,8 +387,6 @@ namespace Vocaluxe.Screens
         {
             base.OnClose();
             _CloseSong();
-            if (_Webcam)
-                CWebcam.Stop();
             CBackgroundMusic.Disabled = false;
         }
         #endregion
@@ -517,9 +502,6 @@ namespace Vocaluxe.Screens
 
             if (_CurrentVideo != null && !_FadeOut && CConfig.Config.Video.VideosInSongs == EOffOn.TR_CONFIG_ON)
                 CVideo.GetFrame(_CurrentVideo, _CurrentTime);
-
-            if (_Webcam)
-                CWebcam.GetFrame(ref _CurrentWebcamFrameTexture);
 
             return true;
         }
@@ -836,14 +818,9 @@ namespace Vocaluxe.Screens
             {
                 CTextureRef background;
                 var aspect = EAspect.Crop;
-                if (_CurrentVideo != null && CConfig.Config.Video.VideosInSongs == EOffOn.TR_CONFIG_ON && !_Webcam)
+                if (_CurrentVideo != null && CConfig.Config.Video.VideosInSongs == EOffOn.TR_CONFIG_ON)
                 {
                     background = _CurrentVideo.Texture;
-                    aspect = _VideoAspect;
-                }
-                else if (_Webcam)
-                {
-                    background = _CurrentWebcamFrameTexture;
                     aspect = _VideoAspect;
                 }
                 else
@@ -969,8 +946,6 @@ namespace Vocaluxe.Screens
             _PrepareTimeLine();
             CSound.Play(_CurrentStream);
             CRecord.Start();
-            if (_Webcam)
-                CWebcam.Start();
             if (CConfig.UseCloudServer && CGame.GetSong() != null)
             {
                 CCloud.setState("playing_song", CGame.GetSong().DataBaseSongID);
@@ -995,15 +970,12 @@ namespace Vocaluxe.Screens
         }
 
         /// <summary>
-        /// Singing is finished, stop webcam and call PartyMode method.
+        /// Singing is finished, call PartyMode method.
         /// </summary>
         private void _FinishedSinging()
         {
             _FadeOut = true;
             CParty.FinishedSinging();
-
-            if (_Webcam)
-                CWebcam.Stop();
         }
 
         /// <summary>

@@ -76,7 +76,6 @@ namespace Vocaluxe.Base
             _Screens.Add(new CScreenOptionsSound());
             _Screens.Add(new CScreenOptionsRecord());
             _Screens.Add(new CScreenOptionsVideo());
-            _Screens.Add(new CScreenOptionsVideoAdjustments());
             _Screens.Add(new CScreenOptionsLyrics());
             _Screens.Add(new CScreenOptionsTheme());
             _Screens.Add(new CScreenNames());

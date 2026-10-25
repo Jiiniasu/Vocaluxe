@@ -15,11 +15,8 @@
 // along with Vocaluxe. If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
-using SkiaSharp;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
 using System.Linq;
 using Vocaluxe.Base;
 using VocaluxeLib;
@@ -40,7 +37,7 @@ namespace Vocaluxe.Screens
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {
-            get { return 3; }
+            get { return 4; }
         }
 
         private const string _SelectSlideProfiles = "SelectSlideProfiles";
@@ -53,10 +50,6 @@ namespace Vocaluxe.Screens
         private const string _ButtonSave = "ButtonSave";
         private const string _ButtonNew = "ButtonNew";
         private const string _ButtonDelete = "ButtonDelete";
-        private const string _ButtonWebcam = "ButtonWebcam";
-        private const string _ButtonSaveSnapshot = "ButtonSaveSnapshot";
-        private const string _ButtonDiscardSnapshot = "ButtonDiscardSnapshot";
-        private const string _ButtonTakeSnapshot = "ButtonTakeSnapshot";
 
         private const string _StaticAvatar = "StaticAvatar";
         private bool _ProfilesChanged;
@@ -66,15 +59,12 @@ namespace Vocaluxe.Screens
 
         private EEditMode _EditMode;
 
-        private CTextureRef _WebcamTexture;
-        private SKBitmap _Snapshot;
-
         public override void Init()
         {
             base.Init();
 
             _ThemeButtons = new string[]
-                {_ButtonPlayerName, _ButtonExit, _ButtonSave, _ButtonNew, _ButtonDelete, _ButtonWebcam, _ButtonSaveSnapshot, _ButtonDiscardSnapshot, _ButtonTakeSnapshot};
+                { _ButtonPlayerName, _ButtonExit, _ButtonSave, _ButtonNew, _ButtonDelete };
             _ThemeSelectSlides = new string[] { _SelectSlideProfiles, _SelectSlideDifficulty, _SelectSlideAvatars, _SelectSlideUserRole, _SelectSlideActive };
             _ThemeStatics = new string[] { _StaticAvatar };
 
@@ -88,10 +78,6 @@ namespace Vocaluxe.Screens
         {
             base.LoadTheme(xmlPath);
 
-            _Buttons[_ButtonSaveSnapshot].Visible = false;
-            _Buttons[_ButtonDiscardSnapshot].Visible = false;
-            _Buttons[_ButtonTakeSnapshot].Visible = false;
-            _Buttons[_ButtonWebcam].Visible = CWebcam.IsDeviceAvailable();
             _SelectSlides[_SelectSlideDifficulty].SetValues<EGameDifficulty>(0);
             _SelectSlides[_SelectSlideUserRole].SetValues<EUserRole>(0);
             _SelectSlides[_SelectSlideActive].SetValues<EOffOn>(0);
@@ -143,14 +129,6 @@ namespace Vocaluxe.Screens
                         }
                         else if (_Buttons[_ButtonDelete].Selected)
                             _DeleteProfile();
-                        else if (_Buttons[_ButtonWebcam].Selected)
-                            _OnWebcam();
-                        else if (_Buttons[_ButtonSaveSnapshot].Selected)
-                            _OnSaveSnapshot();
-                        else if (_Buttons[_ButtonDiscardSnapshot].Selected)
-                            _OnDiscardSnapshot();
-                        else if (_Buttons[_ButtonTakeSnapshot].Selected)
-                            _OnTakeSnapshot();
                         break;
 
                     case Keys.Back:
@@ -224,8 +202,6 @@ namespace Vocaluxe.Screens
                 {
                     CProfiles.SetAvatar(_GetIdFromTag(_SelectSlides[_SelectSlideProfiles].SelectedTag),
                                         _SelectSlides[_SelectSlideAvatars].SelectedTag);
-                    if (CWebcam.IsDeviceAvailable() && _WebcamTexture != null)
-                        _OnDiscardSnapshot();
                 }
                 else if (_SelectSlides[_SelectSlideUserRole].Selected)
                 {
@@ -237,14 +213,6 @@ namespace Vocaluxe.Screens
                     CProfiles.SetActive(_GetIdFromTag(_SelectSlides[_SelectSlideProfiles].SelectedTag),
                                         (EOffOn)_SelectSlides[_SelectSlideActive].Selection);
                 }
-                else if (_Buttons[_ButtonWebcam].Selected)
-                    _OnWebcam();
-                else if (_Buttons[_ButtonSaveSnapshot].Selected)
-                    _OnSaveSnapshot();
-                else if (_Buttons[_ButtonDiscardSnapshot].Selected)
-                    _OnDiscardSnapshot();
-                else if (_Buttons[_ButtonTakeSnapshot].Selected)
-                    _OnTakeSnapshot();
             }
 
             if (mouseEvent.RB)
@@ -272,16 +240,7 @@ namespace Vocaluxe.Screens
 
                 int avatarID = CProfiles.GetAvatarID(_GetIdFromTag(_SelectSlides[_SelectSlideProfiles].SelectedTag));
                 _SelectSlides[_SelectSlideAvatars].SelectedTag = avatarID;
-                if (_Snapshot == null)
-                {
-                    if (CWebcam.IsCapturing())
-                    {
-                        if (CWebcam.GetFrame(ref _WebcamTexture))
-                            _Statics[_StaticAvatar].Texture = _WebcamTexture;
-                    }
-                    else
-                        _Statics[_StaticAvatar].Texture = CProfiles.GetAvatarTexture(avatarID);
-                }
+                _Statics[_StaticAvatar].Texture = CProfiles.GetAvatarTexture(avatarID);
             }
 
             return true;
@@ -299,7 +258,6 @@ namespace Vocaluxe.Screens
         {
             base.OnClose();
             _EditMode = EEditMode.None;
-            _OnDiscardSnapshot();
         }
 
         private void _OnProfileChanged(EProfileChangedFlags flags)
@@ -309,103 +267,6 @@ namespace Vocaluxe.Screens
 
             if (EProfileChangedFlags.Profile == (EProfileChangedFlags.Profile & flags))
                 _ProfilesChanged = true;
-        }
-
-        private void _OnTakeSnapshot()
-        {
-            if (!CWebcam.IsDeviceAvailable())
-            {
-                CDraw.RemoveTexture(ref _WebcamTexture);
-                if (_Snapshot != null)
-                {
-                    _Snapshot.Dispose();
-                    _Snapshot = null;
-                }
-                _Buttons[_ButtonSaveSnapshot].Visible = false;
-                _Buttons[_ButtonDiscardSnapshot].Visible = false;
-                _Buttons[_ButtonTakeSnapshot].Visible = false;
-                _Buttons[_ButtonWebcam].Visible = false;
-
-                _SelectElement(_Buttons[_ButtonSave]);
-            }
-            else
-            {
-                CWebcam.Stop(); //Do this first to get consistent frame and bitmap
-                if (_Snapshot != null)
-                {
-                    _Snapshot.Dispose();
-                    _Snapshot = null;
-                }
-                _Snapshot = CWebcam.GetBitmap();
-                if (CWebcam.GetFrame(ref _WebcamTexture))
-                    _Statics[_StaticAvatar].Texture = _WebcamTexture;
-                _Buttons[_ButtonSaveSnapshot].Visible = true;
-                _Buttons[_ButtonDiscardSnapshot].Visible = true;
-                _Buttons[_ButtonTakeSnapshot].Visible = false;
-                _Buttons[_ButtonWebcam].Visible = false;
-
-                _SelectElement(_Buttons[_ButtonSaveSnapshot]);
-            }
-        }
-
-        private void _OnDiscardSnapshot()
-        {
-            if (_Snapshot != null)
-            {
-                _Snapshot.Dispose();
-                _Snapshot = null;
-            }
-            CDraw.RemoveTexture(ref _WebcamTexture);
-            _Buttons[_ButtonSaveSnapshot].Visible = false;
-            _Buttons[_ButtonDiscardSnapshot].Visible = false;
-            _Buttons[_ButtonTakeSnapshot].Visible = false;
-            _Buttons[_ButtonWebcam].Visible = CWebcam.IsDeviceAvailable();
-
-            _SelectElement(_Buttons[_ButtonWebcam]);
-        }
-
-        private void _OnSaveSnapshot()
-        {
-            string file = CHelper.GetUniqueFileName(Path.Combine(CSettings.DataFolder, CConfig.ProfileFolders[0]), "snapshot.png");
-            using (var image = SKImage.FromBitmap(_Snapshot))
-            using (var encoded = image.Encode(SKEncodedImageFormat.Png, 100))
-                File.WriteAllBytes(file, encoded.ToArray());
-
-            _Snapshot.Dispose();
-            _Snapshot = null;
-            CDraw.RemoveTexture(ref _WebcamTexture);
-
-            _Buttons[_ButtonSaveSnapshot].Visible = false;
-            _Buttons[_ButtonDiscardSnapshot].Visible = false;
-            _Buttons[_ButtonTakeSnapshot].Visible = false;
-            _Buttons[_ButtonWebcam].Visible = CWebcam.IsDeviceAvailable();
-
-            int id = CProfiles.NewAvatar(file);
-            CProfiles.SetAvatar(_GetIdFromTag(_SelectSlides[_SelectSlideProfiles].SelectedTag), id);
-            _LoadAvatars(false);
-
-            _SelectElement(_Buttons[_ButtonSave]);
-        }
-
-        private void _OnWebcam()
-        {
-            if (!CWebcam.IsDeviceAvailable())
-            {
-                _Buttons[_ButtonWebcam].Visible = false;
-                return;
-            }
-            if (_Snapshot != null)
-            {
-                _Snapshot.Dispose();
-                _Snapshot = null;
-            }
-            CWebcam.Start();
-            _Buttons[_ButtonSaveSnapshot].Visible = false;
-            _Buttons[_ButtonDiscardSnapshot].Visible = false;
-            _Buttons[_ButtonTakeSnapshot].Visible = true;
-            _Buttons[_ButtonWebcam].Visible = false;
-
-            _SelectElement(_Buttons[_ButtonTakeSnapshot]);
         }
 
         private void _NewProfile()
