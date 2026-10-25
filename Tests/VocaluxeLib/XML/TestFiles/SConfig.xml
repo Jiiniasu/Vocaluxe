@@ -84,9 +84,7 @@
     <HighscoreStyle>TR_CONFIG_HIGHSCORE_LIST_BEST</HighscoreStyle>
   </Game>
   <Video>
-    <VideoDecoder>FFmpeg</VideoDecoder>
     <VideoBackgrounds>TR_CONFIG_ON</VideoBackgrounds>
-    <VideoPreview>TR_CONFIG_ON</VideoPreview>
     <VideosInSongs>TR_CONFIG_ON</VideosInSongs>
     <VideosToBackground>TR_CONFIG_OFF</VideosToBackground>
   </Video>

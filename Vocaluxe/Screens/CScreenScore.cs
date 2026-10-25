@@ -41,8 +41,6 @@ namespace Vocaluxe.Screens
         private const string _ScreenSettingShortRating = "ScreenSettingShortRating";
         private const string _ScreenSettingShortDifficulty = "ScreenSettingShortDifficulty";
 
-        private CBackground _SlideShowBG;
-
         private string[,,] _TextNames;
         private string[,,] _TextScores;
         private string[,,] _TextRatings;
@@ -97,9 +95,6 @@ namespace Vocaluxe.Screens
 
             _ThemeScreenSettings = new string[] { _ScreenSettingShortScore, _ScreenSettingShortRating, _ScreenSettingShortDifficulty };
 
-            _SlideShowBG = GetNewBackground();
-            _AddBackground(_SlideShowBG);
-            _SlideShowBG.Z--;
         }
 
         public override bool HandleInput(SKeyEvent keyEvent)
@@ -166,7 +161,6 @@ namespace Vocaluxe.Screens
 
             _SetVisibility();
             _UpdateRatings();
-            _SlideShowBG.Visible = _UpdateBackground();
 
             for (int p = 0; p < CGame.NumPlayers; p++)
                 _Statics[_PlayerStaticAvatar[p]].Aspect = EAspect.Crop;
@@ -626,14 +620,6 @@ namespace Vocaluxe.Screens
                     }
                 }
             }
-        }
-
-        private bool _UpdateBackground()
-        {
-            // The source of these slide-show photos (web-camera photos pushed via the in-game web
-            // server) was removed in the .NET 10 port, so the score screen slides show never runs.
-            _SlideShowBG.RemoveSlideShowTextures();
-            return false;
         }
 
         private void _LeaveScreen()

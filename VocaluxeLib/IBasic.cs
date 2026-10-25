@@ -42,7 +42,6 @@ namespace VocaluxeLib
 
         EOffOn GetVideosToBackground();
         EOffOn GetVideoBackgrounds();
-        EOffOn GetVideoPreview();
 
         ESongMenu GetSongMenuType();
 

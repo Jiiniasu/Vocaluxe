@@ -26,11 +26,10 @@ namespace Vocaluxe.Screens
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {
-            get { return 6; }
+            get { return 7; }
         }
 
         private const string _SelectSlideVideoBackgrounds = "SelectSlideVideoBackgrounds";
-        private const string _SelectSlideVideoPreview = "SelectSlideVideoPreview";
         private const string _SelectSlideVideosInSongs = "SelectSlideVideosInSongs";
         private const string _SelectSlideVideosToBackground = "SelectSlideVideosToBackground";
 
@@ -43,7 +42,7 @@ namespace Vocaluxe.Screens
             _ThemeButtons = new string[] { _ButtonExit };
             _ThemeSelectSlides = new string[]
                 {
-                    _SelectSlideVideoBackgrounds, _SelectSlideVideoPreview, _SelectSlideVideosInSongs, _SelectSlideVideosToBackground
+                    _SelectSlideVideoBackgrounds, _SelectSlideVideosInSongs, _SelectSlideVideosToBackground
                 };
         }
 
@@ -52,7 +51,6 @@ namespace Vocaluxe.Screens
             base.LoadTheme(xmlPath);
 
             _SelectSlides[_SelectSlideVideoBackgrounds].SetValues<EOffOn>((int)CConfig.Config.Video.VideoBackgrounds);
-            _SelectSlides[_SelectSlideVideoPreview].SetValues<EOffOn>((int)CConfig.Config.Video.VideoPreview);
             _SelectSlides[_SelectSlideVideosInSongs].SetValues<EOffOn>((int)CConfig.Config.Video.VideosInSongs);
             _SelectSlides[_SelectSlideVideosToBackground].SetValues<EOffOn>((int)CConfig.Config.Video.VideosToBackground);
         }
@@ -118,7 +116,6 @@ namespace Vocaluxe.Screens
         private void _SaveConfig()
         {
             CConfig.Config.Video.VideoBackgrounds = (EOffOn)_SelectSlides[_SelectSlideVideoBackgrounds].Selection;
-            CConfig.Config.Video.VideoPreview = (EOffOn)_SelectSlides[_SelectSlideVideoPreview].Selection;
             CConfig.Config.Video.VideosInSongs = (EOffOn)_SelectSlides[_SelectSlideVideosInSongs].Selection;
             CConfig.Config.Video.VideosToBackground = (EOffOn)_SelectSlides[_SelectSlideVideosToBackground].Selection;
 

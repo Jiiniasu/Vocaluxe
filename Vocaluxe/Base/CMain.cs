@@ -106,11 +106,6 @@ namespace Vocaluxe.Base
             return CConfig.Config.Video.VideoBackgrounds;
         }
 
-        public EOffOn GetVideoPreview()
-        {
-            return CConfig.Config.Video.VideoPreview;
-        }
-
         public EOffOn GetDrawNoteLines()
         {
             return CConfig.Config.Theme.DrawNoteLines;

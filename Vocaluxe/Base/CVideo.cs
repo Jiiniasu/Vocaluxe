@@ -31,15 +31,7 @@ namespace Vocaluxe.Base
         {
             if (_VideoDecoder != null)
                 return false;
-            switch (CConfig.Config.Video.VideoDecoder)
-            {
-                case EVideoDecoder.FFmpeg:
-                    _VideoDecoder = new CVideoDecoderFFmpeg();
-                    break;
-                default:
-                    _VideoDecoder = new CVideoDecoderFFmpeg();
-                    break;
-            }
+            _VideoDecoder = new CVideoDecoderFFmpeg();
 
             return _VideoDecoder.Init();
         }

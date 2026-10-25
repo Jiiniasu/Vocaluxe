@@ -161,20 +161,13 @@ namespace VocaluxeLib
         // ReSharper restore UnusedMember.Global
     }
 
-    public enum EVideoDecoder
-    {
-        FFmpeg
-    }
-
     public enum ESongMenu
     {
         // ReSharper disable InconsistentNaming
         TR_CONFIG_REMOTE,
         TR_CONFIG_DETAILS,
         TR_CONFIG_LIST,       // list of covers and artist - title
-        //TR_CONFIG_DREIDEL,  //as in ultrastar deluxe
         TR_CONFIG_TILE_BOARD, //chessboard like
-        //TR_CONFIG_BOOK      //for playlists
         // ReSharper restore InconsistentNaming
     }
 
@@ -212,9 +205,6 @@ namespace VocaluxeLib
     public enum ECoverLoading
     {
         // ReSharper disable InconsistentNaming
-        // ReSharper disable UnusedMember.Global
-        TR_CONFIG_COVERLOADING_ONDEMAND,
-        // ReSharper restore UnusedMember.Global
         TR_CONFIG_COVERLOADING_ATSTART,
         TR_CONFIG_COVERLOADING_DYNAMIC
         // ReSharper restore InconsistentNaming

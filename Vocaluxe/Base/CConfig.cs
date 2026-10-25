@@ -178,12 +178,8 @@ namespace Vocaluxe.Base
 
         public struct SConfigVideo
         {
-            [DefaultValue(EVideoDecoder.FFmpeg)]
-            public EVideoDecoder VideoDecoder;
             [DefaultValue(EOffOn.TR_CONFIG_ON)]
             public EOffOn VideoBackgrounds;
-            [DefaultValue(EOffOn.TR_CONFIG_ON)]
-            public EOffOn VideoPreview;
             [DefaultValue(EOffOn.TR_CONFIG_ON)]
             public EOffOn VideosInSongs;
             [DefaultValue(EOffOn.TR_CONFIG_OFF)]
@@ -527,12 +523,8 @@ namespace Vocaluxe.Base
                     return "API key for cloud server";
                 case "Players":
                     return "Default profile for players 1 - " + CSettings.MaxNumPlayer + ":";
-                case "VideoDecoder":
-                    return "VideoDecoder: " + CHelper.ListStrings(Enum.GetNames(typeof(EVideoDecoder)));
                 case "VideoBackgrounds":
                     return "VideoBackgrounds: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
-                case "VideoPreview":
-                    return "VideoPreview: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
                 case "VideosInSongs":
                     return "Show Videos while singing: " + CHelper.ListStrings(Enum.GetNames(typeof(EOffOn)));
                 case "VideosToBackground":
