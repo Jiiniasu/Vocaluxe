@@ -100,8 +100,10 @@ namespace Vocaluxe.Lib.Draw
                 //A mask name that is not declared in the skin's texture list resolves to null - without a
                 //warning the glass would simply never draw (the mask-only lyrics bars hit this when their
                 //mask was missing from the skin XML)
-                if (_UnresolvedMasks.Add(cStatic.GetThemeName()))
-                    CLog.Warning("Glass static \"" + cStatic.GetThemeName() + "\" has no resolvable texture or glass mask; the glass is not drawn. Check that the mask is declared in the skin's texture list.");
+                //Copied per-screen player statics (CStatic copy-ctor) lose their theme and have no name
+                string name = cStatic.GetThemeName() ?? "(unnamed)";
+                if (_UnresolvedMasks.Add(name))
+                    CLog.Warning("Glass static \"" + name + "\" has no resolvable texture or glass mask; the glass is not drawn. Check that the mask is declared in the skin's texture list.");
                 return;
             }
 
