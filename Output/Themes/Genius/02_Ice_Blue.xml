@@ -376,6 +376,7 @@
     <TileBackground>TileBackground.png</TileBackground>
     <NotePanel>NotePanel.png</NotePanel>
     <NotePanelLarge>NotePanelLarge.png</NotePanelLarge>
+    <GlassLyricsBar>GlassLyricsBar.png</GlassLyricsBar>
   </Skins>
   <Videos>
     <BG_Video>BG_Video.mp4</BG_Video>

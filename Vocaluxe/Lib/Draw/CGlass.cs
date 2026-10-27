@@ -50,6 +50,7 @@ namespace Vocaluxe.Lib.Draw
         private CTextureRef _VideoTwin;
         private readonly Dictionary<string, SBlurEntry> _BlurredBackgrounds = new Dictionary<string, SBlurEntry>();
         private readonly Dictionary<string, CTextureRef> _Masks = new Dictionary<string, CTextureRef>();
+        private readonly HashSet<string> _UnresolvedMasks = new HashSet<string>();
 
         public bool IsEnabled()
         {
@@ -95,7 +96,14 @@ namespace Vocaluxe.Lib.Draw
             CTextureRef texture = cStatic.Texture;
             //A glass static may be shaped by a mask alone, without a texture of its own (e.g. the lyrics bar)
             if (texture == null && cStatic.GlassMask == null)
+            {
+                //A mask name that is not declared in the skin's texture list resolves to null - without a
+                //warning the glass would simply never draw (the mask-only lyrics bars hit this when their
+                //mask was missing from the skin XML)
+                if (_UnresolvedMasks.Add(cStatic.GetThemeName()))
+                    CLog.Warning("Glass static \"" + cStatic.GetThemeName() + "\" has no resolvable texture or glass mask; the glass is not drawn. Check that the mask is declared in the skin's texture list.");
                 return;
+            }
 
             SRectF rect = _GlassRect(cStatic);
             //The static's fill color does not shape the backdrop: a mask-only glass static (e.g. the
