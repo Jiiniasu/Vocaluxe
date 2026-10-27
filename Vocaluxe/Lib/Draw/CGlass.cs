@@ -98,7 +98,9 @@ namespace Vocaluxe.Lib.Draw
                 return;
 
             SRectF rect = _GlassRect(cStatic);
-            float alpha = cStatic.Color.A * cStatic.Alpha;
+            //The static's fill color does not shape the backdrop: a mask-only glass static (e.g. the
+            //lyrics bar) has an "Invisible" fill by design, so only the runtime fade alpha modulates it
+            float alpha = cStatic.Alpha;
             if (alpha < 0.01f)
                 return;
 
