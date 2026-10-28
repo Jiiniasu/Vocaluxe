@@ -147,6 +147,7 @@ namespace VocaluxeLib
         void DrawTexture(CTextureRef textureRef, SRectF bounds, EAspect aspect, SColorF color);
         void DrawTextureReflection(CTextureRef texture, SRectF rect, SColorF color, SRectF bounds, float reflectionSpace, float reflectionHeight, bool allMonitors = true);
         void DrawGlassTexture(CTextureRef texture, SRectF rect, SColorF color, CTextureRef mask, SRectF maskRect, bool allMonitors = true);
+        void DrawGlassTexture(CTextureRef texture, SRectF rect, SColorF color, CTextureRef mask, SRectF maskRect, SRectF uv, bool allMonitors = true);
 
         CTextureRef AddTexture(string fileName);
         CTextureRef EnqueueTexture(string fileName);

@@ -420,6 +420,23 @@ namespace Vocaluxe.Lib.Draw
         /// <param name="allMonitors">True if the glass should be drawn on all screens</param>
         public void DrawGlassTexture(CTextureRef textureRef, SRectF rect, SColorF color, CTextureRef maskRef, SRectF maskRect, bool allMonitors = true)
         {
+            DrawGlassTexture(textureRef, rect, color, maskRef, maskRect, new SRectF(0f, 0f, 1f, 1f, 0f), allMonitors);
+        }
+
+        /// <summary>
+        ///     Draws a glass (frosted-glass) panel sampling only a sub-rect of the twin texture: the twin
+        ///     is a full-frame copy of the background, so a panel must show the part of it behind the
+        ///     panel (uv in normalized twin coordinates), not the whole frame squashed into the panel.
+        /// </summary>
+        /// <param name="textureRef">Twin texture (the blurred background)</param>
+        /// <param name="rect">A SRectF struct containing the destination coordinates</param>
+        /// <param name="color">A SColorF struct containing the color the glass is tinted with</param>
+        /// <param name="maskRef">Mask texture (white with alpha shaping the panel), null for a plain rectangle</param>
+        /// <param name="maskRect">Destination rect for the mask (usually the same as rect)</param>
+        /// <param name="uv">Sub-rect of the twin to sample (0..1 twin coordinates, (0,0,1,1) for the full twin)</param>
+        /// <param name="allMonitors">True if the glass should be drawn on all screens</param>
+        public void DrawGlassTexture(CTextureRef textureRef, SRectF rect, SColorF color, CTextureRef maskRef, SRectF maskRect, SRectF uv, bool allMonitors = true)
+        {
             if (Math.Abs(color.A) < 0.01)
                 return;
             SDrawCoords dc;
@@ -441,7 +458,7 @@ namespace Vocaluxe.Lib.Draw
                     newmaskRect.X += CSettings.RenderW * i;
                     if (!_PanelVisible(newrect))
                         continue;
-                    if (!_CalcDrawCoords(texture, newrect, out dc))
+                    if (!_CalcGlassCoords(texture, newrect, uv, out dc))
                         return;
                     if (mask != null && !_CalcDrawCoords(mask, newmaskRect, out maskDc))
                         return;
@@ -452,12 +469,39 @@ namespace Vocaluxe.Lib.Draw
             {
                 if (!_PanelVisible(rect))
                     return;
-                if (!_CalcDrawCoords(texture, rect, out dc))
+                if (!_CalcGlassCoords(texture, rect, uv, out dc))
                     return;
                 if (mask != null && !_CalcDrawCoords(mask, maskRect, out maskDc))
                     return;
                 _DrawGlassTexture(texture, dc, mask, maskDc, color);
             }
+        }
+
+        /// <summary>
+        ///     Maps the uv sub-rect (normalized twin coordinates) onto the destination rect for the
+        ///     glass quad. Like <see cref="_CalcDrawCoords" />, the tex coords are scaled by the
+        ///     texture's data ratios so the sample stays within the actual texture data.
+        /// </summary>
+        protected bool _CalcGlassCoords(TTextureType texture, SRectF rect, SRectF uv, out SDrawCoords drawCoords)
+        {
+            drawCoords = new SDrawCoords();
+            if (Math.Abs(rect.W) < 1 || Math.Abs(rect.H) < 1)
+                return false;
+
+            drawCoords.Tx1 = uv.X * texture.WidthRatio;
+            drawCoords.Wx1 = rect.X;
+            drawCoords.Tx2 = uv.Right * texture.WidthRatio;
+            drawCoords.Wx2 = rect.Right;
+
+            drawCoords.Ty1 = uv.Y * texture.HeightRatio;
+            drawCoords.Wy1 = rect.Y;
+            drawCoords.Ty2 = uv.Bottom * texture.HeightRatio;
+            drawCoords.Wy2 = rect.Bottom;
+
+            drawCoords.Wz = rect.Z + CGraphics.ZOffset;
+            drawCoords.Rotation = rect.Rotation;
+
+            return true;
         }
 
         /// <summary>

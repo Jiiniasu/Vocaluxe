@@ -252,6 +252,9 @@ namespace VocaluxeLib.Menu.SongMenu
 
             if (vidtex != null)
             {
+                //Register the preview video as the glass backdrop so glass statics blur the video
+                //that is actually behind them
+                CBase.Glass?.SetBackground(null, CBase.BackgroundMusic.GetVideoGlassTexture(), EAspect.Crop);
                 if (vidtex.Color.A < 1)
                     _VideoBG.Draw(EAspect.Crop);
                 SRectF rect = CHelper.FitInBounds(_VideoBG.Rect, vidtex.OrigAspect, EAspect.Crop);
@@ -260,7 +263,11 @@ namespace VocaluxeLib.Menu.SongMenu
                 CBase.Drawing.DrawTextureReflection(vidtex, rect, vidtex.Color, _VideoBG.Rect, _VideoBG.ReflectionSpace, _VideoBG.ReflectionHeight);
             }
             else
+            {
                 _VideoBG.Draw(EAspect.Crop);
+                //The cover (or the menu background skin) is the backdrop behind the glass
+                CBase.Glass?.SetBackground(_VideoBG.Texture, null, EAspect.Crop);
+            }
         }
 
         public override void LoadSkin()

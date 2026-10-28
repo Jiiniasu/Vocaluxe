@@ -831,10 +831,12 @@ namespace Vocaluxe.Screens
                     SRectF rect = CHelper.FitInBounds(bounds, background.OrigAspect, aspect);
                     CDraw.DrawTexture(background, rect, background.Color, bounds);
                     if (background == _CurrentVideo.Texture)
-                        CBase.Glass?.SetBackground(null, _CurrentVideo.GlassTexture);
+                        CBase.Glass?.SetBackground(null, _CurrentVideo.GlassTexture, aspect);
                     else
-                        CBase.Glass?.SetBackground(background, null);
+                        CBase.Glass?.SetBackground(background, null, aspect);
                 }
+                else if (_CurrentVideo != null && CConfig.Config.Video.VideosInSongs == EOffOn.TR_CONFIG_ON)
+                    CBase.Glass?.SetBackground(null, null, aspect); //video frame not ready yet: drop any stale twin from a previous screen
                 else if (_SlideShow != null)
                     _SlideShow.Draw(); // registers itself with the glass (see CBackground)
             }

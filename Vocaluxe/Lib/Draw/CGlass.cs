@@ -48,25 +48,36 @@ namespace Vocaluxe.Lib.Draw
 
         private CTextureRef _Source;
         private CTextureRef _VideoTwin;
+        private EAspect _BackgroundAspect = EAspect.Crop;
         private readonly Dictionary<string, SBlurEntry> _BlurredBackgrounds = new Dictionary<string, SBlurEntry>();
         private readonly Dictionary<string, CTextureRef> _Masks = new Dictionary<string, CTextureRef>();
         private readonly HashSet<string> _UnresolvedMasks = new HashSet<string>();
+        private readonly HashSet<string> _Diagnosed = new HashSet<string>();
 
         public bool IsEnabled()
         {
             return CConfig.Config.Graphics.GlassBlur == EOffOn.TR_CONFIG_ON;
         }
 
-        public void SetBackground(CTextureRef source, CTextureRef videoTwin)
+        public void SetBackground(CTextureRef source, CTextureRef videoTwin, EAspect aspect)
         {
+            _BackgroundAspect = aspect;
+
             if (videoTwin != null)
             {
+                if (_VideoTwin == null || !ReferenceEquals(_VideoTwin, videoTwin))
+                    CLog.Debug("[Glass] background: video twin " + (_VideoTwin == null ? "null" : _VideoTwin.ID.ToString()) + " -> " + videoTwin.ID + " (" + videoTwin.OrigSize.Width + "x" + videoTwin.OrigSize.Height + ")");
                 _VideoTwin = videoTwin;
                 return;
             }
 
+            //The background is no longer a video: drop the twin so a later screen (image or none)
+            //does not sample a frozen video frame
+            _VideoTwin = null;
+
             if (source == _Source)
                 return;
+            CLog.Debug("[Glass] background: image -> " + (source == null ? "null" : source.TexturePath));
 
             //New background image: the cached blurred copies of the old one are stale
             foreach (SBlurEntry entry in _BlurredBackgrounds.Values)
@@ -91,20 +102,26 @@ namespace Vocaluxe.Lib.Draw
         public void DrawGlass(CStatic cStatic)
         {
             if (!IsEnabled() || !cStatic.Glass || !cStatic.Visible)
+            {
+                _DiagnoseGate(cStatic);
                 return;
+            }
 
             CTextureRef texture = cStatic.Texture;
-            //A glass static may be shaped by a mask alone, without a texture of its own (e.g. the lyrics bar)
+            //A glass static with neither texture nor mask is a plain rectangular glass (e.g. a text bar),
+            //and a mask-only glass (e.g. the lyrics bar) is fine as well. Only a declared mask that does
+            //not resolve in the skin's texture list silently changes the shape (to a plain rectangle),
+            //so warn once per static name about that
             if (texture == null && cStatic.GlassMask == null)
             {
-                //A mask name that is not declared in the skin's texture list resolves to null - without a
-                //warning the glass would simply never draw (the mask-only lyrics bars hit this when their
-                //mask was missing from the skin XML)
-                //Copied per-screen player statics (CStatic copy-ctor) lose their theme and have no name
-                string name = cStatic.GetThemeName() ?? "(unnamed)";
-                if (_UnresolvedMasks.Add(name))
-                    CLog.Warning("Glass static \"" + name + "\" has no resolvable texture or glass mask; the glass is not drawn. Check that the mask is declared in the skin's texture list.");
-                return;
+                SThemeStatic theme = (SThemeStatic)cStatic.GetTheme();
+                if (!String.IsNullOrEmpty(theme.GlassMask))
+                {
+                    //Copied per-screen player statics (CStatic copy-ctor) lose their theme and have no name
+                    string name = cStatic.GetThemeName() ?? "(unnamed)";
+                    if (_UnresolvedMasks.Add(name))
+                        CLog.Warning("Glass static \"" + name + "\" declares glass mask \"" + theme.GlassMask + "\" but it does not resolve; the glass is drawn as a plain rectangle. Check that the mask is declared in the skin's texture list.");
+                }
             }
 
             SRectF rect = _GlassRect(cStatic);
@@ -121,13 +138,20 @@ namespace Vocaluxe.Lib.Draw
             if (twin != null)
             {
                 CTextureRef mask = _GetMask(cStatic, texture);
-                CBase.Drawing.DrawGlassTexture(twin, rect, color, mask, rect, cStatic.AllMonitors);
+                //The twin is a full-frame copy of the background: only the part behind the panel is
+                //sampled, otherwise the whole frame is squashed into the panel
+                SRectF uv = _TwinUv(rect, twin);
+                _DiagnoseDraw(cStatic, rect, uv, twin, mask, alpha);
+                CBase.Drawing.DrawGlassTexture(twin, rect, color, mask, rect, uv, cStatic.AllMonitors);
             }
             else
             {
                 //No blur source available (e.g. a plain color background): tint-only fallback,
                 //shaped by the mask when there is one
                 CTextureRef mask = _GetMask(cStatic, texture);
+                string name = (cStatic.GetThemeName() ?? "(unnamed)") + "@" + cStatic.Rect.X.ToString("F0") + "," + cStatic.Rect.Y.ToString("F0");
+                if (_Diagnosed.Add("tint:" + name))
+                    CLog.Debug("[Glass] tint fallback " + name + ": twin=null source=" + (_Source == null ? "null" : _Source.TexturePath) + " mask=" + (mask == null ? "null" : mask.ID.ToString()));
                 if (mask != null)
                     CBase.Drawing.DrawTexture(mask, rect, color, cStatic.AllMonitors);
                 else
@@ -157,6 +181,33 @@ namespace Vocaluxe.Lib.Draw
                 rect = cStatic.Rect;
 
             return rect;
+        }
+
+        /// <summary>
+        ///     The sub-rect of the twin texture (normalized 0..1) that lies behind the glass panel.
+        ///     The background is drawn per panel as FitInBounds(panel window, twin aspect, aspect),
+        ///     exactly like the regular background draws (CBackground, CScreenSing): the twin quad is
+        ///     that fitted rect and the panel window clips it, so the panel's rect maps to a UV
+        ///     sub-rect of the twin. The per-panel geometry is identical (everything is shifted by
+        ///     panel * RenderW), so the panel-0 mapping is valid for every panel.
+        /// </summary>
+        private SRectF _TwinUv(SRectF rect, CTextureRef twin)
+        {
+            float panelX = (float)Math.Floor(rect.X / CSettings.RenderW) * CSettings.RenderW;
+            SRectF window = new SRectF(panelX, 0f, CSettings.RenderW, CSettings.RenderH, 0f);
+            SRectF twinRect = CHelper.FitInBounds(window, twin.OrigAspect, _BackgroundAspect);
+
+            float u1 = (rect.X - twinRect.X) / twinRect.W;
+            float v1 = (rect.Y - twinRect.Y) / twinRect.H;
+            float u2 = (rect.Right - twinRect.X) / twinRect.W;
+            float v2 = (rect.Bottom - twinRect.Y) / twinRect.H;
+
+            u1 = Math.Min(1f, Math.Max(0f, u1));
+            v1 = Math.Min(1f, Math.Max(0f, v1));
+            u2 = Math.Min(1f, Math.Max(0f, u2));
+            v2 = Math.Min(1f, Math.Max(0f, v2));
+
+            return new SRectF(u1, v1, u2 - u1, v2 - v1, 0f);
         }
 
         /// <summary>
@@ -212,6 +263,8 @@ namespace Vocaluxe.Lib.Draw
         private CTextureRef _GetMask(CStatic cStatic, CTextureRef texture)
         {
             CTextureRef maskSource = cStatic.GlassMask ?? texture;
+            if (maskSource == null)
+                return null; //no texture and no mask: unshaped, rectangular glass
 
             string key;
             if (!String.IsNullOrEmpty(maskSource.TexturePath))
@@ -246,6 +299,24 @@ namespace Vocaluxe.Lib.Draw
 
             _Masks[key] = mask;
             return mask;
+        }
+
+        // Log the gate decision and the drawn quad once per static name so the debug log shows
+        // which path a glass static takes
+        private void _DiagnoseGate(CStatic cStatic)
+        {
+            string name = (cStatic.GetThemeName() ?? "(unnamed)") + "@" + cStatic.Rect.X.ToString("F0") + "," + cStatic.Rect.Y.ToString("F0");
+            if (!_Diagnosed.Add("gate:" + name))
+                return;
+            CLog.Debug("[Glass] gate skip " + name + ": enabled=" + IsEnabled() + " glass=" + cStatic.Glass + " visible=" + cStatic.Visible + " alpha=" + cStatic.Alpha.ToString("F3"));
+        }
+
+        private void _DiagnoseDraw(CStatic cStatic, SRectF rect, SRectF uv, CTextureRef twin, CTextureRef mask, float alpha)
+        {
+            string name = (cStatic.GetThemeName() ?? "(unnamed)") + "@" + cStatic.Rect.X.ToString("F0") + "," + cStatic.Rect.Y.ToString("F0");
+            if (!_Diagnosed.Add("draw:" + name))
+                return;
+            CLog.Debug("[Glass] draw " + name + ": twin=" + twin.ID + " (" + twin.OrigSize.Width + "x" + twin.OrigSize.Height + ") mask=" + (mask == null ? "null" : mask.ID.ToString()) + " rect=(" + rect.X.ToString("F0") + "," + rect.Y.ToString("F0") + "," + rect.W.ToString("F0") + "," + rect.H.ToString("F0") + ") uv=(" + uv.X.ToString("F3") + "," + uv.Y.ToString("F3") + "," + uv.W.ToString("F3") + "," + uv.H.ToString("F3") + ") alpha=" + alpha.ToString("F3") + " allMonitors=" + cStatic.AllMonitors);
         }
 
         /// <summary>

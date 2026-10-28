@@ -56,6 +56,7 @@ namespace Vocaluxe.Lib.Draw
         void DrawTexture(CTextureRef texture, SRectF rect, SColorF color, float begin, float end, bool allMonitors = true);
 
         void DrawGlassTexture(CTextureRef texture, SRectF rect, SColorF color, CTextureRef mask, SRectF maskRect, bool allMonitors = true);
+        void DrawGlassTexture(CTextureRef texture, SRectF rect, SColorF color, CTextureRef mask, SRectF maskRect, SRectF uv, bool allMonitors = true);
 
         void DrawTextureReflection(CTextureRef texture, SRectF rect, SColorF color, SRectF bounds, float space, float height, bool allMonitors = true, float mirrorLine = 0f, float fadeOrigin = 0f, float fadeSpan = 0f);
     }

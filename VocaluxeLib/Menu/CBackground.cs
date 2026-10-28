@@ -209,7 +209,7 @@ namespace VocaluxeLib.Menu
         private void _DrawColor()
         {
             CBase.Drawing.DrawRect(Color, Rect);
-            CBase.Glass?.SetBackground(null, null);
+            CBase.Glass?.SetBackground(null, null, EAspect.Crop);
         }
 
         private bool _DrawTexture()
@@ -218,7 +218,7 @@ namespace VocaluxeLib.Menu
             if (texture != null)
             {
                 CBase.Drawing.DrawTexture(texture, Rect, EAspect.Crop);
-                CBase.Glass?.SetBackground(texture, null);
+                CBase.Glass?.SetBackground(texture, null, EAspect.Crop);
                 return true;
             }
             return false;
@@ -249,7 +249,7 @@ namespace VocaluxeLib.Menu
                     return false;
 
                 CBase.Drawing.DrawTexture(texture, Rect, EAspect.Crop);
-                CBase.Glass?.SetBackground(texture, null);
+                CBase.Glass?.SetBackground(texture, null, EAspect.Crop);
 
                 if (_SlideShowTimer.ElapsedMilliseconds >= CBase.Settings.GetSlideShowImageTime())
                 {
@@ -281,7 +281,7 @@ namespace VocaluxeLib.Menu
                 if (_VideoStream.Texture != null)
                 {
                     CBase.Drawing.DrawTexture(_VideoStream.Texture, Rect, EAspect.Crop);
-                    CBase.Glass?.SetBackground(null, _VideoStream.GlassTexture);
+                    CBase.Glass?.SetBackground(null, _VideoStream.GlassTexture, EAspect.Crop);
                     return true;
                 }
                 return false;
@@ -295,7 +295,7 @@ namespace VocaluxeLib.Menu
             if (videoTexture != null)
             {
                 CBase.Drawing.DrawTexture(videoTexture, Rect, EAspect.Crop);
-                CBase.Glass?.SetBackground(null, CBase.BackgroundMusic.GetVideoGlassTexture());
+                CBase.Glass?.SetBackground(null, CBase.BackgroundMusic.GetVideoGlassTexture(), EAspect.Crop);
                 return true;
             }
             return false;

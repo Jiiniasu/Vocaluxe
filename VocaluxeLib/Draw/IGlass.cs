@@ -35,8 +35,10 @@ namespace VocaluxeLib.Draw
         ///     Registers the current background the glass is drawn against: the background image texture
         ///     (image backgrounds) or the video stream's pre-blurred glass twin (video backgrounds,
         ///     source null). Both are borrowed references and never disposed by the glass.
+        ///     aspect is how the background fills the panel (EAspect.Crop etc., the same value the
+        ///     background draw uses) so the glass can sample the part of the twin behind a panel.
         /// </summary>
-        void SetBackground(CTextureRef source, CTextureRef videoTwin);
+        void SetBackground(CTextureRef source, CTextureRef videoTwin, EAspect aspect);
 
         /// <summary>
         ///     Draws the glass backdrop behind a glass static (no-op if the static has no glass or none

@@ -463,6 +463,11 @@ namespace Vocaluxe.Base
             CDraw.DrawGlassTexture(texture, rect, color, mask, maskRect, allMonitors);
         }
 
+        public void DrawGlassTexture(CTextureRef texture, SRectF rect, SColorF color, CTextureRef mask, SRectF maskRect, SRectF uv, bool allMonitors = true)
+        {
+            CDraw.DrawGlassTexture(texture, rect, color, mask, maskRect, uv, allMonitors);
+        }
+
         public CTextureRef AddTexture(string fileName)
         {
             return CDraw.AddTexture(fileName);

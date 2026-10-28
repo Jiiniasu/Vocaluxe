@@ -84,6 +84,17 @@ namespace Vocaluxe.Lib.Draw
 
     class COpenGL : CDrawBaseGlfw<COGLTexture>, IDraw
     {
+        // The glass quad's GLSL 1.20 program (see _DrawGlassTexture): the 2-stage fixed-function
+        // MODULATE chain does not apply unit1 (the mask) on this context, so the mask cutout must
+        // come from a shader. Programs and VBOs are shared objects - created once on the primary
+        // context, they are visible to every shared child context.
+        private int _GlassProgram;
+        private int _GlassVbo;
+        private int _GlassLocTwin;
+        private int _GlassLocMask;
+        private int _GlassLocColor;
+        private readonly float[] _GlassQuad = new float[28];
+
         public COpenGL()
         {
             int panels = CConfig.Config.Graphics.NumScreens;
@@ -263,6 +274,8 @@ namespace Vocaluxe.Lib.Draw
             else
                 _ApplyBaseGLState(_Window);
 
+            _InitGlassShader();
+
             return true;
         }
 
@@ -283,6 +296,104 @@ namespace Vocaluxe.Lib.Draw
             GL.DepthFunc(DepthFunction.Lequal);
             GL.Enable(EnableCap.DepthTest);
             GL.ClearColor(0f, 0f, 0f, 1f);
+        }
+
+        /// <summary>
+        ///     Compiles the glass quad's GLSL 1.20 program (shaders are core in GL 2.1) and its shared
+        ///     VBO. Runs once on the primary context after the base state; the objects are visible to
+        ///     every shared child context.
+        /// </summary>
+        private void _InitGlassShader()
+        {
+            if (_GlassProgram != 0)
+                return;
+
+            // The attributes are explicitly declared and bound (see BindAttribLocation below)
+            // instead of the fixed-function built-ins (gl_Vertex, gl_MultiTexCoord*): on this
+            // legacy context the same quad drawn through the immediate path is visible while the
+            // built-in-attribute version is not, so the generic arrays must not alias the
+            // built-ins (0 = gl_Vertex, 1 = gl_Normal, 2 = gl_Color, 3 = gl_MultiTexCoord0,
+            // 4 = gl_MultiTexCoord1 in GL 2.1).
+            const string vertex =
+                "#version 120\n" +
+                "attribute vec3 aPos;\n" +
+                "attribute vec2 aTwinUv;\n" +
+                "attribute vec2 aMaskUv;\n" +
+                "varying vec2 vTwin;\n" +
+                "varying vec2 vMask;\n" +
+                "void main()\n" +
+                "{\n" +
+                "    gl_Position = gl_ModelViewProjectionMatrix * vec4(aPos, 1.0);\n" +
+                "    vTwin = aTwinUv;\n" +
+                "    vMask = aMaskUv;\n" +
+                "}\n";
+
+            const string fragment =
+                "#version 120\n" +
+                "uniform sampler2D uTwin;\n" +
+                "uniform sampler2D uMask;\n" +
+                "uniform vec4 uColor;\n" +
+                "varying vec2 vTwin;\n" +
+                "varying vec2 vMask;\n" +
+                "void main()\n" +
+                "{\n" +
+                "    vec4 mask = texture2D(uMask, vMask);\n" +
+                "    //The mask only shapes the glass (where the panel exists): its alpha must\n" +
+                "    //not attenuate the glass's opacity, or a translucent panel skin would let\n" +
+                "    //the sharp video shine through the glass. Thresholded with a narrow band\n" +
+                "    //so the anti-aliased edge stays smooth.\n" +
+                "    mask.a = smoothstep(0.3, 0.4, mask.a);\n" +
+                "    gl_FragColor = uColor * texture2D(uTwin, vTwin) * mask;\n" +
+                "}\n";
+
+            int vs = GL.CreateShader(ShaderType.VertexShader);
+            GL.ShaderSource(vs, vertex);
+            GL.CompileShader(vs);
+            int fs = GL.CreateShader(ShaderType.FragmentShader);
+            GL.ShaderSource(fs, fragment);
+            GL.CompileShader(fs);
+
+            int vsStatus, fsStatus;
+            GL.GetShader(vs, ShaderParameter.CompileStatus, out vsStatus);
+            GL.GetShader(fs, ShaderParameter.CompileStatus, out fsStatus);
+            string vsLog;
+            GL.GetShaderInfoLog(vs, out vsLog);
+            string fsLog;
+            GL.GetShaderInfoLog(fs, out fsLog);
+            CLog.Debug("[Glass] vertex shader compile status " + vsStatus + ": " + vsLog);
+            CLog.Debug("[Glass] fragment shader compile status " + fsStatus + ": " + fsLog);
+
+            _GlassProgram = GL.CreateProgram();
+            GL.AttachShader(_GlassProgram, vs);
+            GL.AttachShader(_GlassProgram, fs);
+            GL.BindAttribLocation(_GlassProgram, 0, "aPos");
+            GL.BindAttribLocation(_GlassProgram, 1, "aTwinUv");
+            GL.BindAttribLocation(_GlassProgram, 2, "aMaskUv");
+            GL.LinkProgram(_GlassProgram);
+            GL.DeleteShader(vs);
+            GL.DeleteShader(fs);
+
+            int linkStatus;
+            GL.GetProgram(_GlassProgram, GetProgramParameterName.LinkStatus, out linkStatus);
+            string log;
+            GL.GetProgramInfoLog(_GlassProgram, out log);
+            if (linkStatus == 0)
+            {
+                CLog.Error("Glass shader failed to link: " + log);
+                GL.DeleteProgram(_GlassProgram);
+                _GlassProgram = 0;
+                return;
+            }
+
+            _GlassLocTwin = GL.GetUniformLocation(_GlassProgram, "uTwin");
+            _GlassLocMask = GL.GetUniformLocation(_GlassProgram, "uMask");
+            _GlassLocColor = GL.GetUniformLocation(_GlassProgram, "uColor");
+            CLog.Debug("[Glass] shader linked: program=" + _GlassProgram + " locTwin=" + _GlassLocTwin + " locMask=" + _GlassLocMask + " locColor=" + _GlassLocColor);
+
+            _GlassVbo = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _GlassVbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, new IntPtr(_GlassQuad.Length * 4), IntPtr.Zero, BufferUsageHint.DynamicDraw);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
         }
 
         public override void Close()
@@ -737,79 +848,99 @@ namespace Vocaluxe.Lib.Draw
             dc.Wy1 = (float)Math.Round(dc.Wy1);
             dc.Wx2 = (float)Math.Round(dc.Wx2);
             dc.Wy2 = (float)Math.Round(dc.Wy2);
-            if (mask != null)
+
+            // No mask: a plain, unshaped glass rect.
+            if (mask == null)
             {
-                maskDc.Wx1 = (float)Math.Round(maskDc.Wx1);
-                maskDc.Wy1 = (float)Math.Round(maskDc.Wy1);
-                maskDc.Wx2 = (float)Math.Round(maskDc.Wx2);
-                maskDc.Wy2 = (float)Math.Round(maskDc.Wy2);
+                _DrawTexture(texture, dc, color);
+                return;
             }
 
-            // The glass quad chains two GL_MODULATE stages: unit0 multiplies the color with the twin
-            // (blurred background), unit1 multiplies the result with the mask. GL_MULTIPLY is not exposed
-            // by the legacy bindings, but the masks are white in RGB, so MODULATE is identical to it.
+            // The 2-stage fixed-function MODULATE chain (unit0 = twin, unit1 = mask) does not apply
+            // unit1 on this context (verified with a single-unit diagnostic draw), so the mask cutout
+            // is drawn with a small GLSL 1.20 shader (core in GL 2.1) that multiplies the two samples
+            // explicitly. If the program is missing the glass degrades to a plain rect (the warning
+            // was already logged in _InitGlassShader).
+            if (_GlassProgram == 0)
+            {
+                _DrawTexture(texture, dc, color);
+                return;
+            }
+
+            // One shared VBO: 4 verts x (pos3 + twinUV2 + maskUV2), the same vertex/UV pairing as the
+            // old immediate-mode quad.
+            _GlassQuad[0] = dc.Wx1;
+            _GlassQuad[1] = dc.Wy1;
+            _GlassQuad[2] = dc.Wz;
+            _GlassQuad[3] = dc.Tx1;
+            _GlassQuad[4] = dc.Ty1;
+            _GlassQuad[5] = maskDc.Tx1;
+            _GlassQuad[6] = maskDc.Ty1;
+            _GlassQuad[7] = dc.Wx1;
+            _GlassQuad[8] = dc.Wy2;
+            _GlassQuad[9] = dc.Wz;
+            _GlassQuad[10] = dc.Tx1;
+            _GlassQuad[11] = dc.Ty2;
+            _GlassQuad[12] = maskDc.Tx1;
+            _GlassQuad[13] = maskDc.Ty2;
+            _GlassQuad[14] = dc.Wx2;
+            _GlassQuad[15] = dc.Wy2;
+            _GlassQuad[16] = dc.Wz;
+            _GlassQuad[17] = dc.Tx2;
+            _GlassQuad[18] = dc.Ty2;
+            _GlassQuad[19] = maskDc.Tx2;
+            _GlassQuad[20] = maskDc.Ty2;
+            _GlassQuad[21] = dc.Wx2;
+            _GlassQuad[22] = dc.Wy1;
+            _GlassQuad[23] = dc.Wz;
+            _GlassQuad[24] = dc.Tx2;
+            _GlassQuad[25] = dc.Ty1;
+            _GlassQuad[26] = maskDc.Tx2;
+            _GlassQuad[27] = maskDc.Ty1;
+
             TextureUnit prevUnit = (TextureUnit)GL.GetInteger(GetPName.ActiveTexture);
             GL.ActiveTexture(TextureUnit.Texture0);
-            int prevMode0;
-            GL.GetTexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, out prevMode0);
-            GL.ActiveTexture(TextureUnit.Texture1);
-            int prevMode1;
-            GL.GetTexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, out prevMode1);
-
-            GL.ActiveTexture(TextureUnit.Texture0);
-            GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (int)TextureEnvMode.Modulate);
             GL.BindTexture(TextureTarget.Texture2D, texture.Name);
-
-            if (mask != null)
-            {
-                GL.ActiveTexture(TextureUnit.Texture1);
-                GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, (int)TextureEnvMode.Modulate);
-                GL.BindTexture(TextureTarget.Texture2D, mask.Name);
-            }
+            GL.ActiveTexture(TextureUnit.Texture1);
+            GL.BindTexture(TextureTarget.Texture2D, mask.Name);
+            GL.ActiveTexture(prevUnit);
 
             GL.Enable(EnableCap.Blend);
-            GL.MatrixMode(MatrixMode.Texture);
-            GL.PushMatrix();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _GlassVbo);
+            GL.BufferData(BufferTarget.ArrayBuffer, _GlassQuad.Length * 4, _GlassQuad, BufferUsageHint.DynamicDraw);
 
-            GL.Begin(PrimitiveType.Quads);
+            GL.UseProgram(_GlassProgram);
+            GL.Uniform1(_GlassLocTwin, 0);
+            GL.Uniform1(_GlassLocMask, 1);
+            GL.Uniform4(_GlassLocColor, color.R, color.G, color.B, color.A * CGraphics.GlobalAlpha);
 
-            GL.Color4(color.R, color.G, color.B, color.A * CGraphics.GlobalAlpha);
-            GL.TexCoord2(dc.Tx1, dc.Ty1);
-            GL.Vertex3(dc.Wx1, dc.Wy1, dc.Wz);
-            if (mask != null)
-                GL.MultiTexCoord2(TextureUnit.Texture1, maskDc.Tx1, maskDc.Ty1);
+            const int stride = 7 * 4;
+            GL.EnableVertexAttribArray(0);
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, stride, 0);
+            GL.EnableVertexAttribArray(1);
+            GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, stride, 12);
+            GL.EnableVertexAttribArray(2);
+            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, stride, 20);
+            // GL_QUADS is not a valid glDrawArrays primitive in GL 2.1 (GL_INVALID_OPERATION): the
+            // quad is drawn as a triangle fan over the same 4 verts (BL, TL, TR, BR).
+            GL.DrawArrays(PrimitiveType.TriangleFan, 0, 4);
 
-            GL.TexCoord2(dc.Tx1, dc.Ty2);
-            GL.Vertex3(dc.Wx1, dc.Wy2, dc.Wz);
-            if (mask != null)
-                GL.MultiTexCoord2(TextureUnit.Texture1, maskDc.Tx1, maskDc.Ty2);
-
-            GL.TexCoord2(dc.Tx2, dc.Ty2);
-            GL.Vertex3(dc.Wx2, dc.Wy2, dc.Wz);
-            if (mask != null)
-                GL.MultiTexCoord2(TextureUnit.Texture1, maskDc.Tx2, maskDc.Ty2);
-
-            GL.TexCoord2(dc.Tx2, dc.Ty1);
-            GL.Vertex3(dc.Wx2, dc.Wy1, dc.Wz);
-            if (mask != null)
-                GL.MultiTexCoord2(TextureUnit.Texture1, maskDc.Tx2, maskDc.Ty1);
-
-            GL.End();
-
-            GL.PopMatrix();
-
-            GL.Disable(EnableCap.Blend);
-
-            //Unbind both units and restore the previous unit state so regular draws are unaffected
+            // State hygiene: back to the fixed-function defaults so the remaining immediate-mode
+            // draws are unaffected.
+            GL.DisableVertexAttribArray(0);
+            GL.DisableVertexAttribArray(1);
+            GL.DisableVertexAttribArray(2);
+            GL.UseProgram(0);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 0, IntPtr.Zero);
+            GL.VertexAttribPointer(1, 2, VertexAttribPointerType.Float, false, 0, IntPtr.Zero);
+            GL.VertexAttribPointer(2, 2, VertexAttribPointerType.Float, false, 0, IntPtr.Zero);
             GL.ActiveTexture(TextureUnit.Texture1);
-            GL.BindTexture(TextureTarget.Texture2D, 0);
-            GL.ActiveTexture(prevUnit);
             GL.BindTexture(TextureTarget.Texture2D, 0);
             GL.ActiveTexture(TextureUnit.Texture0);
-            GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, prevMode0);
-            GL.ActiveTexture(TextureUnit.Texture1);
-            GL.TexEnv(TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode, prevMode1);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
             GL.ActiveTexture(prevUnit);
+            GL.Disable(EnableCap.Blend);
         }
     }
 }
