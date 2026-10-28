@@ -265,15 +265,8 @@ namespace VocaluxeLib.Menu
                     el.Draw();
             }
 
-            // Pass 2: frosted-glass backdrops, drawn behind all remaining elements (see IGlass)
-            for (int i = 0; i < _Statics.Count; i++)
-            {
-                CStatic cs = _Statics[i];
-                if (cs.Glass && cs.Visible)
-                    CBase.Glass?.DrawGlass(cs);
-            }
-
-            // Pass 3: all remaining elements in Z order
+            // Pass 2: all remaining elements in Z order (a glass static draws its own backdrop
+            // right before itself, see CStatic.Draw)
             for (int i = 0; i < items.Count; i++)
             {
                 IMenuElement el = _GetElement(items[i].ID);

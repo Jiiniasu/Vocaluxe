@@ -175,6 +175,11 @@ namespace VocaluxeLib.Menu
             var color = new SColorF(Color.R, Color.G, Color.B, Color.A * Alpha);
             if (Visible || forceDraw)
             {
+                //The frosted-glass backdrop is drawn right behind this static (see IGlass), so the
+                //glass works for every static no matter who draws it (screens, song menus, ...)
+                if (Glass)
+                    CBase.Glass?.DrawGlass(this);
+
                 if (texture != null)
                 {
                     CBase.Drawing.DrawTexture(texture, rect, color, bounds, false, AllMonitors);
