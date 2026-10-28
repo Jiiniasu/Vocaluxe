@@ -994,7 +994,7 @@
             <Z>1</Z>
           </Rect>
         </StaticVideoBG>
-        <StaticTextBG Name="StaticTextBG">
+        <StaticTextBG Name="StaticTextBG" Glass="true">
           <Skin />
           <Color Name="BackgroundColorAlpha" />
           <Rect>

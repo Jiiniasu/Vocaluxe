@@ -28,7 +28,7 @@
         <Z>-1</Z>
       </Rect>
     </Static>
-    <Static Name="StaticLyrics" Glass="true" GlassMask="GlassLyricsBar">
+    <Static Name="StaticLyrics">
       <Skin />
       <Color Name="Invisible" />
       <Rect>
@@ -39,7 +39,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticLyricsDuet" Glass="true" GlassMask="GlassLyricsBar">
+    <Static Name="StaticLyricsDuet">
       <Skin />
       <Color Name="Invisible" />
       <Rect>
@@ -50,7 +50,7 @@
         <Z>-0.75</Z>
       </Rect>
     </Static>
-    <Static Name="StaticLyricsTop" Glass="true" GlassMask="GlassLyricsBar">
+    <Static Name="StaticLyricsTop">
       <Skin />
       <Color Name="Invisible" />
       <Rect>
