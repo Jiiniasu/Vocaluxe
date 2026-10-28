@@ -28,39 +28,6 @@
         <Z>-1</Z>
       </Rect>
     </Static>
-    <Static Name="StaticLyrics">
-      <Skin />
-      <Color Name="Invisible" />
-      <Rect>
-        <X>0</X>
-        <Y>610</Y>
-        <W>1280</W>
-        <H>90</H>
-        <Z>-0.75</Z>
-      </Rect>
-    </Static>
-    <Static Name="StaticLyricsDuet">
-      <Skin />
-      <Color Name="Invisible" />
-      <Rect>
-        <X>0</X>
-        <Y>0</Y>
-        <W>1280</W>
-        <H>90</H>
-        <Z>-0.75</Z>
-      </Rect>
-    </Static>
-    <Static Name="StaticLyricsTop">
-      <Skin />
-      <Color Name="Invisible" />
-      <Rect>
-        <X>0</X>
-        <Y>0</Y>
-        <W>1280</W>
-        <H>90</H>
-        <Z>-0.75</Z>
-      </Rect>
-    </Static>
     <Static Name="StaticTimeBar">
       <Skin>TimeBar</Skin>
       <Color Name="StaticColor" />

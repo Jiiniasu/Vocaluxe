@@ -60,9 +60,6 @@ namespace Vocaluxe.Screens
 
         private const string _StaticDefaultAvatar = "StaticDefaultAvatar";
         private const string _StaticSongText = "StaticSongText";
-        private const string _StaticLyrics = "StaticLyrics";
-        private const string _StaticLyricsDuet = "StaticLyricsDuet";
-        private const string _StaticLyricsTop = "StaticLyricsTop";
         private const string _StaticTimeBar = "StaticTimeBar";
         private const string _StaticTimeLine = "StaticTimeLine";
         private const string _StaticTimeLineExpandedNormal = "StaticTimeLineExpandedNormal";
@@ -152,9 +149,6 @@ namespace Vocaluxe.Screens
             var statics = new List<string>
                 {
                     _StaticSongText,
-                    _StaticLyrics,
-                    _StaticLyricsDuet,
-                    _StaticLyricsTop,
                     _StaticTimeBar,
                     _StaticTimeLine,
                     _StaticTimeLineExpandedNormal,
@@ -450,9 +444,6 @@ namespace Vocaluxe.Screens
                 _Lyrics[_LyricMainTop].Alpha = alpha[0];
                 _Lyrics[_LyricSubTop].Alpha = alpha[1];
 
-                _Statics[_StaticLyrics].Alpha = alpha[0];
-                _Statics[_StaticLyricsTop].Alpha = alpha[0];
-
                 _Statics[_StaticLyricHelper].Alpha = alpha[0];
                 _Statics[_StaticLyricHelperTop].Alpha = alpha[0];
 
@@ -482,13 +473,11 @@ namespace Vocaluxe.Screens
                     _Lyrics[_LyricMainDuet].Alpha = alpha[0];
                     _Lyrics[_LyricSubDuet].Alpha = alpha[1];
 
-                    _Statics[_StaticLyricsDuet].Alpha = alpha[0];
                     _Statics[_StaticLyricHelperDuet].Alpha = alpha[0];
 
                     _Lyrics[_LyricMain].Alpha = alpha[2];
                     _Lyrics[_LyricSub].Alpha = alpha[3];
 
-                    _Statics[_StaticLyrics].Alpha = alpha[2];
                     _Statics[_StaticLyricHelper].Alpha = alpha[2];
                 }
             }
@@ -883,7 +872,7 @@ namespace Vocaluxe.Screens
                 if (time > totaltime)
                     time = totaltime;
 
-                if (_Statics[_StaticLyrics].Visible)
+                if (_Lyrics[_LyricMain].Visible)
                 {
                     SRectF rect = _Statics[_StaticLyricHelper].Rect;
                     var color = new SColorF(
@@ -897,7 +886,7 @@ namespace Vocaluxe.Screens
                                       new SRectF(rect.X + distance * (1f - time / totaltime), rect.Y, rect.W, rect.H, rect.Z), color);
                 }
 
-                if (_Statics[_StaticLyricsTop].Visible)
+                if (_Lyrics[_LyricMainTop].Visible)
                 {
                     SRectF rect = _Statics[_StaticLyricHelperTop].Rect;
                     var color = new SColorF(
@@ -1256,15 +1245,12 @@ namespace Vocaluxe.Screens
 
             _Lyrics[_LyricMain].Visible = bottomLyricsVisible;
             _Lyrics[_LyricSub].Visible = bottomLyricsVisible;
-            _Statics[_StaticLyrics].Visible = bottomLyricsVisible;
 
             _Lyrics[_LyricMainTop].Visible = topLyricsVisible;
             _Lyrics[_LyricSubTop].Visible = topLyricsVisible;
-            _Statics[_StaticLyricsTop].Visible = topLyricsVisible;
 
             _Lyrics[_LyricMainDuet].Visible = duetLyricsVisible;
             _Lyrics[_LyricSubDuet].Visible = duetLyricsVisible;
-            _Statics[_StaticLyricsDuet].Visible = duetLyricsVisible;
 
             for (int p = 0; p < CGame.NumPlayers; p++)
             {
@@ -1275,7 +1261,6 @@ namespace Vocaluxe.Screens
 
         private void _SetVisibility()
         {
-            _Statics[_StaticLyricsDuet].Visible = false;
             _Statics[_StaticLyricHelper].Visible = false;
             _Statics[_StaticLyricHelperDuet].Visible = false;
             _Statics[_StaticLyricHelperTop].Visible = false;
@@ -1367,16 +1352,12 @@ namespace Vocaluxe.Screens
             _Lyrics[_LyricMainTop].Alpha = 0f;
             _Lyrics[_LyricSubTop].Alpha = 0f;
 
-            _Statics[_StaticLyrics].Alpha = 0f;
-            _Statics[_StaticLyricsTop].Alpha = 0f;
-
             _Statics[_StaticLyricHelper].Alpha = 0f;
             _Statics[_StaticLyricHelperTop].Alpha = 0f;
 
             _Lyrics[_LyricMainDuet].Alpha = 0f;
             _Lyrics[_LyricSubDuet].Alpha = 0f;
 
-            _Statics[_StaticLyricsDuet].Alpha = 0f;
             _Statics[_StaticLyricHelperDuet].Alpha = 0f;
 
             _Statics[_StaticTimeLine].Visible = CConfig.Config.Theme.TimerLook == ETimerLook.TR_CONFIG_TIMERLOOK_NORMAL;
