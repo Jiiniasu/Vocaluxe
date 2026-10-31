@@ -14,9 +14,9 @@
     </Background>
   </Backgrounds>
   <Statics>
-    <Static Name="StaticMenuBar">
+    <Static Name="StaticMenuBar" Glass="true">
       <Skin />
-      <Color Name="BackgroundColorAlpha" />
+      <Color Name="Invisible" />
       <Rect>
         <X>0</X>
         <Y>40</Y>

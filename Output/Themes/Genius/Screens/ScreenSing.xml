@@ -28,7 +28,7 @@
         <Z>-1</Z>
       </Rect>
     </Static>
-    <Static Name="StaticTimeBar">
+    <Static Name="StaticTimeBar" Glass="true">
       <Skin>TimeBar</Skin>
       <Color Name="StaticColor" />
       <Rect>

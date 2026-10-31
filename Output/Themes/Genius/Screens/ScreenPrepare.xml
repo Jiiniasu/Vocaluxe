@@ -25,9 +25,9 @@
         <Z>5</Z>
       </Rect>
     </Static>
-    <Static Name="StaticMenuBar">
+    <Static Name="StaticMenuBar" Glass="true">
       <Skin/>
-      <Color Name="BackgroundColorAlpha"/>
+      <Color Name="Invisible"/>
       <Rect>
         <X>0</X>
         <Y>40</Y>
@@ -36,9 +36,9 @@
         <Z>1</Z>
       </Rect>
     </Static>
-    <Static Name="StaticBottomBar">
+    <Static Name="StaticBottomBar" Glass="true">
       <Skin/>
-      <Color Name="BackgroundColorAlpha"/>
+      <Color Name="Invisible"/>
       <Rect>
         <X>0</X>
         <Y>630</Y>
@@ -58,9 +58,9 @@
         <Z>-1</Z>
       </Rect>
     </Static>
-    <Static Name="StaticPlayerBG">
+    <Static Name="StaticPlayerBG" Glass="true">
       <Skin />
-      <Color Name="BackgroundColorAlpha" />
+      <Color Name="Invisible" />
       <Rect>
         <X>5</X>
         <Y>0</Y>

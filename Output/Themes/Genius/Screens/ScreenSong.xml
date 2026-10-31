@@ -996,7 +996,7 @@
         </StaticVideoBG>
         <StaticTextBG Name="StaticTextBG" Glass="true">
           <Skin />
-          <Color Name="BackgroundColorAlpha" />
+          <Color Name="Invisible" />
           <Rect>
             <X>0</X>
             <Y>540</Y>
