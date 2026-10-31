@@ -162,6 +162,27 @@ namespace Vocaluxe.Screens
             base.OnClose();
             CRecord.Stop();
         }
+
+        /// <summary>
+        ///     This screen's visual backdrop is not the theme background (BG_Video) but the song preview,
+        ///     which UpdateGame() draws as the full-screen static StaticVideoBackground above the bars in Z
+        ///     (Z=5 vs Z=1): the glass backdrop must sample it, not the menu background that CBackground
+        ///     registered in pass 1 of CObjectInteractions.Draw.
+        /// </summary>
+        protected override void _OnBackgroundsDrawn()
+        {
+            if (CBackgroundMusic.SongHasVideo)
+            {
+                // The twin is rebuilt per frame by the decoder (see CGlassBlur) and matches the frame
+                // UpdateGame() assigned to StaticVideoBackground
+                CBase.Glass?.SetBackground(null, CBackgroundMusic.GetVideoGlassTexture(), EAspect.Crop);
+                return;
+            }
+
+            CTextureRef cover = CBackgroundMusic.Cover;
+            if (cover != null)
+                CBase.Glass?.SetBackground(cover, null, EAspect.Crop);
+        }
         #endregion public methods
 
         #region private methods

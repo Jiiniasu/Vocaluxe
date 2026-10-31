@@ -265,6 +265,8 @@ namespace VocaluxeLib.Menu
                     el.Draw();
             }
 
+            _OnBackgroundsDrawn();
+
             // Pass 2: all remaining elements in Z order (a glass static draws its own backdrop
             // right before itself, see CStatic.Draw)
             for (int i = 0; i < items.Count; i++)
@@ -274,6 +276,15 @@ namespace VocaluxeLib.Menu
                     el.Draw();
             }
         }
+
+        /// <summary>
+        ///     Runs after all CBackground elements have been drawn (they register themselves as the
+        ///     glass backdrop, see CBackground) and before the remaining elements draw. A screen whose
+        ///     visual backdrop is a regular element (a full-screen static over the theme background, see
+        ///     CScreenPrepare) overrides this to (re-)register the glass backdrop so the glass matches
+        ///     what is actually behind the glass statics.
+        /// </summary>
+        protected virtual void _OnBackgroundsDrawn() { }
         #endregion Drawing
 
         #region Element-Adding
