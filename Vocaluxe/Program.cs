@@ -95,9 +95,9 @@ namespace Vocaluxe
                     null, // CReporter (WinForms) removed; crash dialogs are logged only
                     ELogLevel.Information);
 
-                if (!CProgrammHelper.CheckRequirements())
+                if (!CProgramHelper.CheckRequirements())
                     return;
-                CProgrammHelper.Init();
+                CProgramHelper.Init();
 
                 using (CBenchmark.Time("Init Program"))
                 {

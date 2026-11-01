@@ -28,9 +28,9 @@ using VocaluxeLib.Log;
 namespace Vocaluxe
 {
     /// <summary>
-    ///     Some helper functions for the programm
+    ///     Some helper functions for the program
     /// </summary>
-    static class CProgrammHelper
+    static class CProgramHelper
     {
 #if WIN
         private static class CWindowsFunctions
