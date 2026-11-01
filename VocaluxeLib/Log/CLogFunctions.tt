@@ -76,13 +76,13 @@ namespace VocaluxeLib.Log
 <# if(Log == "Main") { #>
         /// <param name="show">True if an message should be shown to the user, false otherwise.</param>
 <# } #>
-        /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+        /// <param name="callerMethodName">Don't use! The method name of the caller will be filled automatically by the compiler.</param>
         /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
-        /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+        /// <param name="callerLineNumber">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
         [MessageTemplateFormatMethod("messageTemplate")]
-        public static void <#= LogLevel #>(string messageTemplate, <#= Log == "Main"?(LogLevel == "Fatal"?"bool show = true, ":"bool show = false, "):"" #>[CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+        public static void <#= LogLevel #>(string messageTemplate, <#= Log == "Main"?(LogLevel == "Fatal"?"bool show = true, ":"bool show = false, "):"" #>[CallerMemberName] string callerMethodName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = -1)
         {
-            using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer}))
+            using (LogContext.PushProperty("CallingContext", new { callerMethodName, callerFilePath, callerLineNumber}))
             {                
                 <#= Log == "Main"?"_MainLog":"_SongLog" #>.<#= LogLevel #>(messageTemplate);                
             }
@@ -106,13 +106,13 @@ namespace VocaluxeLib.Log
 <# if(Log == "Main") { #>
         /// <param name="show">True if an message should be shown to the user, false otherwise.</param>
 <# } #>
-        /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+        /// <param name="callerMethodName">Don't use! The method name of the caller will be filled automatically by the compiler.</param>
         /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
-        /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+        /// <param name="callerLineNumber">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
         [MessageTemplateFormatMethod("messageTemplate")]
-        public static void <#= LogLevel #>(string messageTemplate, object[] propertyValues, <#= Log == "Main"?(LogLevel == "Fatal"?"bool show = true, ":"bool show = false, "):"" #>[CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+        public static void <#= LogLevel #>(string messageTemplate, object[] propertyValues, <#= Log == "Main"?(LogLevel == "Fatal"?"bool show = true, ":"bool show = false, "):"" #>[CallerMemberName] string callerMethodName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = -1)
         {
-            using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer}))
+            using (LogContext.PushProperty("CallingContext", new { callerMethodName, callerFilePath, callerLineNumber}))
             {
                 int usedPropertiesCount = _PropertiesRegex.Matches(messageTemplate).Cast<Match>().Select(m => m.Value).Distinct().Count();
 
@@ -148,13 +148,13 @@ namespace VocaluxeLib.Log
 <# if(Log == "Main") { #>
         /// <param name="show">True if an message should be shown to the user, false otherwise.</param>
 <# } #>
-        /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+        /// <param name="callerMethodName">Don't use! The method name of the caller will be filled automatically by the compiler.</param>
         /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
-        /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+        /// <param name="callerLineNumber">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
         [MessageTemplateFormatMethod("messageTemplate")]
-        public static void <#= LogLevel #>(Exception exception, string messageTemplate, <#= Log == "Main"?(LogLevel == "Fatal"?"bool show = true, ":"bool show = false, "):"" #>[CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+        public static void <#= LogLevel #>(Exception exception, string messageTemplate, <#= Log == "Main"?(LogLevel == "Fatal"?"bool show = true, ":"bool show = false, "):"" #>[CallerMemberName] string callerMethodName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = -1)
         {
-            using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer}))
+            using (LogContext.PushProperty("CallingContext", new { callerMethodName, callerFilePath, callerLineNumber}))
             {
                 <#= Log == "Main"?"_MainLog":"_SongLog" #>.<#= LogLevel #>( exception, messageTemplate);
             }
@@ -179,13 +179,13 @@ namespace VocaluxeLib.Log
 <# if(Log == "Main") { #>
         /// <param name="show">True if an message should be shown to the user, false otherwise.</param>
 <# } #>
-        /// <param name="callerMethodeName">Don't use! The methode name of the caller will be filled automatically by the compiler.</param>
+        /// <param name="callerMethodName">Don't use! The method name of the caller will be filled automatically by the compiler.</param>
         /// <param name="callerFilePath">Don't use! The filepath of the caller will be filled automatically by the compiler.</param>
-        /// <param name="callerLineNumer">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
+        /// <param name="callerLineNumber">Don't use! The line number of the caller will be filled automatically by the compiler.</param>
         [MessageTemplateFormatMethod("messageTemplate")]
-        public static void <#= LogLevel #>(Exception exception, string messageTemplate, object[] propertyValues, <#= Log == "Main"?(LogLevel == "Fatal"?"bool show = true, ":"bool show = false, "):"" #>[CallerMemberName] string callerMethodeName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumer = -1)
+        public static void <#= LogLevel #>(Exception exception, string messageTemplate, object[] propertyValues, <#= Log == "Main"?(LogLevel == "Fatal"?"bool show = true, ":"bool show = false, "):"" #>[CallerMemberName] string callerMethodName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = -1)
         {
-            using (LogContext.PushProperty("CallingContext", new { callerMethodeName, callerFilePath, callerLineNumer}))
+            using (LogContext.PushProperty("CallingContext", new { callerMethodName, callerFilePath, callerLineNumber}))
             {
                 int usedPropertiesCount = _PropertiesRegex.Matches(messageTemplate).Cast<Match>().Select(m => m.Value).Distinct().Count();
 
