@@ -35,7 +35,9 @@ namespace Vocaluxe.Base
 
         public bool Loop
         {
-            set { CVideo.SetLoop(_VideoStream, value); }
+            // Load() may have found no stream (theme without the video); stay no-op consistent
+            // with Start() and Pause() instead of throwing inside the main loop.
+            set { if (_VideoStream != null) CVideo.SetLoop(_VideoStream, value); }
         }
 
         public void Load(string videoName)
