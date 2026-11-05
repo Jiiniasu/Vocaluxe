@@ -29,7 +29,7 @@
           when building on/for macOS so the Linux/Windows builds are unaffected. -->
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="3.119.4" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
     <!-- CCloud's HTTP retry (v7-compatible API surface, v8 package). -->
-    <PackageReference Include="Polly" Version="8.8.0" />
+    <PackageReference Include="Polly" Version="8.9.0" />
     <!-- Native-only bundles (FFmpeg 4.x + acinerella shim) that place their binaries under
           libs/unmanaged, exactly like the old packages.config build did. -->
     <PackageReference Include="vocaluxe.dependencies.acinerella" Version="1.0.6" />
@@ -37,7 +37,7 @@
     <!-- SQLite on the official Microsoft.Data.Sqlite provider. Its native engine (SQLitePCLRaw
           "e_sqlite3") ships as runtimes/<rid>/native assets and resolves next to the exe in
           Output/ - no manual staging target needed for it. -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.14" />
   </ItemGroup>
 
   <ItemGroup>
@@ -60,8 +60,7 @@
         SDK project does not. git is optional: if it is unavailable (e.g. a source tarball) the build
         falls back to the "Not Versioned" strings instead of failing. -->
    <Target Name="_StampGitVersion" BeforeTargets="CoreCompile">
-    <Exec Command="git describe --tags --long --always --dirty" ConsoleToMSBuild="true"
-           ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
+    <Exec Command="git describe --tags --long --always --dirty" ConsoleToMSBuild="true" ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
       <Output TaskParameter="ConsoleOutput" PropertyName="_GitRaw" />
       <Output TaskParameter="ExitCode" PropertyName="_GitExit" />
     </Exec>
@@ -98,11 +97,69 @@
         <_Parameter1>$(_Numeric)</_Parameter1>
       </_VerAttr>
     </ItemGroup>
-    <WriteCodeFragment AssemblyAttributes="@(_VerAttr)" Language="C#"
-                       OutputDirectory="$(IntermediateOutputPath)" OutputFile="GitVersion.g.cs">
+    <WriteCodeFragment AssemblyAttributes="@(_VerAttr)" Language="C#" OutputDirectory="$(IntermediateOutputPath)" OutputFile="GitVersion.g.cs">
       <Output TaskParameter="OutputFile" ItemName="Compile" />
     </WriteCodeFragment>
   </Target>
+
+  <!-- Build PitchTracker.dll automatically, so a fresh checkout can no longer fail _StageUnmanagedNatives.
+        A plain `dotnet build` cannot compile the sibling C++ vcxproj: its $(VCTargetsPath) targets only
+        load in the Visual Studio MSBuild engine (the SDK's engine fails with MSB4278). Rather than keep
+        "run msbuild PitchTracker\PitchTracker.vcxproj ... first" as a manual prerequisite - exactly how
+        a missing native gets reported - locate the VS MSBuild with vswhere, which ships with every
+        VS/Build Tools install and is version-/PATH-independent, then build Release|x64. The vcxproj build
+        is incremental, so a warm build pays only a quick up-to-date check. Windows-only by design: on
+        Linux the same contract is the makefile + _CheckLinuxNatives. -->
+   <UsingTask TaskName="_FindVsMsBuild" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <MsBuildPath Output="true" ParameterType="System.String" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.Diagnostics" />
+      <Code>
+        string dir = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
+        if (string.IsNullOrEmpty(dir))
+        {
+          Log.LogError("Building PitchTracker.vcxproj needs Visual Studio (or Build Tools) with the 'Desktop development with C++' workload.");
+          return false;
+        }
+        string vswhere = System.IO.Path.Combine(dir, @"Microsoft Visual Studio\Installer\vswhere.exe");
+        if (!System.IO.File.Exists(vswhere))
+        {
+          Log.LogError("vswhere not found at {0}; install Visual Studio (or Build Tools), then rebuild.", vswhere);
+          return false;
+        }
+        ProcessStartInfo psi = new ProcessStartInfo(vswhere, @"-latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe")
+        {
+          RedirectStandardOutput = true,
+          UseShellExecute = false
+        };
+        Process proc = Process.Start(psi);
+        string found = (proc == null) ? "" : proc.StandardOutput.ReadToEnd().Trim();
+        int exit = -1;
+        if (proc != null)
+        {
+          proc.WaitForExit();
+          exit = proc.ExitCode;
+        }
+        if (exit != 0 || string.IsNullOrEmpty(found) || !System.IO.File.Exists(found))
+        {
+          Log.LogError("vswhere found no Visual Studio MSBuild to build PitchTracker.vcxproj - install the 'Desktop development with C++' workload, then rebuild.");
+          return false;
+        }
+        MsBuildPath = found;
+      </Code>
+    </Task>
+   </UsingTask>
+   <Target Name="_BuildPitchTrackerNative" BeforeTargets="_StageUnmanagedNatives" Condition="'$(OS)' == 'Windows_NT'">
+    <PropertyGroup>
+      <_PtProj>$(MSBuildThisFileDirectory)..\PitchTracker\PitchTracker.vcxproj</_PtProj>
+    </PropertyGroup>
+    <_FindVsMsBuild>
+      <Output TaskParameter="MsBuildPath" PropertyName="_VsMsBuild" />
+    </_FindVsMsBuild>
+    <Exec Command='&quot;$(_VsMsBuild)&quot; "$(_PtProj)" /p:Configuration=Release /p:Platform=x64 /v:minimal /nologo' />
+   </Target>
 
   <!-- Stage every unmanaged native the game needs next to the other libs in Output/libs/unmanaged.
         Sources:
@@ -110,8 +167,9 @@
             build targets keyed on Platform=='x64', which net10 SDK builds never set (Platform=AnyCPU)
             - so nothing gets copied on a fresh checkout without this (the old Output/ copies were
             net48-era relics).
-          - PitchTracker: the sibling C++ vcxproj. Build it first (Visual Studio 2022+ with the C++
-            workload):  msbuild PitchTracker\PitchTracker.vcxproj /p:Configuration=Release /p:Platform=x64
+          - PitchTracker: the sibling C++ vcxproj, built automatically by _BuildPitchTrackerNative above
+            (the SDK MSBuild engine cannot compile C++ - MSB4278 on $(VCTargetsPath) - so the Visual
+            Studio MSBuild that vswhere finds builds Release|x64 first; that is the only prerequisite).
         A missing native is a hard error on Windows - never ship a game that would die on first
         decode/record/DB use. On Linux the check is _CheckLinuxNatives' job; on macOS the RID
         packages carry the natives. -->
@@ -131,11 +189,8 @@
       <_UnmanagedNative Include="$(_PtDir)\PitchTracker.dll" />
       <_UnmanagedNative Include="$(_PtDir)\PitchTracker.pdb" />
     </ItemGroup>
-    <Error Condition="'$(OS)' == 'Windows_NT' and '$(_MissingNatives)' != ''"
-           Text="Missing unmanaged native(s): $(_MissingNatives) - run 'dotnet restore', and build PitchTracker Release x64 (see _StageUnmanagedNatives header)." />
-    <Copy Condition="'$(OS)' == 'Windows_NT'"
-          SourceFiles="@(_UnmanagedNative)"
-          DestinationFolder="$(_UnmanagedDst)" SkipUnchangedFiles="true" />
+    <Error Condition="'$(OS)' == 'Windows_NT' and '$(_MissingNatives)' != ''" Text="Missing unmanaged native(s): $(_MissingNatives) - run 'dotnet restore' for the NuGet ones; a missing PitchTracker means _BuildPitchTrackerNative could not run (Visual Studio / Build Tools with the C++ workload are required)." />
+    <Copy Condition="'$(OS)' == 'Windows_NT'" SourceFiles="@(_UnmanagedNative)" DestinationFolder="$(_UnmanagedDst)" SkipUnchangedFiles="true" />
   </Target>
 
   <!-- Linux parity for the Windows "never ship without natives" contract. The NuGet package natives
@@ -145,12 +200,9 @@
         exception - they are built from local sources by the makefiles (see the root makefile) and
         are not checked in, so on a fresh checkout the game would build fine and die at startup with
         a DllNotFoundException. Gate the build instead, and point at the fix. -->
-  <Target Name="_CheckLinuxNatives" BeforeTargets="Build;Publish"
-          Condition="$([MSBuild]::IsOSPlatform('Linux'))">
-    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\Output\libPitchTracker.dll.so')"
-           Text="Missing Output\libPitchTracker.dll.so - run 'make -C PitchTracker' first (see the root makefile)." />
-    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\Output\libacinerella.so')"
-           Text="Missing Output\libacinerella.so - run 'make -C Vocaluxe/Lib/Video/Acinerella' first (see the root makefile)." />
+  <Target Name="_CheckLinuxNatives" BeforeTargets="Build;Publish" Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\Output\libPitchTracker.dll.so')" Text="Missing Output\libPitchTracker.dll.so - run 'make -C PitchTracker' first (see the root makefile)." />
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\Output\libacinerella.so')" Text="Missing Output\libacinerella.so - run 'make -C Vocaluxe/Lib/Video/Acinerella' first (see the root makefile)." />
   </Target>
 
   <!-- After the PortAudioSharp2 runtime package has laid its stock portaudio.dll down, replace
@@ -164,8 +216,7 @@
     <PropertyGroup>
       <_PaAsioSrc>$(MSBuildThisFileDirectory)..\Native\portaudio-asio\win-x64\portaudio.dll</_PaAsioSrc>
     </PropertyGroup>
-    <Error Condition="!Exists('$(_PaAsioSrc)')"
-           Text="Missing Native\portaudio-asio\win-x64\portaudio.dll - rebuild it (Native\portaudio-asio\build.ps1) or restore the committed binary." />
+    <Error Condition="!Exists('$(_PaAsioSrc)')" Text="Missing Native\portaudio-asio\win-x64\portaudio.dll - rebuild it (Native\portaudio-asio\build.ps1) or restore the committed binary." />
     <Copy SourceFiles="$(_PaAsioSrc)" DestinationFiles="$(MSBuildThisFileDirectory)..\Output\portaudio.dll" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(_PaAsioSrc)" DestinationFiles="$(MSBuildThisFileDirectory)..\Output\runtimes\win-x64\native\portaudio.dll" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(_PaAsioSrc)" DestinationFiles="$(MSBuildThisFileDirectory)..\Output\libs\unmanaged\portaudio.dll" SkipUnchangedFiles="true" />
