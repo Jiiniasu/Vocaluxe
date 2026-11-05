@@ -23,8 +23,8 @@
   <ItemGroup>
     <PackageReference Include="OpenTK" Version="4.9.4" />
     <PackageReference Include="PortAudioSharp2" Version="1.0.6" />
-    <PackageReference Include="SkiaSharp" Version="3.119.4" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
+    <PackageReference Include="SkiaSharp" Version="4.154.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.154.0" />
     <!-- macOS publishes need the SkiaSharp dylib from the macOS native-asset package; only pulled in
           when building on/for macOS so the Linux/Windows builds are unaffected. -->
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="3.119.4" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />

@@ -289,6 +289,8 @@ namespace Vocaluxe.Base.Fonts
                     {
                         canvas.Clear(SKColors.Transparent);
 
+                        // SKTextAlign is explicit in 4.x; Left reproduces the implicit alignment of the removed
+                        // SKPaint-align overload (x0 is the glyph's left edge, so no re-centering is needed).
                         if (outlineSize > 0)
                         {
                             using (var outlinePaint = new SKPaint
@@ -299,11 +301,11 @@ namespace Vocaluxe.Base.Fonts
                                 StrokeJoin = SKStrokeJoin.Round,
                                 Color = _ToSkColor(outlineColor)
                             })
-                                canvas.DrawText(text, x0, baselineY, font, outlinePaint);
+                                canvas.DrawText(text, x0, baselineY, SKTextAlign.Left, font, outlinePaint);
                         }
 
                         using (var fillPaint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill, Color = SKColors.White })
-                            canvas.DrawText(text, x0, baselineY, font, fillPaint);
+                            canvas.DrawText(text, x0, baselineY, SKTextAlign.Left, font, fillPaint);
                     }
 
                     // SkiaSharp 3+: SKBitmap.Bytes is not guaranteed to be the pixel store - take a copy

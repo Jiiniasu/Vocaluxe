@@ -584,7 +584,8 @@ namespace Vocaluxe.Lib.Draw
 
                 using (var data = SKData.CreateCopy(screen))
                 using (var source = SKImage.FromPixels(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Unpremul), data, width * 4))
-                    canvas.DrawImage(source, 0, 0);
+                    // 1:1 blit; nearest-neighbor keeps the copy byte-exact (matches the old implicit filter).
+                    canvas.DrawImage(source, 0, 0, new SKSamplingOptions(SKFilterMode.Nearest));
 
                 using (var encoded = SKImage.FromBitmap(flipped).Encode(SKEncodedImageFormat.Png, 100))
                     File.WriteAllBytes(file, encoded.ToArray());

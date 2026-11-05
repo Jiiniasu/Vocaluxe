@@ -120,13 +120,15 @@ namespace Vocaluxe.Base
                 using (SKBitmap first = SKBitmap.Decode(firstCoverPath))
                 {
                     if (first != null)
-                        canvas.DrawBitmap(first, dstRect);
+                        // SKSamplingOptions (required in 4.x) = nearest-neighbor, pixel-identical to what the
+                        // implicit filter of the removed no-sampling overload applied.
+                        canvas.DrawBitmap(first, dstRect, new SKSamplingOptions(SKFilterMode.Nearest));
                 }
                 bgAlpha = (byte)(_Theme.ImageAlpha * 255);
             }
 
             using (var paint = new SKPaint { Color = new SKColor(255, 255, 255, bgAlpha) })
-                canvas.DrawBitmap(bmpBackground, dstRect, paint);
+                canvas.DrawBitmap(bmpBackground, dstRect, new SKSamplingOptions(SKFilterMode.Nearest), paint);
         }
 
         private void _DrawText(SKCanvas canvas, int width, int height, CFont font, List<CTextElement> elements)
@@ -180,9 +182,11 @@ namespace Vocaluxe.Base
                         else
                             left = _MarginLeft;
                         float baseline = top - metrics.Ascent;
+                        // SKTextAlign is explicit in 4.x; Left reproduces the implicit alignment of the
+                        // removed SKPaint-align overload (the x offset above already does the centering).
                         if (outlineSize > 0)
-                            canvas.DrawText(line, left, baseline, skFont, outlinePaint);
-                        canvas.DrawText(line, left, baseline, skFont, fillPaint);
+                            canvas.DrawText(line, left, baseline, SKTextAlign.Left, skFont, outlinePaint);
+                        canvas.DrawText(line, left, baseline, SKTextAlign.Left, skFont, fillPaint);
                         top += maxHeight + _LineSpace;
                     }
                 }
