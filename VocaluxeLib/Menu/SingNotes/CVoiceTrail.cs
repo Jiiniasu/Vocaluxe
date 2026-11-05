@@ -82,6 +82,34 @@ namespace VocaluxeLib.Menu.SingNotes
             _Cull(barLeft, spawnX, noteWidth, beat);
         }
 
+        /// <summary>
+        ///     The pitch band occupied by the live dots, in semi-tones. <paramref name="maxTone"/> is where the highest
+        ///     dot's center sits, <paramref name="minTone"/> the lowest, and <paramref name="maxHalfPx"/> the largest
+        ///     half dot size in pixels, so a caller can turn all three into a single "fits inside" requirement
+        /// </summary>
+        /// <returns>true if there is at least one live dot</returns>
+        public bool GetLiveBounds(out float maxTone, out float minTone, out float maxHalfPx)
+        {
+            maxTone = float.NegativeInfinity;
+            minTone = float.PositiveInfinity;
+            maxHalfPx = 0f;
+            if (_Dots.Count == 0)
+                return false;
+
+            for (int i = 0; i < _Dots.Count; i++)
+            {
+                SDot dot = _Dots[i];
+                if (dot.Tone > maxTone)
+                    maxTone = dot.Tone;
+                if (dot.Tone < minTone)
+                    minTone = dot.Tone;
+                float half = dot.Size * 0.5f;
+                if (half > maxHalfPx)
+                    maxHalfPx = half;
+            }
+            return true;
+        }
+
         public void Draw(CTextureRef texture, SRectF barRect, float spawnX, float noteWidth, float beat, float viewTop, float semiToneHeight)
         {
             int count = _Cull(barRect.X, spawnX, noteWidth, beat);
