@@ -209,6 +209,20 @@ namespace Vocaluxe.Base
         }
 
         /// <summary>
+        ///     Reads back a texture's pixels as a tightly packed, straight-alpha BGRA byte array of the
+        ///     texture's data size (w x h via out params). Null if the texture is missing or not loaded yet.
+        ///     Must be called from main thread!
+        /// </summary>
+        /// <param name="textureRef">Texture to read back</param>
+        /// <param name="width">Width of the returned data</param>
+        /// <param name="height">Height of the returned data</param>
+        /// <returns>The pixel data or null on error</returns>
+        public static byte[] CopyTextureData(CTextureRef textureRef, out int width, out int height)
+        {
+            return _Draw.CopyTextureData(textureRef, out width, out height);
+        }
+
+        /// <summary>
         ///     Updates a texture, filling it with the new data
         /// </summary>
         /// <param name="textureRef"></param>

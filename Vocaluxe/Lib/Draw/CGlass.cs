@@ -213,18 +213,20 @@ namespace Vocaluxe.Lib.Draw
         /// <summary>
         ///     The blurred copy of the current background: the video stream's pre-blurred twin if the
         ///     background is a video, otherwise a cached blurred copy of the background image (generated
-        ///     on demand, regenerated when the blur strength changes).
-        ///     Null if no blur source is available.
+        ///     on demand, regenerated when the blur strength changes). File-backed sources are decoded
+        ///     from the file; generated textures (e.g. the cover DB's resized bytes, which carry no path)
+        ///     are read back from the texture itself. Null if no blur source is available.
         /// </summary>
         private CTextureRef _GetTwin()
         {
             if (_VideoTwin != null)
                 return _VideoTwin;
-            if (_Source == null || String.IsNullOrEmpty(_Source.TexturePath))
-                return null; //generated texture, no file to decode: tint-only fallback
+            if (_Source == null)
+                return null; //no background source at all: tint-only fallback
 
             int strength = (int)CConfig.Config.Graphics.GlassStrength;
-            string key = _Source.TexturePath;
+            bool hasFile = !String.IsNullOrEmpty(_Source.TexturePath);
+            string key = hasFile ? _Source.TexturePath : "id" + _Source.ID;
 
             SBlurEntry entry;
             if (_BlurredBackgrounds.TryGetValue(key, out entry) && entry.Strength == strength)
@@ -237,7 +239,7 @@ namespace Vocaluxe.Lib.Draw
             }
 
             int width, height;
-            byte[] bgra = _LoadBgra(key, out width, out height);
+            byte[] bgra = hasFile ? _LoadBgra(_Source.TexturePath, out width, out height) : CDraw.CopyTextureData(_Source, out width, out height);
             if (bgra == null)
                 return null;
 

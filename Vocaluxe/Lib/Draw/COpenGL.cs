@@ -625,6 +625,43 @@ namespace Vocaluxe.Lib.Draw
             }
         }
 
+        public byte[] CopyTextureData(CTextureRef textureRef, out int width, out int height)
+        {
+            width = 0;
+            height = 0;
+
+            COGLTexture texture;
+            if (!_GetTexture(textureRef, out texture) || !texture.IsLoaded)
+                return null;
+
+            //glGetTexImage returns the whole texture memory - the power-of-two allocation including the
+            //edge-replicated pad (see _EdgeReplicatedPotData) - so read it all and crop the data region out.
+            //The bind/restore follows the COGLTexture constructor's idiom.
+            int tw = texture.Size.Width;
+            int th = texture.Size.Height;
+            byte[] full = new byte[4 * tw * th];
+
+            GL.BindTexture(TextureTarget.Texture2D, texture.Name);
+            GL.GetTexImage(TextureTarget.Texture2D, 0, PixelFormat.Bgra, PixelType.UnsignedByte, full);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+
+            int dw = texture.DataSize.Width;
+            int dh = texture.DataSize.Height;
+            if (dw == tw && dh == th)
+            {
+                width = dw;
+                height = dh;
+                return full;
+            }
+
+            byte[] data = new byte[4 * dw * dh];
+            for (int y = 0; y < dh; y++)
+                System.Buffer.BlockCopy(full, y * tw * 4, data, y * dw * 4, dw * 4);
+            width = dw;
+            height = dh;
+            return data;
+        }
+
         public void DrawRect(SColorF color, SRectF rect, bool allMonitors = true)
         {
             int loops = 1;
