@@ -819,7 +819,7 @@ namespace Vocaluxe.Screens
                     SRectF bounds = CSettings.RenderRect;
                     SRectF rect = CHelper.FitInBounds(bounds, background.OrigAspect, aspect);
                     CDraw.DrawTexture(background, rect, background.Color, bounds);
-                    if (background == _CurrentVideo.Texture)
+                    if (_CurrentVideo != null && background == _CurrentVideo.Texture)
                         CBase.Glass?.SetBackground(null, _CurrentVideo.GlassTexture, aspect);
                     else
                         CBase.Glass?.SetBackground(background, null, aspect);
