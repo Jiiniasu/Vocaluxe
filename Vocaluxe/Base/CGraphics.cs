@@ -158,6 +158,13 @@ namespace Vocaluxe.Base
         public static bool UpdateGameLogic(CKeys keys, CMouse mouse)
         {
             bool run = true;
+
+            // Drain the cloud pump first, on the loop thread, so any cloud result (score submission,
+            // profile/player assignment, live control event) lands before input and state are handled
+            // this frame. No-op when nothing is pending; untouched entirely when cloud is disabled.
+            if (CConfig.UseCloudServer)
+                CCloud.Update();
+
             _Cursor.Visible = mouse.Visible;
 
             mouse.CopyEvents();

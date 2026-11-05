@@ -640,11 +640,16 @@ namespace Vocaluxe.Screens
 
                 if (CConfig.UseCloudServer)
                 {
-                    List<int> cloudscores = CCloud.putRound(players);
-                    foreach (int score in cloudscores)
+                    // Fire-and-forget: putRound delivers the new-entry IDs onto the loop thread (pump)
+                    // once the submission is done; we simply add them there. The screen no longer blocks
+                    // on the request or the outbox write.
+                    CCloud.putRound(players, delegate (List<int> cloudScores)
                     {
-                        CGame.NewEntryIDs.Add(score);
-                    }
+                        foreach (int score in cloudScores)
+                        {
+                            CGame.NewEntryIDs.Add(score);
+                        }
+                    });
                     continue;
                 }
 

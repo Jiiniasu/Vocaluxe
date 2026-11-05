@@ -236,11 +236,22 @@ namespace Vocaluxe.Screens
                 EHighscoreStyle style = CBase.Config.GetHighscoreStyle();
                 if (CConfig.UseCloudServer)
                 {
+                    // Start the fetch now (off the loop thread) and fill the pre-allocated list when the
+                    // result arrives (pump). UpdateGame() re-renders from _Scores every frame, so the rows
+                    // appear as soon as they land - the screen shows empty-then-populated instead of frozen.
                     _Scores[round] = new List<SDBScoreEntry>();
-                    foreach (SDBScoreEntry scoreEntry in CCloud.getHighScores(CSongs.GetSong(CGame.GetSong(round).ID).DataBaseSongID, gameMode, style))
+                    int targetRound = round;
+                    int databaseSongId = CSongs.GetSong(CGame.GetSong(round).ID).DataBaseSongID;
+                    CCloud.getHighScores(databaseSongId, gameMode, style, delegate (SDBScoreEntry[] entries)
                     {
-                        _Scores[round].Add(scoreEntry);
-                    }
+                        if (entries == null)
+                            return;
+
+                        foreach (SDBScoreEntry scoreEntry in entries)
+                        {
+                            _Scores[targetRound].Add(scoreEntry);
+                        }
+                    });
                 }
                 else
                 {

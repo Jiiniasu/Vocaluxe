@@ -39,6 +39,7 @@ namespace Vocaluxe.Base
             EditProfile,
             DeleteProfile,
             AddAvatar,
+            AddCloudAvatar,
             EditAvatar
         }
 
@@ -48,6 +49,7 @@ namespace Vocaluxe.Base
             public CAvatar Avatar;
             public EAction Action;
             public Guid ProfileID;
+            public string FileName;
         }
         #endregion enums and structs
 
@@ -154,6 +156,21 @@ namespace Vocaluxe.Base
                             change.Avatar.ID = _AvatarIDs.Dequeue();
                             _Avatars.Add(change.Avatar.ID, change.Avatar);
                             _AvatarsChanged = true;
+                            break;
+
+                        case EAction.AddCloudAvatar:
+                            if (string.IsNullOrEmpty(change.FileName))
+                                break;
+
+                            // Runs on the loop thread (this is the Update dispatch), so the _Avatars
+                            // mutation and the _AvatarsChanged flag are applied consistently here.
+                            CAvatar newAvatar = CAvatar.GetAvatar(change.FileName);
+                            if (newAvatar != null)
+                            {
+                                newAvatar.ID = _AvatarIDs.Dequeue();
+                                _Avatars.Add(newAvatar.ID, newAvatar);
+                                _AvatarsChanged = true;
+                            }
                             break;
 
                         case EAction.EditAvatar:
@@ -271,6 +288,21 @@ namespace Vocaluxe.Base
                 return;
 
             var change = new SChange { Action = EAction.AddAvatar, Avatar = newAvatar };
+
+            lock (_QueueMutex)
+            {
+                _Queue.Enqueue(change);
+            }
+        }
+
+        // Queues a cloud-downloaded avatar (already written to disk by the caller) so that creating the
+        // CAvatar and setting _AvatarsChanged happens on the loop thread inside Update, not on the pool.
+        public static void AddCloudAvatar(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+                return;
+
+            var change = new SChange { Action = EAction.AddCloudAvatar, FileName = fileName };
 
             lock (_QueueMutex)
             {
@@ -533,25 +565,32 @@ namespace Vocaluxe.Base
 
             if (CConfig.UseCloudServer)
             {
-                foreach (CProfile profile in CCloud.getProfiles())
+                // Fetch on the thread pool and apply the new profiles on the loop thread (via the cloud
+                // pump), so _Profiles is only ever mutated there. The screen renders with the current (or
+                // empty) profiles until the response arrives - a brief blank is better than a frozen frame.
+                // _ProfilesChanged is set on arrival to drive the profile-changed callbacks.
+                CCloud.getProfiles(delegate (CProfile[] profiles)
                 {
-                    _Profiles.Add(profile.ID, profile);
-                }
+                    if (profiles != null)
+                    {
+                        foreach (CProfile profile in profiles)
+                        {
+                            _Profiles.Add(profile.ID, profile);
+                        }
+                    }
+                    _ProfilesChanged = true;
+                });
+                return;
             }
-            else
+
+            var files = new List<string>();
+            foreach (string path in CConfig.ProfileFolders)
+                files.AddRange(CHelper.ListFiles(path, "*.xml", true, true));
+            foreach (string file in files)
             {
-                var files = new List<string>();
-
-                foreach (string path in CConfig.ProfileFolders)
-                    files.AddRange(CHelper.ListFiles(path, "*.xml", true, true));
-
-                foreach (string file in files)
-                {
-                    var profile = new CProfile();
-
-                    if (profile.LoadProfile(file))
-                        _Profiles.Add(profile.ID, profile);
-                }
+                var profile = new CProfile();
+                if (profile.LoadProfile(file))
+                    _Profiles.Add(profile.ID, profile);
             }
             _ProfilesChanged = true;
         }
@@ -661,22 +700,26 @@ namespace Vocaluxe.Base
 
             if (CConfig.UseCloudServer)
             {
-                try
+                // Cached avatar: already linked above (fast path, unchanged). Otherwise download off the
+                // loop thread; on arrival the file write happens on that pool thread and only the
+                // add-to-_Avatars mutation is deferred onto the loop thread via the change queue (Update).
+                CCloud.getAvatar(fileName, delegate (byte[] imageData)
                 {
-                    byte[] imageData = CCloud.getAvatar(fileName);
-                    if (imageData == null)
-                        return null;
+                    if (imageData == null || imageData.Length == 0)
+                        return;
 
-                    File.WriteAllBytes(CHelper.GetUniqueFileName(CConfig.ProfileFolders[0], fileName), imageData);
+                    try
+                    {
+                        File.WriteAllBytes(CHelper.GetUniqueFileName(CConfig.ProfileFolders[0], fileName), imageData);
+                    }
+                    catch
+                    {
+                        return;
+                    }
 
-                    int id = NewAvatar(CConfig.ProfileFolders[0] + "\\" + fileName);
-
-                    return _Avatars[id];
-                }
-                catch
-                {
-                    return null;
-                }
+                    AddCloudAvatar(CConfig.ProfileFolders[0] + "\\" + fileName);
+                });
+                return null;
             }
 
             return null;

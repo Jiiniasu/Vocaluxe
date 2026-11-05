@@ -73,6 +73,78 @@ namespace Vocaluxe.Base
         // over the same queued records.
         private static readonly object _FlushLock = new object();
 
+        // There is no SynchronizationContext installed on the main loop thread (net10), so an async
+        // method started there - Init() below - resumes on the thread pool, and so does the websocket
+        // read/dispatch loop. Anything that mutates game or UI state (CGame / CGraphics / CBase /
+        // CProfiles) must therefore be applied on the loop thread: we queue those actions here and let
+        // CGraphics.UpdateGameLogic drain the queue once per frame (Update). Post is safe from any thread.
+        private static readonly Queue<Action> _PendingActions = new Queue<Action>();
+        private static readonly object _PendingActionsMutex = new object();
+
+        internal static void Post(Action action)
+        {
+            if (action != null)
+            {
+                lock (_PendingActionsMutex)
+                {
+                    _PendingActions.Enqueue(action);
+                }
+            }
+        }
+
+        public static void Update()
+        {
+            Action[] batch;
+            lock (_PendingActionsMutex)
+            {
+                if (_PendingActions.Count == 0)
+                    return;
+
+                batch = new Action[_PendingActions.Count];
+                for (int i = 0; i < batch.Length; i++)
+                    batch[i] = _PendingActions.Dequeue();
+            }
+
+            for (int i = 0; i < batch.Length; i++)
+            {
+                try
+                {
+                    batch[i]();
+                }
+                catch (Exception e)
+                {
+                    CLog.CCloudLog.Error(e, "Cloud pump action failed: {msg}", CLog.Params(e.Message));
+                }
+            }
+        }
+
+        // Runs a blocking cloud call on the thread pool, then applies onComplete with its result on the
+        // loop thread. The calling screen therefore never blocks the render pass; the result arrives the
+        // following frame(s) via the pump. On any fault the caller gets the CLR default (null / empty) so
+        // it can treat it as "no data yet" rather than crash.
+        private static void RunAsync<T>(Func<T> work, Action<T> onComplete)
+        {
+            Task.Run(delegate
+            {
+                T result;
+                try
+                {
+                    result = work();
+                }
+                catch (Exception e)
+                {
+                    CLog.CCloudLog.Error(e, "Cloud request failed: {msg}", CLog.Params(e.Message));
+                    result = default(T);
+                }
+
+                Post(delegate
+                {
+                    if (onComplete != null)
+                        onComplete(result);
+                });
+            });
+        }
+
         /// <summary>
         /// True while the WebSocket to the cloud server is open; false while it is down,
         /// reconnecting, or before the first successful connection.
@@ -107,10 +179,11 @@ namespace Vocaluxe.Base
             Converters = { new JsonStringEnumConverter(), new CloudDateTimeConverter() }
         };
         private static string _State = "loading_game";
-        // Written by the WebSocket dispatch, read via isUpdated(). Both run on the UI thread, so
-        // no extra synchronization is required.
+        // Written by the websocket dispatch when it is posted onto the loop thread (see Post/Update) and
+        // read via isUpdated(); once dispatched, both sides run on the loop thread, so no extra sync.
         private static DateTime _LastPlayerChange = DateTime.Now;
-        // Set by the WebSocket dispatch (UI thread) and read by the game loop (UI thread).
+        // Set by the websocket dispatch (posted onto the loop thread) and read by the sing screen (loop
+        // thread); the same-thread discipline makes these plain fields safe.
         public static bool PauseSong;
         public static bool StopSong;
         public static bool RestartSong;
@@ -571,7 +644,9 @@ namespace Vocaluxe.Base
                     CLog.CCloudLog.Information("Event \"{eventName}\" received with data: {data}", CLog.Params(message.eventName, message.data));
                     try
                     {
-                        await DispatchEvent(message);
+                        // Runs on the thread pool: it only parses the payload and posts the state
+                        // changes onto the loop thread (Post), so it must never touch game/UI state here.
+                        DispatchEvent(message);
                     }
                     catch (Exception e)
                     {
@@ -581,46 +656,68 @@ namespace Vocaluxe.Base
             }
         }
 
-        private static async Task DispatchEvent(EventMessage message)
+        private static void DispatchEvent(EventMessage message)
         {
             if (message == null || string.IsNullOrEmpty(message.eventName))
                 return;
 
+            // Runs on the thread pool: only parse the payload and post the state changes onto the loop
+            // thread (Post). Reading CGraphics.CurrentScreen or writing CGame / CBase here would race the
+            // main loop thread, so those happen entirely inside the posted actions.
             switch (message.eventName)
             {
                 case "previewSong":
-                    if (CGraphics.CurrentScreen.GetType() == typeof(Screens.CScreenSong))
-                        PreviewSong(ExtractIdFromEvent(message));
-                    break;
+                    {
+                        int previewSongId = ExtractIdFromEvent(message);
+                        Post(delegate
+                        {
+                            if (CGraphics.CurrentScreen.GetType() == typeof(Screens.CScreenSong))
+                                PreviewSong(previewSongId);
+                        });
+                        break;
+                    }
 
                 case "startSong":
-                    if (CGraphics.CurrentScreen.GetType() == typeof(Screens.CScreenSong))
                     {
                         int songId = ExtractIdFromEvent(message);
-                        StopSong = false;
-                        // A new song starts: the prepare window is open again, so player
-                        // settings (voice and difficulty) apply live until the song commits.
-                        PlayerSettingsCommitted = false;
-                        await setState("preparing_song", songId);
-                        StartSong(songId);
+                        Post(delegate
+                        {
+                            if (CGraphics.CurrentScreen.GetType() == typeof(Screens.CScreenSong))
+                            {
+                                StopSong = false;
+                                // A new song starts: the prepare window is open again, so player settings
+                                // (voice and difficulty) apply live until the song commits.
+                                PlayerSettingsCommitted = false;
+                                // Fire-and-forget: SendToSocket swallows/never faults, so the loop thread does
+                                // not block waiting for the socket frame to be enqueued.
+                                setState("preparing_song", songId);
+                                StartSong(songId);
+                            }
+                        });
+                        break;
                     }
-                    break;
 
                 case "togglePause":
-                    PauseSong = !PauseSong;
+                    Post(delegate { PauseSong = !PauseSong; });
                     break;
 
                 case "stopSong":
-                    StopSong = true;
+                    Post(delegate { StopSong = true; });
                     break;
 
                 case "restartSong":
-                    RestartSong = true;
+                    Post(delegate { RestartSong = true; });
                     break;
 
                 case "PlayerUpdated":
-                    HandlePlayerUpdated(message);
-                    break;
+                    {
+                        CloudPlayer player = SafeParsePlayer(message);
+                        if (player == null)
+                            break;
+
+                        Post(delegate { ApplyPlayerUpdate(player); });
+                        break;
+                    }
 
                 default:
                     break;
@@ -641,45 +738,49 @@ namespace Vocaluxe.Base
             }
         }
 
-        private static void HandlePlayerUpdated(EventMessage message)
+        // Parses a PlayerUpdated payload off the loop thread (JSON only; no game-state mutation) so the
+        // network thread never blocks and never touches CGame. Returns null on any malformed input.
+        private static CloudPlayer SafeParsePlayer(EventMessage message)
         {
             try
             {
-                CloudPlayer player = JsonSerializer.Deserialize<CloudPlayer>(message.data, _JsonOptions);
-                if (player == null)
-                    return;
-
-                int index = player.Id - 1;
-                if (index < 0 || index >= CGame.NumPlayers)
-                {
-                    CLog.CCloudLog.Warning("PlayerUpdated ignored: player id {id} out of range", CLog.Params(player.Id));
-                    return;
-                }
-
-                CGame.Players[index].ProfileID = player.ProfileGuid;
-                CGame.Players[index].ToneHelperText = player.ToneHelperText;
-
-                if (PlayerSettingsCommitted)
-                {
-                    // The current song is already committed: applying a difficulty or voice
-                    // change here would rewrite the scoring of a song that is being evaluated
-                    // mid-way. The change is kept server-side and therefore takes effect for
-                    // the next song, where the prepare window applies it again.
-                    CLog.CCloudLog.Warning("PlayerUpdated: ignoring difficulty {difficulty} and voice {voice} of player {id}, the current song is committed",
-                        CLog.Params((int)player.Difficulty, player.Voice, player.Id));
-                }
-                else
-                {
-                    CGame.Players[index].Difficulty = player.Difficulty;
-                    CGame.Players[index].VoiceNr = player.Voice;
-                }
-
-                _LastPlayerChange = DateTime.Now;
+                return JsonSerializer.Deserialize<CloudPlayer>(message.data, _JsonOptions);
             }
-            catch (Exception e)
+            catch
             {
-                CLog.CCloudLog.Error(e, "PlayerUpdated handling failed: {msg}", CLog.Params(e.Message));
+                return null;
             }
+        }
+
+        // Runs on the loop thread (posted by DispatchEvent): applies a player update to CGame.Players.
+        private static void ApplyPlayerUpdate(CloudPlayer player)
+        {
+            int index = player.Id - 1;
+            if (index < 0 || index >= CGame.NumPlayers)
+            {
+                CLog.CCloudLog.Warning("PlayerUpdated ignored: player id {id} out of range", CLog.Params(player.Id));
+                return;
+            }
+
+            CGame.Players[index].ProfileID = player.ProfileGuid;
+            CGame.Players[index].ToneHelperText = player.ToneHelperText;
+
+            if (PlayerSettingsCommitted)
+            {
+                // The current song is already committed: applying a difficulty or voice change here would
+                // rewrite the scoring of a song that is being evaluated mid-way. The change is kept
+                // server-side and therefore takes effect for the next song, where the prepare window
+                // applies it again.
+                CLog.CCloudLog.Warning("PlayerUpdated: ignoring difficulty {difficulty} and voice {voice} of player {id}, the current song is committed",
+                    CLog.Params((int)player.Difficulty, player.Voice, player.Id));
+            }
+            else
+            {
+                CGame.Players[index].Difficulty = player.Difficulty;
+                CGame.Players[index].VoiceNr = player.Voice;
+            }
+
+            _LastPlayerChange = DateTime.Now;
         }
 
         // Log (and mark observed) any task fault that no caller awaited, so nothing crashes the app.
@@ -727,44 +828,56 @@ namespace Vocaluxe.Base
             CloudSong[] result = SafeDeserialize<CloudSong[]>(PostStringToCloud("/api/loadSongs", json, _HTTPRetryPolicy));
             return result ?? new CloudSong[0];
         }
-        public static CProfile[] getProfiles()
+        public static void getProfiles(Action<CProfile[]> onReady)
         {
             string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey });
-            CProfile[] result = SafeDeserialize<CProfile[]>(PostStringToCloud("/api/getProfiles", json, _HTTPRetryPolicy));
-            return result ?? new CProfile[0];
+            RunAsync(delegate
+            {
+                CProfile[] profiles = SafeDeserialize<CProfile[]>(PostStringToCloud("/api/getProfiles", json, _HTTPRetryPolicy));
+                return profiles ?? new CProfile[0];
+            }, onReady);
         }
 
-        public static byte[] getAvatar(string fileName)
+        // Downloads the avatar image on the thread pool and calls onReady (also on a pool thread, so the
+        // caller can do the file write off the loop thread) with the validated bytes, or null on failure.
+        public static void getAvatar(string fileName, Action<byte[]> onReady)
         {
             string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey, FileName = fileName });
-
-            byte[] data = PostBytesToCloud("/api/getAvatar", json, _HTTPRetryPolicy);
-            if (data == null || data.Length == 0)
-                return null;
-
-            try
+            Task.Run(delegate
             {
-                // Validate that the image decodes fully before saving it (equivalent of the former
-                // GDI+ "copy into a Bitmap" load, done with SkiaSharp).
-                using (var bmp = SKBitmap.Decode(data))
+                byte[] data = PostBytesToCloud("/api/getAvatar", json, _HTTPRetryPolicy);
+                byte[] result = null;
+                if (data != null && data.Length > 0)
                 {
-                    if (bmp == null)
-                        return null;
+                    // Validate that the image decodes fully before handing it out (equivalent of the
+                    // former GDI+ "copy into a Bitmap" load, done with SkiaSharp).
+                    try
+                    {
+                        using (var bmp = SKBitmap.Decode(data))
+                        {
+                            if (bmp != null)
+                                result = data;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        CLog.CCloudLog.Error(e, "Failed to decode cloud avatar: {msg}", CLog.Params(e.Message));
+                    }
                 }
-                return data;
-            }
-            catch (Exception e)
-            {
-                CLog.CCloudLog.Error(e, "Failed to decode cloud avatar: {msg}", CLog.Params(e.Message));
-                return null;
-            }
+
+                if (onReady != null)
+                    onReady(result);
+            });
         }
 
-        public static SDBScoreEntry[] getHighScores(int databaseSongId, EGameMode gameMode, EHighscoreStyle highscoreStyle)
+        public static void getHighScores(int databaseSongId, EGameMode gameMode, EHighscoreStyle highscoreStyle, Action<SDBScoreEntry[]> onReady)
         {
             string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey, DataBaseSongID = databaseSongId, GameMode = gameMode, Style = highscoreStyle });
-            SDBScoreEntry[] result = SafeDeserialize<SDBScoreEntry[]>(PostStringToCloud("/api/getHighScores", json, _HTTPRetryPolicy));
-            return result ?? new SDBScoreEntry[0];
+            RunAsync(delegate
+            {
+                SDBScoreEntry[] scores = SafeDeserialize<SDBScoreEntry[]>(PostStringToCloud("/api/getHighScores", json, _HTTPRetryPolicy));
+                return scores ?? new SDBScoreEntry[0];
+            }, onReady);
         }
         public static void putCover(int databaseSongId, string data, string format)
         {
@@ -773,52 +886,75 @@ namespace Vocaluxe.Base
             PostStringToCloud("/api/putCover", json, _HTTPRetryPolicy);
         }
 
-        public static List<int> putRound(SPlayer[] players)
+        public static void putRound(SPlayer[] players, Action<List<int>> onReady)
         {
+            // Posts the delivered (new-entry) IDs onto the loop thread - the caller adds them to
+            // CGame.NewEntryIDs there, which is the one write that must not happen off the loop thread.
+            Action noData = delegate
+            {
+                if (onReady != null)
+                    onReady(new List<int>());
+            };
+
             if (players == null || players.Length == 0)
             {
                 CLog.CCloudLog.Warning("putRound skipped: no players in round");
-                return new List<int>();
+                Post(noData);
+                return;
             }
 
             CSong song = CSongs.GetSong(players[0].SongID);
             if (song == null || song.DataBaseSongID < 0)
             {
                 CLog.CCloudLog.Warning("putRound skipped: no valid cloud song for the round");
-                return new List<int>();
+                Post(noData);
+                return;
             }
 
             const string Endpoint = "/api/putRound";
             string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey, DataBaseSongID = song.DataBaseSongID, SongFinished = players[0].SongFinished, Scores = players });
 
-            // Non-idempotent: use the conservative policy (connection failures only) to avoid
-            // submitting the same round twice if the server already accepted it.
-            CloudPost result = DoPost(Endpoint, json, _HTTPRetryPolicyNonIdempotent);
-            if (result.Success)
-                return SafeDeserialize<List<int>>(Encoding.UTF8.GetString(result.Body)) ?? new List<int>();
-
-            // The round was NOT recorded server-side.
-            if (result.Transient)
+            // Deliberately off the loop thread: DoPost blocks the calling thread until the request (plus
+            // the retry policy) completes, and the transient branch below writes the outbox to disk. Both
+            // are I/O that must never stall the render pass. Only the application of the resulting
+            // new-entry IDs is marshalled back onto the loop thread via Post.
+            Task.Run(delegate
             {
-                // Safe to retry: either no response at all, or a "wait and retry" throttle (429/503)
-                // that the server rejected *before* writing the round. We never got an application of
-                // it, so queueing it cannot produce a duplicate even with no server-side dedup.
-                COutbox.Enqueue(Endpoint, json, Guid.NewGuid().ToString());
-                CLog.CCloudLog.Warning("putRound could not be delivered now - queued for a later upload ({n} pending)", CLog.Params(COutbox.Count));
+                // Non-idempotent: use the conservative policy (connection failures only) to avoid
+                // submitting the same round twice if the server already accepted it.
+                CloudPost result = DoPost(Endpoint, json, _HTTPRetryPolicyNonIdempotent);
 
-                // Ask the background flush to retry it promptly. It honors the server's Retry-After
-                // (when this was a throttle) off the UI thread, so this screen doesn't block.
-                FlushOnNextConnection();
-            }
-            else
-            {
-                // A permanent or ambiguous error (the safe 429/503/408 cases are handled by the
-                // transient branch above, which queues them). Since a 5xx may already have recorded the
-                // round and we have no server-side deduplication, drop it and log clearly rather than
-                // risk a double entry.
-                CLog.CCloudLog.Warning("putRound was refused by the server (HTTP {code}) and dropped to avoid a double record", CLog.Params(result.StatusCode));
-            }
-            return new List<int>();
+                List<int> ids = new List<int>();
+                if (result.Success)
+                    ids = SafeDeserialize<List<int>>(Encoding.UTF8.GetString(result.Body)) ?? new List<int>();
+                else if (result.Transient)
+                {
+                    // Safe to retry: either no response at all, or a "wait and retry" throttle (429/503)
+                    // that the server rejected *before* writing the round. We never got an application of
+                    // it, so queueing it cannot produce a duplicate even with no server-side dedup.
+                    COutbox.Enqueue(Endpoint, json, Guid.NewGuid().ToString());
+                    CLog.CCloudLog.Warning("putRound could not be delivered now - queued for a later upload ({n} pending)", CLog.Params(COutbox.Count));
+
+                    // Ask the background flush to retry it promptly. It honors the server's Retry-After
+                    // (when this was a throttle) off the loop thread, so this screen doesn't block.
+                    FlushOnNextConnection();
+                }
+                else
+                {
+                    // A permanent or ambiguous error (the safe 429/503/408 cases are handled by the
+                    // transient branch above, which queues them). Since a 5xx may already have recorded
+                    // the round and we have no server-side deduplication, drop it and log clearly rather
+                    // than risk a double entry.
+                    CLog.CCloudLog.Warning("putRound was refused by the server (HTTP {code}) and dropped to avoid a double record", CLog.Params(result.StatusCode));
+                }
+
+                List<int> delivered = ids;
+                Post(delegate
+                {
+                    if (onReady != null)
+                        onReady(delivered);
+                });
+            });
         }
 
         // Delivers whichever rounds are queued, oldest first, in order, as far as the connection
@@ -910,18 +1046,26 @@ namespace Vocaluxe.Base
             CProfiles.LoadProfiles();
 
             string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey });
-            CloudPlayer[] cloudPlayers = SafeDeserialize<CloudPlayer[]>(PostStringToCloud("/api/getPlayers", json, _HTTPRetryPolicy));
-            if (cloudPlayers == null)
-                return;
-
-            int count = Math.Min(CGame.NumPlayers, cloudPlayers.Length);
-            for (int i = 0; i < count; i++)
+            // Fetch off the loop thread; the assignment writes CGame.Players, which must land on the loop
+            // thread (Post), not on the pool thread this is called from.
+            Task.Run(delegate
             {
-                CGame.Players[i].ProfileID = cloudPlayers[i].ProfileGuid;
-                CGame.Players[i].Difficulty = cloudPlayers[i].Difficulty;
-                CGame.Players[i].ToneHelperText = cloudPlayers[i].ToneHelperText;
-                CGame.Players[i].VoiceNr = cloudPlayers[i].Voice;
-            }
+                CloudPlayer[] cloudPlayers = SafeDeserialize<CloudPlayer[]>(PostStringToCloud("/api/getPlayers", json, _HTTPRetryPolicy));
+                if (cloudPlayers == null)
+                    return;
+
+                Post(delegate
+                {
+                    int count = Math.Min(CGame.NumPlayers, cloudPlayers.Length);
+                    for (int i = 0; i < count; i++)
+                    {
+                        CGame.Players[i].ProfileID = cloudPlayers[i].ProfileGuid;
+                        CGame.Players[i].Difficulty = cloudPlayers[i].Difficulty;
+                        CGame.Players[i].ToneHelperText = cloudPlayers[i].ToneHelperText;
+                        CGame.Players[i].VoiceNr = cloudPlayers[i].Voice;
+                    }
+                });
+            });
         }
 
         public static int GetCurrentSongId()
