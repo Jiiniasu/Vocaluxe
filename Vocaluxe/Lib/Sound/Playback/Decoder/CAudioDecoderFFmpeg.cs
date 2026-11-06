@@ -17,19 +17,18 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Vocaluxe.Lib.Video.Acinerella;
+using Vocaluxe.Lib.Video.FFmpeg;
 using VocaluxeLib.Log;
 
 namespace Vocaluxe.Lib.Sound.Playback.Decoder
 {
     class CAudioDecoderFFmpeg : IAudioDecoder, IDisposable
     {
-        private IntPtr _InstancePtr = IntPtr.Zero;
-        private IntPtr _Audiodecoder = IntPtr.Zero;
+        private CFFmpegDecoder _Decoder;
 
-        private SACInstance _Instance;
         private SFormatInfo _FormatInfo;
         private float _CurrentTime;
+        private const int _MaxDecodeTries = 10;
 
         private string _FileName;
         private bool _FileOpened;
@@ -40,9 +39,13 @@ namespace Vocaluxe.Lib.Sound.Playback.Decoder
 
             try
             {
-                _InstancePtr = CAcinerella.AcInit();
-                CAcinerella.AcOpen2(_InstancePtr, _FileName);
-                _Instance = (SACInstance)Marshal.PtrToStructure(_InstancePtr, typeof(SACInstance));
+                _Decoder = new CFFmpegDecoder(EFFmpegStreamType.Audio);
+                if (!_Decoder.Open(_FileName))
+                {
+                    CLog.Error("Error opening audio file: " + _FileName);
+                    Close();
+                    return false;
+                }
             }
             catch (Exception)
             {
@@ -51,68 +54,27 @@ namespace Vocaluxe.Lib.Sound.Playback.Decoder
                 return false;
             }
 
-
-            if (!_Instance.Opened)
-            {
-                Close();
-                return false;
-            }
-
-            int audioStreamIndex;
-            SACDecoder audiodecoder;
-            try
-            {
-                _Audiodecoder = CAcinerella.AcCreateAudioDecoder(_InstancePtr);
-                audiodecoder = (SACDecoder)Marshal.PtrToStructure(_Audiodecoder, typeof(SACDecoder));
-                audioStreamIndex = audiodecoder.StreamIndex;
-            }
-            catch (Exception)
-            {
-                CLog.Error("Error opening audio file (can't find decoder): " + _FileName);
-                Close();
-                return false;
-            }
-
-            if (audioStreamIndex < 0)
-            {
-                Close();
-                return false;
-            }
-
+            // The decoder always emits interleaved 16-bit PCM (see CFFmpegDecoder's audio contract),
+            // so the pipeline's 16-bit contract holds for every input codec (mp3/ogg/wav/wma, ...).
             _FormatInfo = new SFormatInfo
             {
-                SamplesPerSecond = audiodecoder.StreamInfo.AudioInfo.SamplesPerSecond,
-                BitDepth = audiodecoder.StreamInfo.AudioInfo.BitDepth,
-                ChannelCount = audiodecoder.StreamInfo.AudioInfo.ChannelCount
+                SamplesPerSecond = _Decoder.SamplesPerSecond,
+                BitDepth = 16,
+                ChannelCount = _Decoder.ChannelCount
             };
 
             _CurrentTime = 0f;
 
-            // 16-bit PCM is passed straight through; 32-bit is the float32 output the native
-            // decoder produces for compressed formats (mp3/flac/ogg) and is converted to 16-bit
-            // in Decode(), keeping the pipeline's 16-bit PCM contract.
-            if (_FormatInfo.BitDepth != 16 && _FormatInfo.BitDepth != 32)
-            {
-                CLog.Error("Unsupported BitDepth (" + _FormatInfo.BitDepth + ") in file " + fileName);
-                Close();
-                return false;
-            }
             _FileOpened = true;
             return true;
         }
 
         public void Close()
         {
-            if (_Audiodecoder != IntPtr.Zero)
+            if (_Decoder != null)
             {
-                CAcinerella.AcFreeDecoder(_Audiodecoder);
-                _Audiodecoder = IntPtr.Zero;
-            }
-            if (_InstancePtr != IntPtr.Zero)
-            {
-                CAcinerella.AcClose(_InstancePtr);
-                CAcinerella.AcFree(_InstancePtr);
-                _InstancePtr = IntPtr.Zero;
+                _Decoder.Dispose();
+                _Decoder = null;
             }
 
             _FileOpened = false;
@@ -125,17 +87,19 @@ namespace Vocaluxe.Lib.Sound.Playback.Decoder
 
         public float GetLength()
         {
-            return _FileOpened ? _Instance.Info.Duration / 1000f : 0;
+            return _FileOpened ? _Decoder.Length : 0;
         }
 
         public void SetPosition(float time)
         {
             if (!_FileOpened)
+            {
                 return;
+            }
 
             try
             {
-                CAcinerella.AcSeek(_Audiodecoder, (time > _CurrentTime) ? 0 : -1, (Int64)(time * 1000f));
+                _Decoder.Seek(time <= _CurrentTime, (Int64)(time * 1000f));
             }
             catch (Exception)
             {
@@ -158,57 +122,30 @@ namespace Vocaluxe.Lib.Sound.Playback.Decoder
                 return;
             }
 
-            bool frameFinished = CAcinerella.AcGetAudioFrame(_InstancePtr, _Audiodecoder);
+            // The decoder buffers internally (frame threading, interleaved streams): one GetFrame
+            // may not have decoded yet - retry a few times before reporting "no data" to the caller.
+            var frameFinished = false;
+            for (var i = 0; i < _MaxDecodeTries && !frameFinished; i++)
+            {
+                frameFinished = _Decoder.GetFrame();
+            }
 
             if (frameFinished)
             {
-                var decoder = (SACDecoder)Marshal.PtrToStructure(_Audiodecoder, typeof(SACDecoder));
-
-                timeStamp = (float)decoder.Timecode;
+                timeStamp = (float)_Decoder.Timecode;
                 _CurrentTime = timeStamp;
-                //Console.WriteLine(_CurrentTime.ToString("#0.000") + " Buffer size: " + Decoder.buffer_size.ToString());
-                buffer = new byte[decoder.BufferSize];
+                buffer = new byte[_Decoder.BufferSize];
 
-                if (decoder.BufferSize > 0)
-                    Marshal.Copy(decoder.Buffer, buffer, 0, buffer.Length);
-
-                // The native decoder emits 32-bit float samples for compressed formats while the
-                // playback pipeline consumes 16-bit PCM; convert before handing the frame over.
-                if (decoder.BufferSize > 0 && _FormatInfo.BitDepth == 32)
-                    buffer = _FloatToPcm16(buffer);
+                if (_Decoder.BufferSize > 0)
+                {
+                    Marshal.Copy(_Decoder.Buffer, buffer, 0, buffer.Length);
+                }
 
                 return;
             }
 
             buffer = null;
             timeStamp = 0f;
-        }
-
-        /// <summary>
-        /// Converts an interleaved IEEE754 float32 buffer to 16-bit signed little-endian PCM.
-        /// </summary>
-        private static byte[] _FloatToPcm16(byte[] src)
-        {
-            int samples = src.Length / 4;
-            var dst = new byte[samples * 2];
-            int s = 0, d = 0;
-
-            for (int i = 0; i < samples; i++)
-            {
-                float f = BitConverter.ToSingle(src, s);
-                s += 4;
-
-                int v = (int)(f * 32768f);
-                if (v > 32767)
-                    v = 32767;
-                else if (v < -32768)
-                    v = -32768;
-
-                dst[d++] = (byte)(v & 0xFF);
-                dst[d++] = (byte)((v >> 8) & 0xFF);
-            }
-
-            return dst;
         }
 
         public void Dispose() { }

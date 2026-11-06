@@ -90,6 +90,9 @@
     <VideoBackgrounds>TR_CONFIG_ON</VideoBackgrounds>
     <VideosInSongs>TR_CONFIG_ON</VideosInSongs>
     <VideosToBackground>TR_CONFIG_OFF</VideosToBackground>
+    <HardwareDecoding>TR_CONFIG_ON</HardwareDecoding>
+    <DecoderThreads>0</DecoderThreads>
+    <VideoDownscaleResolution>0</VideoDownscaleResolution>
   </Video>
   <Record>
     <MicConfig>

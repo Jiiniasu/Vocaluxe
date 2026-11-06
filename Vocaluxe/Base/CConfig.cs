@@ -195,6 +195,24 @@ namespace Vocaluxe.Base
             public EOffOn VideosInSongs;
             [DefaultValue(EOffOn.TR_CONFIG_OFF)]
             public EOffOn VideosToBackground;
+            /// <summary>
+            ///     ON (default): video decoding uses the GPU when the platform supports it
+            ///         (D3D11VA/DXVA2 on Windows, VideoToolbox on macOS, VAAPI/VDPAU on Linux),
+            ///         with an automatic software fallback. OFF: always software decode.
+            /// </summary>
+            [DefaultValue(EOffOn.TR_CONFIG_ON)]
+            public EOffOn HardwareDecoding;
+            /// <summary>
+            ///     Decoder threads for video (0 = let FFmpeg pick, the default).
+            /// </summary>
+            [XmlRanged(0, 64), DefaultValue(0)]
+            public int DecoderThreads;
+            /// <summary>
+            ///     Downscale video to this height in pixels before display (0 = off, the default;
+            ///         e.g. 720 renders a 1080p theme at 720p).
+            /// </summary>
+            [XmlRanged(0, 2160), DefaultValue(0)]
+            public int VideoDownscaleResolution;
         }
 
         public struct SConfigRecord

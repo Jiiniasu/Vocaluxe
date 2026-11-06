@@ -40,10 +40,6 @@
     <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="3.119.4" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
     <!-- CCloud's HTTP retry (v7-compatible API surface, v8 package). -->
     <PackageReference Include="Polly" Version="8.9.0" />
-    <!-- Native-only bundles (FFmpeg 4.x + acinerella shim) that place their binaries under
-          libs/unmanaged, exactly like the old packages.config build did. -->
-    <PackageReference Include="vocaluxe.dependencies.acinerella" Version="1.0.6" />
-    <PackageReference Include="vocaluxe.dependencies.ffmpeg" Version="1.0.6" />
     <!-- SQLite on the official Microsoft.Data.Sqlite provider. Its native engine (SQLitePCLRaw
           "e_sqlite3") ships as runtimes/<rid>/native assets and resolves next to the exe in
           Output/ - no manual staging target needed for it. -->
@@ -172,47 +168,71 @@
    </Target>
 
   <!-- Stage every unmanaged native the game needs next to the other libs in Output/libs/unmanaged.
-        Sources:
-          - vocaluxe.dependencies.* NuGet packages ship their binaries in a plain x64/ folder with
-            build targets keyed on Platform=='x64', which net10 SDK builds never set (Platform=AnyCPU)
-            - so nothing gets copied on a fresh checkout without this (the old Output/ copies were
-            net48-era relics).
+        Source:
           - PitchTracker: the sibling C++ vcxproj, built automatically by _BuildPitchTrackerNative above
             (the SDK MSBuild engine cannot compile C++ - MSB4278 on $(VCTargetsPath) - so the Visual
             Studio MSBuild that vswhere finds builds Release|x64 first; that is the only prerequisite).
+        (FFmpeg is staged separately by the _StageFFmpeg* targets below; portaudio by _StagePaAsioNative.)
         A missing native is a hard error on Windows - never ship a game that would die on first
         decode/record/DB use. On Linux the check is _CheckLinuxNatives' job; on macOS the RID
         packages carry the natives. -->
    <Target Name="_StageUnmanagedNatives" BeforeTargets="Build;Publish">
     <PropertyGroup>
       <_UnmanagedDst>$(MSBuildThisFileDirectory)..\Output\libs\unmanaged</_UnmanagedDst>
-      <_PkgRoot>$(NuGetPackageRoot)</_PkgRoot>
       <_PtDir>$(MSBuildThisFileDirectory)..\PitchTracker\bin\Release.x64</_PtDir>
-      <_MissingNatives Condition="!Exists('$(_PkgRoot)vocaluxe.dependencies.acinerella\1.0.6\x64\acinerella.dll')">acinerella; $(_MissingNatives)</_MissingNatives>
-      <_MissingNatives Condition="!Exists('$(_PkgRoot)vocaluxe.dependencies.ffmpeg\1.0.6\x64\avcodec-58.dll')">ffmpeg; $(_MissingNatives)</_MissingNatives>
       <_MissingNatives Condition="!Exists('$(_PtDir)\PitchTracker.dll')">PitchTracker (build see header); $(_MissingNatives)</_MissingNatives>
     </PropertyGroup>
     <ItemGroup>
-      <_UnmanagedNative Include="$(_PkgRoot)vocaluxe.dependencies.acinerella\1.0.6\x64\*.dll" />
-      <_UnmanagedNative Include="$(_PkgRoot)vocaluxe.dependencies.acinerella\1.0.6\x64\*.pdb" />
-      <_UnmanagedNative Include="$(_PkgRoot)vocaluxe.dependencies.ffmpeg\1.0.6\x64\*.dll" />
       <_UnmanagedNative Include="$(_PtDir)\PitchTracker.dll" />
       <_UnmanagedNative Include="$(_PtDir)\PitchTracker.pdb" />
     </ItemGroup>
-    <Error Condition="'$(OS)' == 'Windows_NT' and '$(_MissingNatives)' != ''" Text="Missing unmanaged native(s): $(_MissingNatives) - run 'dotnet restore' for the NuGet ones; a missing PitchTracker means _BuildPitchTrackerNative could not run (Visual Studio / Build Tools with the C++ workload are required)." />
+    <Error Condition="'$(OS)' == 'Windows_NT' and '$(_MissingNatives)' != ''" Text="Missing unmanaged native(s): $(_MissingNatives) - a missing PitchTracker means _BuildPitchTrackerNative could not run (Visual Studio / Build Tools with the C++ workload are required)." />
     <Copy Condition="'$(OS)' == 'Windows_NT'" SourceFiles="@(_UnmanagedNative)" DestinationFolder="$(_UnmanagedDst)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- Stage the pinned FFmpeg 8.1.3 GPL shared build (the acinerella-era 4.x bundle replacement) under
+        Output/libs/unmanaged/ffmpeg64 - the exact folder CFFmpegDecoder probes on every platform. The
+        zip (VocaluxeDependencies) is pinned to the FFmpeg 8.1 ABI (avcodec-62) that the FFmpeg.AutoGen
+        8.1.0 bindings require. Already staged (avcodec-62 present) = no-op, so warm builds stay offline.
+        A missing result is a hard error on Windows - never ship a game that dies on first decode. -->
+    <Target Name="_StageFFmpegWindows" BeforeTargets="Build;Publish" Condition="'$(OS)' == 'Windows_NT'">
+    <PropertyGroup>
+      <_FFmpegDst>$(MSBuildThisFileDirectory)..\Output\libs\unmanaged</_FFmpegDst>
+      <_FFmpegUrl>https://github.com/Vocaluxe/VocaluxeDependencies/raw/master/zips/dependencies/ffmpeg_x64.zip</_FFmpegUrl>
+      <_FFmpegDownload Condition="!Exists('$(_FFmpegDst)\ffmpeg64\avcodec-62.dll')">true</_FFmpegDownload>
+    </PropertyGroup>
+    <Message Text="FFmpeg 8.1.3 is missing - downloading $(_FFmpegUrl)" Importance="high" Condition="'$(_FFmpegDownload)' == 'true'" />
+    <DownloadFile Condition="'$(_FFmpegDownload)' == 'true'" SourceUrl="$(_FFmpegUrl)" DestinationFolder="$(MSBuildThisFileDirectory)$(IntermediateOutputPath)" DestinationFileName="ffmpeg_x64.zip" />
+    <Unzip Condition="'$(_FFmpegDownload)' == 'true'" SourceFiles="$(MSBuildThisFileDirectory)$(IntermediateOutputPath)ffmpeg_x64.zip" DestinationFolder="$(_FFmpegDst)" />
+    <Error Condition="!Exists('$(_FFmpegDst)\ffmpeg64\avcodec-62.dll')" Text="FFmpeg 8.1.3 (avcodec-62) missing in Output\libs\unmanaged\ffmpeg64 - the download from VocaluxeDependencies failed; check the network and rebuild." />
+  </Target>
+
+  <!-- Linux: the same pinned bundle, once the ffmpeg_linux_x64.zip artifact exists in VocaluxeDependencies
+        (tracked in FFmpeg-Modernization-Plan.md P2). Until then the download is best-effort: warn loudly
+        and keep the build green, because CFFmpegDecoder falls back to a system FFmpeg 8.x when the staged
+        set is absent. The zip root is "ffmpeg64" so it lands in libs/unmanaged/ffmpeg64, as on Windows. -->
+    <Target Name="_StageFFmpegLinux" BeforeTargets="Build;Publish" Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <PropertyGroup>
+      <_FFmpegDst>$(MSBuildThisFileDirectory)../Output/libs/unmanaged</_FFmpegDst>
+      <_FFmpegUrl>https://github.com/Vocaluxe/VocaluxeDependencies/raw/master/zips/dependencies/ffmpeg_linux_x64.zip</_FFmpegUrl>
+      <_FFmpegDownload Condition="!Exists('$(_FFmpegDst)/ffmpeg64/libavutil.so.60')">true</_FFmpegDownload>
+    </PropertyGroup>
+    <Message Text="FFmpeg 8.1.3 bundle missing for Linux - trying $(_FFmpegUrl)" Importance="high" Condition="'$(_FFmpegDownload)' == 'true'" />
+    <DownloadFile Condition="'$(_FFmpegDownload)' == 'true'" ContinueOnError="WarnAndContinue" SourceUrl="$(_FFmpegUrl)" DestinationFolder="$(MSBuildThisFileDirectory)$(IntermediateOutputPath)" DestinationFileName="ffmpeg_linux_x64.zip" />
+    <Unzip Condition="'$(_FFmpegDownload)' == 'true' and Exists('$(MSBuildThisFileDirectory)$(IntermediateOutputPath)ffmpeg_linux_x64.zip')" SourceFiles="$(MSBuildThisFileDirectory)$(IntermediateOutputPath)ffmpeg_linux_x64.zip" DestinationFolder="$(_FFmpegDst)" />
+    <Message Importance="high" Text="WARNING: no FFmpeg 8.1.3 bundle in Output/libs/unmanaged/ffmpeg64 - CFFmpegDecoder will fall back to a system FFmpeg 8.x (see FFmpeg-Modernization-Plan.md P2 for the pinned artifact)." Condition="!Exists('$(_FFmpegDst)/ffmpeg64/libavutil.so.60')" />
   </Target>
 
   <!-- Linux parity for the Windows "never ship without natives" contract. The NuGet package natives
         (portaudio, SkiaSharp, SQLite, GLFW) need no staging: the SDK copies the runtimes/&lt;rid&gt;/native
         assets into the build output even for a plain no-RID `dotnet build`, and the runtime probes
-        Output/runtimes/linux-x64/native for every DllImport. PitchTracker and acinerella are the
-        exception - they are built from local sources by the makefiles (see the root makefile) and
-        are not checked in, so on a fresh checkout the game would build fine and die at startup with
-        a DllNotFoundException. Gate the build instead, and point at the fix. -->
+        Output/runtimes/linux-x64/native for every DllImport. PitchTracker is the exception - it is
+        built from local sources by the makefile (see the root makefile) and is not checked in, so on a
+        fresh checkout the game would build fine and die at startup with a DllNotFoundException. Gate the
+        build instead, and point at the fix. (FFmpeg's Linux bundle is staged best-effort by
+        _StageFFmpegLinux until the pinned artifact is published - see FFmpeg-Modernization-Plan.md P2.) -->
   <Target Name="_CheckLinuxNatives" BeforeTargets="Build;Publish" Condition="$([MSBuild]::IsOSPlatform('Linux'))">
     <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\Output\libPitchTracker.dll.so')" Text="Missing Output\libPitchTracker.dll.so - run 'make -C PitchTracker' first (see the root makefile)." />
-    <Error Condition="!Exists('$(MSBuildThisFileDirectory)..\Output\libacinerella.so')" Text="Missing Output\libacinerella.so - run 'make -C Vocaluxe/Lib/Video/Acinerella' first (see the root makefile)." />
   </Target>
 
   <!-- After the PortAudioSharp2 runtime package has laid its stock portaudio.dll down, replace

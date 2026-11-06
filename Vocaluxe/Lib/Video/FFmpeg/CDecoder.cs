@@ -1,4 +1,4 @@
-﻿#region license
+#region license
 // This file is part of Vocaluxe.
 // 
 // Vocaluxe is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@ using System.Diagnostics;
 using System.IO;
 using VocaluxeLib.Draw;
 
-namespace Vocaluxe.Lib.Video.Acinerella
+namespace Vocaluxe.Lib.Video.FFmpeg
 {
     class CDecoder
     {

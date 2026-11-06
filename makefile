@@ -1,14 +1,13 @@
-# Build Vocaluxe (Linux): the two C/C++ native sub-projects (plain g++) and the .NET 10
-# solution. Prerequisites are listed in HowToBuildLinux.md.
+# Build Vocaluxe (Linux): the C++ native sub-project (PitchTracker, plain g++) and the .NET 10
+# solution. Prerequisites are listed in HowToBuildLinux.md. FFmpeg is a build-time download
+# (see the _StageFFmpegLinux target in Vocaluxe/Vocaluxe.csproj) - no system FFmpeg needed.
 
 all:
 	$(MAKE) -C PitchTracker
-	$(MAKE) -C Vocaluxe/Lib/Video/Acinerella
 	dotnet build Vocaluxe.slnx -c Release
 
 clean:
 	$(MAKE) -C PitchTracker clean
-	$(MAKE) -C Vocaluxe/Lib/Video/Acinerella clean
 	dotnet clean Vocaluxe.slnx -c Release
 
 INSTALLPATH?=/usr/share/vocaluxe

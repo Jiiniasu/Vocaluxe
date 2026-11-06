@@ -1,4 +1,4 @@
-﻿#region license
+#region license
 // This file is part of Vocaluxe.
 // 
 // Vocaluxe is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Vocaluxe.Lib.Video.Acinerella
+namespace Vocaluxe.Lib.Video.FFmpeg
 {
     class CFramebuffer
     {
