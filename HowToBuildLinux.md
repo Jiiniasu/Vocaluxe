@@ -1,8 +1,8 @@
 # Build Vocaluxe - HowTo (Linux)
 
 Vocaluxe on Linux runs on the **.NET 10 SDK** (no Mono, no xbuild). The game data ships in the
-repository (`Output/`), the two small native sub-projects (pitch tracking, video/audio decoding)
-build with plain gcc/g++, and everything else comes from NuGet.
+repository (`Output/`), the one small native sub-project (pitch tracking) builds with plain gcc/g++,
+and everything else comes from NuGet or a build-time download.
 
 ## Prerequisites
 
@@ -10,11 +10,9 @@ Build-time:
 
 - .NET 10 SDK
 - gcc, g++, make
-- FFmpeg development libraries (`libacinerella.so` links against the system FFmpeg):
-  Debian/Ubuntu:
-  ```sh
-  sudo apt install pkg-config libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libswresample-dev
-  ```
+
+(No FFmpeg development libraries are needed: the FFmpeg 8.1.3 binaries are staged next to the game
+by the build - see `Output/libs/unmanaged/ffmpeg64`.)
 
 Runtime (on the machine that *runs* the game; a dev box has all of this from the build-time
 packages):
@@ -23,16 +21,17 @@ packages):
 - OpenGL + windowing: `libgl1 libegl1 libgbm1` plus X11 (`libx11-6 libxrandr2 libxinerama1
   libxcursor1 libxi6 libxkbcommon0`) or a Wayland compositor
 - Audio: `libasound2t64` (ALSA); PulseAudio/JACK are optional
-- FFmpeg shared libraries, e.g. on Debian 13: `libavformat63 libavcodec63 libavutil61
-  libswscale10 libswresample7` (numbers follow your distribution's FFmpeg)
-- Optional (webcam): `ffmpeg` CLI + a V4L2 capture device
+- FFmpeg 8.x shared libraries - either the staged bundle in `Output/libs/unmanaged/ffmpeg64`
+  (once the pinned `ffmpeg_linux_x64.zip` artifact has been published, see
+  `FFmpeg-Modernization-Plan.md` P2) or a system install (e.g. `ffmpeg@8` on macOS-style setups)
+- Optional (webcam): a V4L2 capture device
 
 ## Build
 
 ```sh
 git clone https://github.com/Vocaluxe/Vocaluxe.git
 cd Vocaluxe
-make          # = the two native sub-projects (g++) + dotnet build -c Release
+make          # = PitchTracker (g++) + dotnet build -c Release
 ```
 
 Or, step by step:
@@ -40,13 +39,11 @@ Or, step by step:
 ```sh
 dotnet restore Vocaluxe.slnx
 make -C PitchTracker                          # -> Output/libPitchTracker.dll.so
-make -C Vocaluxe/Lib/Video/Acinerella         # -> Output/libacinerella.so (system FFmpeg)
 dotnet build Vocaluxe.slnx                    # Debug is fine for a dev loop
 ```
 
-The build refuses to succeed while `libPitchTracker.dll.so` or `libacinerella.so` are missing
-(it points at the makefile above), so a broken native setup can never masquerade as a working
-game.
+The build refuses to succeed while `libPitchTracker.dll.so` is missing (it points at the makefile
+above), so a broken native setup can never masquerade as a working game.
 
 ## Run
 
