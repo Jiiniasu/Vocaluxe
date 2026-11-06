@@ -159,11 +159,17 @@ namespace Vocaluxe.Base
         public const string PutRoundEndpoint = "/api/putRound";
         public const string PutCoverEndpoint = "/api/putCover";
 
-        // Number of rounds currently queued for a later upload. Exposed only so the UI can surface
-        // that a score is still pending; the queue logic itself lives in COutbox + FlushUploadQueue.
-        public static int PendingUploads
+        // Number of score rounds currently queued for a later upload. Exposed only so the UI can
+        // surface that a score is still pending; the queue logic lives in COutbox + FlushUploadQueue.
+        public static int PendingScores
         {
-            get { return COutbox.Count; }
+            get { return COutbox.CountForEndpoint(PutRoundEndpoint); }
+        }
+
+        // Number of song covers currently queued for a later upload.
+        public static int PendingCovers
+        {
+            get { return COutbox.CountForEndpoint(PutCoverEndpoint); }
         }
         // System.Text.Json options for the cloud wire format. PropertyNameCaseInsensitive is a
         // superset of the old Json.NET default (case-sensitive matching), so it accepts everything

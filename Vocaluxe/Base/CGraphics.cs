@@ -525,19 +525,20 @@ namespace Vocaluxe.Base
         }
 
         // Screen-independent overlay: shows a small banner whenever there is something the player
-        // should notice about the cloud - a score that is queued (not yet uploaded), or that the
-        // connection is currently down.
+        // should notice about the cloud - a score or cover that is queued (not yet uploaded), or that
+        // the connection is currently down.
         private static void _DrawCloudStatusOverlay()
         {
             if (!CConfig.UseCloudServer)
                 return;
 
             bool connected = CCloud.IsConnected;
-            int pending = CCloud.PendingUploads;
+            int scores = CCloud.PendingScores;
+            int covers = CCloud.PendingCovers;
 
             string message;
-            if (pending > 0)
-                message = pending == 1 ? "1 score not uploaded yet" : pending + " scores not uploaded yet";
+            if (scores > 0 || covers > 0)
+                message = _CloudUploadsMessage(scores, covers);
             else if (!connected)
                 message = "Cloud connection lost";
             else
@@ -554,6 +555,23 @@ namespace Vocaluxe.Base
 
             CDraw.DrawRect(new SColorF(0.10f, 0.12f, 0.18f, 0.82f), new SRectF(x, y, width, height, CSettings.ZNear));
             CFonts.DrawText(message, font, x + pad, y + pad / 2f, CSettings.ZNear, new SColorF(1f, 1f, 1f, 1f));
+        }
+
+        // Banner text for queued cloud uploads, naming whichever kind is pending (scores, covers, or
+        // both) so the count always matches what is actually waiting in the outbox.
+        private static string _CloudUploadsMessage(int scores, int covers)
+        {
+            if (scores > 0 && covers > 0)
+                return _Pluralize(scores, "score") + " and " + _Pluralize(covers, "cover") + " not uploaded yet";
+            if (scores > 0)
+                return _Pluralize(scores, "score") + " not uploaded yet";
+            return _Pluralize(covers, "cover") + " not uploaded yet";
+        }
+
+        // "1 score" / "3 scores" / "1 cover" / "2 covers".
+        private static string _Pluralize(int count, string noun)
+        {
+            return count + (count == 1 ? " " + noun : " " + noun + "s");
         }
 
         // Session notice (e.g. the F1 multi-window downgrade): a persistent top banner for the whole

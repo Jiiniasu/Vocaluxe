@@ -91,6 +91,23 @@ namespace Vocaluxe.Base
             }
         }
 
+        // Number of queued records targeting a specific endpoint (used by the status overlay to tell
+        // score rounds apart from song covers, so the banner names what is actually pending).
+        public static int CountForEndpoint(string endpoint)
+        {
+            EnsureLoaded();
+            lock (_Lock)
+            {
+                int count = 0;
+                foreach (SOutboxEntry e in _Entries)
+                {
+                    if (e.Endpoint == endpoint)
+                        count++;
+                }
+                return count;
+            }
+        }
+
         public static void Enqueue(string endpoint, string payload, string id)
         {
             if (string.IsNullOrEmpty(id))
