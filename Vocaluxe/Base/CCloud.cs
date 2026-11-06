@@ -154,6 +154,11 @@ namespace Vocaluxe.Base
             get { return _Connected; }
         }
 
+        // Endpoint names for the durable outbox; shared by the enqueue sites (putRound / putCover) and
+        // the status overlay, so both sides agree on which queued record is a score vs a cover.
+        public const string PutRoundEndpoint = "/api/putRound";
+        public const string PutCoverEndpoint = "/api/putCover";
+
         // Number of rounds currently queued for a later upload. Exposed only so the UI can surface
         // that a score is still pending; the queue logic itself lives in COutbox + FlushUploadQueue.
         public static int PendingUploads
@@ -882,8 +887,31 @@ namespace Vocaluxe.Base
         public static void putCover(int databaseSongId, string data, string format)
         {
             string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey, DataBaseSongID = databaseSongId, Data = data, Format = format });
-            // Upload is fire-and-forget from the caller's perspective; failures are logged in PostBytesToCloud.
-            PostStringToCloud("/api/putCover", json, _HTTPRetryPolicy);
+            const string Endpoint = PutCoverEndpoint;
+
+            // putCover is an idempotent PUT (the same cover for the same song), so it is always safe
+            // to retry. Run the request off the calling thread (DoPost blocks until the request plus
+            // its retry policy finish) and, on a "wait and retry" throttle (429/503/408) or a network
+            // miss, queue it in the durable outbox for a later flush instead of dropping it. A
+            // permanent/ambiguous error is dropped and logged: re-sending what the server keeps
+            // refusing would just fail again.
+            Task.Run(delegate
+            {
+                CloudPost result = DoPost(Endpoint, json, _HTTPRetryPolicy);
+                if (result.Success)
+                    return;
+
+                if (result.Transient)
+                {
+                    COutbox.Enqueue(Endpoint, json, Guid.NewGuid().ToString());
+                    CLog.CCloudLog.Warning("putCover could not be delivered now - queued for a later upload ({n} pending)", CLog.Params(COutbox.Count));
+                    FlushOnNextConnection();
+                }
+                else
+                {
+                    CLog.CCloudLog.Warning("putCover was refused by the server (HTTP {code}) and dropped", CLog.Params(result.StatusCode));
+                }
+            });
         }
 
         public static void putRound(SPlayer[] players, Action<List<int>> onReady)
@@ -911,7 +939,7 @@ namespace Vocaluxe.Base
                 return;
             }
 
-            const string Endpoint = "/api/putRound";
+            const string Endpoint = PutRoundEndpoint;
             string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey, DataBaseSongID = song.DataBaseSongID, SongFinished = players[0].SongFinished, Scores = players });
 
             // Deliberately off the loop thread: DoPost blocks the calling thread until the request (plus
