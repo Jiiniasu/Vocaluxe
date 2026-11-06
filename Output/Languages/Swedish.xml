@@ -90,6 +90,8 @@
   <string name="TR_CONFIG_GLASSDARKEN_MEDIUM">Medium</string>
   <string name="TR_CONFIG_GLASSDARKEN_STRONG">Strong</string>
   <string name="TR_CONFIG_GLASSDARKEN_HEAVY">Heavy</string>
+  <string name="TR_CONFIG_VIDEOTHREADS_AUTO">Auto</string>
+  <string name="TR_CONFIG_VIDEOSCALE_NATIVE">Native</string>
   <string name="TR_SCREENLOAD_LOADING">Laddar</string>
   <string name="TR_SCREENLOAD_TOTAL">Totalt</string>
   <string name="TR_SCREENLOAD_SONGS">låtar</string>
@@ -195,6 +197,9 @@
   <string name="TR_SCREENOVIDEO_VIDEOBACKGROUNDS">Videobakgrund</string>
   <string name="TR_SCREENOVIDEO_VIDEOINSONGS">Video under spel</string>
   <string name="TR_SCREENOVIDEO_VIDEOSTOBACKGROUND">Visa video för aktuell bakgrundsmusik</string>
+  <string name="TR_SCREENOVIDEO_HARDWAREDECODING">Hardware decoding</string>
+  <string name="TR_SCREENOVIDEO_DECODERTHREADS">Decoder threads</string>
+  <string name="TR_SCREENOVIDEO_DOWNSCALERESOLUTION">Downscale resolution</string>
   <string name="TR_SCREENOVIDEO_GLASS">Glass backdrops</string>
   <string name="TR_SCREENOVIDEO_GLASSSTRENGTH">Glass blur strength</string>
   <string name="TR_SCREENOVIDEO_GLASSDARKEN">Glass darkening</string>

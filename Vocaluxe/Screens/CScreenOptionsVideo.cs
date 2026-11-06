@@ -28,12 +28,15 @@ namespace Vocaluxe.Screens
         // Version number for theme files. Increment it, if you've changed something on the theme files!
         protected override int _ScreenVersion
         {
-            get { return 8; }
+            get { return 9; }
         }
 
         private const string _SelectSlideVideoBackgrounds = "SelectSlideVideoBackgrounds";
         private const string _SelectSlideVideosInSongs = "SelectSlideVideosInSongs";
         private const string _SelectSlideVideosToBackground = "SelectSlideVideosToBackground";
+        private const string _SelectSlideHardwareDecoding = "SelectSlideHardwareDecoding";
+        private const string _SelectSlideDecoderThreads = "SelectSlideDecoderThreads";
+        private const string _SelectSlideDownscaleResolution = "SelectSlideDownscaleResolution";
         private const string _SelectSlideGlassBlur = "SelectSlideGlassBlur";
         private const string _SelectSlideGlassStrength = "SelectSlideGlassStrength";
         private const string _SelectSlideGlassDarken = "SelectSlideGlassDarken";
@@ -48,6 +51,7 @@ namespace Vocaluxe.Screens
             _ThemeSelectSlides = new string[]
                 {
                     _SelectSlideVideoBackgrounds, _SelectSlideVideosInSongs, _SelectSlideVideosToBackground,
+                    _SelectSlideHardwareDecoding, _SelectSlideDecoderThreads, _SelectSlideDownscaleResolution,
                     _SelectSlideGlassBlur, _SelectSlideGlassStrength, _SelectSlideGlassDarken
                 };
         }
@@ -59,6 +63,19 @@ namespace Vocaluxe.Screens
             _SelectSlides[_SelectSlideVideoBackgrounds].SetValues<EOffOn>((int)CConfig.Config.Video.VideoBackgrounds);
             _SelectSlides[_SelectSlideVideosInSongs].SetValues<EOffOn>((int)CConfig.Config.Video.VideosInSongs);
             _SelectSlides[_SelectSlideVideosToBackground].SetValues<EOffOn>((int)CConfig.Config.Video.VideosToBackground);
+
+            _SelectSlides[_SelectSlideHardwareDecoding].SetValues<EOffOn>((int)CConfig.Config.Video.HardwareDecoding);
+
+            //The int options have a fixed set of sensible choices: the tag is the stored config value.
+            //TR_* value texts are translated like every other select-slide entry.
+            _SelectSlides[_SelectSlideDecoderThreads].AddValues(
+                new[] { "TR_CONFIG_VIDEOTHREADS_AUTO", "1", "2", "4", "8", "16" },
+                new[] { 0, 1, 2, 4, 8, 16 });
+            _SelectSlides[_SelectSlideDecoderThreads].SelectedTag = CConfig.Config.Video.DecoderThreads;
+            _SelectSlides[_SelectSlideDownscaleResolution].AddValues(
+                new[] { "TR_CONFIG_VIDEOSCALE_NATIVE", "480p", "720p", "1080p", "1440p", "2160p" },
+                new[] { 0, 480, 720, 1080, 1440, 2160 });
+            _SelectSlides[_SelectSlideDownscaleResolution].SelectedTag = CConfig.Config.Video.VideoDownscaleResolution;
 
             //The glass enums have non-consecutive values (0-100 percent), so select by tag instead of by index
             _SelectSlides[_SelectSlideGlassBlur].SetValues<EOffOn>((int)CConfig.Config.Graphics.GlassBlur);
@@ -131,6 +148,10 @@ namespace Vocaluxe.Screens
             CConfig.Config.Video.VideoBackgrounds = (EOffOn)_SelectSlides[_SelectSlideVideoBackgrounds].Selection;
             CConfig.Config.Video.VideosInSongs = (EOffOn)_SelectSlides[_SelectSlideVideosInSongs].Selection;
             CConfig.Config.Video.VideosToBackground = (EOffOn)_SelectSlides[_SelectSlideVideosToBackground].Selection;
+
+            CConfig.Config.Video.HardwareDecoding = (EOffOn)_SelectSlides[_SelectSlideHardwareDecoding].Selection;
+            CConfig.Config.Video.DecoderThreads = _SelectSlides[_SelectSlideDecoderThreads].SelectedTag;
+            CConfig.Config.Video.VideoDownscaleResolution = _SelectSlides[_SelectSlideDownscaleResolution].SelectedTag;
 
             CConfig.Config.Graphics.GlassBlur = (EOffOn)_SelectSlides[_SelectSlideGlassBlur].Selection;
             CConfig.Config.Graphics.GlassStrength = (EGlassStrength)_SelectSlides[_SelectSlideGlassStrength].SelectedTag;

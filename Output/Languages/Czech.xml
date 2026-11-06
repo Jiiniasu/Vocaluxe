@@ -90,6 +90,8 @@
   <string name="TR_CONFIG_GLASSDARKEN_MEDIUM">Medium</string>
   <string name="TR_CONFIG_GLASSDARKEN_STRONG">Strong</string>
   <string name="TR_CONFIG_GLASSDARKEN_HEAVY">Heavy</string>
+  <string name="TR_CONFIG_VIDEOTHREADS_AUTO">Auto</string>
+  <string name="TR_CONFIG_VIDEOSCALE_NATIVE">Native</string>
   <string name="TR_SCREENLOAD_LOADING">Nahrává se</string>
   <string name="TR_SCREENLOAD_TOTAL">Celkem</string>
   <string name="TR_SCREENLOAD_SONGS">Písně</string>
@@ -194,6 +196,9 @@
   <string name="TR_SCREENOVIDEO_VIDEOBACKGROUNDS">Pozadí obrazu</string>
   <string name="TR_SCREENOVIDEO_VIDEOINSONGS">Obrazové záznamy během přehrávání</string>
   <string name="TR_SCREENOVIDEO_VIDEOSTOBACKGROUND">Zobrazit obrazový záznam k nynější hudbě na pozadí</string>
+  <string name="TR_SCREENOVIDEO_HARDWAREDECODING">Hardware decoding</string>
+  <string name="TR_SCREENOVIDEO_DECODERTHREADS">Decoder threads</string>
+  <string name="TR_SCREENOVIDEO_DOWNSCALERESOLUTION">Downscale resolution</string>
   <string name="TR_SCREENOVIDEO_GLASS">Glass backdrops</string>
   <string name="TR_SCREENOVIDEO_GLASSSTRENGTH">Glass blur strength</string>
   <string name="TR_SCREENOVIDEO_GLASSDARKEN">Glass darkening</string>

@@ -90,6 +90,8 @@
   <string name="TR_CONFIG_GLASSDARKEN_MEDIUM">Mittel</string>
   <string name="TR_CONFIG_GLASSDARKEN_STRONG">Stark</string>
   <string name="TR_CONFIG_GLASSDARKEN_HEAVY">Sehr stark</string>
+  <string name="TR_CONFIG_VIDEOTHREADS_AUTO">Automatisch</string>
+  <string name="TR_CONFIG_VIDEOSCALE_NATIVE">Nativ</string>
   <string name="TR_SCREENLOAD_LOADING">Laden</string>
   <string name="TR_SCREENLOAD_TOTAL">Gesamt</string>
   <string name="TR_SCREENLOAD_SONGS">Lieder</string>
@@ -194,6 +196,9 @@
   <string name="TR_SCREENOVIDEO_VIDEOBACKGROUNDS">Video-Hintergründe</string>
   <string name="TR_SCREENOVIDEO_VIDEOINSONGS">Videos während des Singens</string>
   <string name="TR_SCREENOVIDEO_VIDEOSTOBACKGROUND">Aktuelles Hintergrundvideo anzeigen</string>
+  <string name="TR_SCREENOVIDEO_HARDWAREDECODING">Hardware-Decodierung</string>
+  <string name="TR_SCREENOVIDEO_DECODERTHREADS">Decodier-Threads</string>
+  <string name="TR_SCREENOVIDEO_DOWNSCALERESOLUTION">AuflÃ¶sung herunterskalieren</string>
   <string name="TR_SCREENOVIDEO_GLASS">Glas-Hintergründe</string>
   <string name="TR_SCREENOVIDEO_GLASSSTRENGTH">Glas-Unschärfe</string>
   <string name="TR_SCREENOVIDEO_GLASSDARKEN">Glas-Abdunkelung</string>

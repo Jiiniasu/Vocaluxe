@@ -1,4 +1,14 @@
 ++++++++++
+Version 9:
+
+Add:
+<SelectSlideHardwareDecoding>, <SelectSlideDecoderThreads>, <SelectSlideDownscaleResolution>
+and their texts
+"TR_SCREENOVIDEO_HARDWAREDECODING", "TR_SCREENOVIDEO_DECODERTHREADS", "TR_SCREENOVIDEO_DOWNSCALERESOLUTION"
+
+Relayout: all rows now on a uniform 50px pitch to make room
+
+++++++++++
 Version 5:
 
 Rename:

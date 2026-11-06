@@ -72,6 +72,8 @@
   <string name="TR_CONFIG_GLASSDARKEN_MEDIUM">Medium</string>
   <string name="TR_CONFIG_GLASSDARKEN_STRONG">Strong</string>
   <string name="TR_CONFIG_GLASSDARKEN_HEAVY">Heavy</string>
+  <string name="TR_CONFIG_VIDEOTHREADS_AUTO">Auto</string>
+  <string name="TR_CONFIG_VIDEOSCALE_NATIVE">Native</string>
   <string name="TR_SCREENLOAD_LOADING">Yükleniyor</string>
   <string name="TR_SCREENLOAD_TOTAL">Toplam</string>
   <string name="TR_SCREENLOAD_SONGS">Şarkılar</string>
@@ -170,6 +172,9 @@
   <string name="TR_SCREENOVIDEO_VIDEOBACKGROUNDS">Video Arka Planları</string>
   <string name="TR_SCREENOVIDEO_VIDEOINSONGS">Şarkı Söylerken Videoları Gösterme</string>
   <string name="TR_SCREENOVIDEO_VIDEOSTOBACKGROUND">Şarkı Söylerken Videoları Gösterme</string>
+  <string name="TR_SCREENOVIDEO_HARDWAREDECODING">Hardware decoding</string>
+  <string name="TR_SCREENOVIDEO_DECODERTHREADS">Decoder threads</string>
+  <string name="TR_SCREENOVIDEO_DOWNSCALERESOLUTION">Downscale resolution</string>
   <string name="TR_SCREENOVIDEO_GLASS">Glass backdrops</string>
   <string name="TR_SCREENOVIDEO_GLASSSTRENGTH">Glass blur strength</string>
   <string name="TR_SCREENOVIDEO_GLASSDARKEN">Glass darkening</string>
