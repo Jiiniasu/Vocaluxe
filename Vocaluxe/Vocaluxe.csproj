@@ -10,6 +10,9 @@
     <AssemblyName>Vocaluxe</AssemblyName>
     <StartupObject>Vocaluxe.CMainProgram</StartupObject>
     <ApplicationIcon>Vocaluxe.ico</ApplicationIcon>
+    <!-- CFFmpegDecoder (the modern FFmpeg decoder replacing acinerella) uses managed pointers
+         into the FFmpeg structs - the same approach as the upstream port. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- The legacy SSIS-Remote layout: the app builds into the repo's Output/ folder, right next to the
          game data (Themes, Languages, Fonts, ...) that already lives there - same as the net48 build. -->
     <OutputPath>$(MSBuildThisFileDirectory)..\Output\</OutputPath>
@@ -21,6 +24,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- FFmpeg API bindings for CFFmpegDecoder (the acinerella replacement): managed, dynamically
+         loaded, pinned to the FFmpeg 8.1 ABI (avcodec-62 / avutil-60). The 8.1.3 GPL shared
+         binaries are staged next to the exe under libs/unmanaged/ffmpeg64 (see the staging
+         target and FFmpeg-Modernization-Plan.md). MIT-licensed (Ruslan-B/FFmpeg.AutoGen); the
+         upstream .NET 10 port (Vocaluxe/Vocaluxe#946) uses the same version. -->
+    <PackageReference Include="FFmpeg.AutoGen.Abstractions" Version="8.1.0" />
+    <PackageReference Include="FFmpeg.AutoGen.Bindings.DynamicallyLoaded" Version="8.1.0" />
     <PackageReference Include="OpenTK" Version="4.9.4" />
     <PackageReference Include="PortAudioSharp2" Version="1.0.6" />
     <PackageReference Include="SkiaSharp" Version="4.154.0" />
