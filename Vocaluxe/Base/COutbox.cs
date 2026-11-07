@@ -8,7 +8,7 @@
 // 
 // Vocaluxe is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY; FITNESS FOR A PARTICULAR PURPOSE. See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 // 
 // You should have received a copy of the GNU General Public License
@@ -26,8 +26,9 @@ namespace Vocaluxe.Base
 {
     // A small, durable, first-in-first-out queue for cloud uploads that could not be delivered
     // (e.g. a putRound while the network was down). It survives an app restart so queued rounds
-    // get a later chance to be uploaded, in order, and it is bounded (max attempts / max age)
-    // so a long outage cannot accumulate without limit or be replayed without restraint.
+    // and covers are retried later instead of being lost, and it is bounded: records are capped
+    // by attempt count and age, so a long outage cannot accumulate without limit or be replayed
+    // without restraint.
     //
     // Deliberately kept independent of CDataBase: it has its own schema and no relationship to
     // the highscore/cover tables.
@@ -37,23 +38,15 @@ namespace Vocaluxe.Base
         private static readonly List<SOutboxEntry> _Entries = new List<SOutboxEntry>();
         private static bool _Loaded;
 
-        // Save throttling: a mutation latches _Dirty and persists at most once per SaveThrottleMs
-        // window (see MarkDirty). The old code rewrote the WHOLE queue on every mutation, and a
-        // burst of N enqueues is N full serialize + disk writes of hundreds of base64 payloads -
-        // tens of MB of allocation and disk I/O per write, which is the gen2 GC + disk storm the
-        // upload bursts were throwing at the render thread.
-        private const int SaveThrottleMs = 250;
-        private static long _LastSaveTicks;
-        private static bool _Dirty;
-
         // A record that has been retried this many times (on top of the original attempt) is dropped.
         public static int MaxAttempts { get { return 5; } }
 
         // Records older than this are dropped, so old rounds aren't silently replayed days later.
         public static TimeSpan MaxAge { get { return TimeSpan.FromDays(7); } }
 
-        // The queue file is a local, human-readable artifact: indented exactly like the old
-        // Json.NET Formatting.Indented output, property names unchanged, names matched leniently.
+        // The queue is a local, human-readable artifact: each record is one small JSON file,
+        // indented exactly like the old Json.NET Formatting.Indented output, property names
+        // unchanged, names matched leniently.
         private static readonly JsonSerializerOptions _FileOptions = new JsonSerializerOptions
         {
             WriteIndented = true,
@@ -83,9 +76,24 @@ namespace Vocaluxe.Base
             }
         }
 
-        private static string FilePath
+        // One file per queued record. This replaces the old single cloud_outbox.json, which the
+        // queue rewrote IN FULL (every payload, hundreds of MB) on every mutation - the gen2 GC
+        // + disk storm of upload bursts, and the reason readers could stall behind a save. With
+        // per-entry files a mutation touches exactly one small file, and the in-memory list is
+        // the index.
+        private static string QueueDir
+        {
+            get { return Path.Combine(CSettings.DataFolder, "cloud_outbox"); }
+        }
+
+        private static string LegacyFile
         {
             get { return Path.Combine(CSettings.DataFolder, "cloud_outbox.json"); }
+        }
+
+        private static string FileFor(string id)
+        {
+            return Path.Combine(QueueDir, id + ".json");
         }
 
         #region public stuff
@@ -128,14 +136,15 @@ namespace Vocaluxe.Base
                 if (_Entries.Exists(e => e.Id == id))
                     return; // already queued - avoid a duplicate.
 
-                _Entries.Add(new SOutboxEntry
+                SOutboxEntry entry = new SOutboxEntry
                 {
                     Id = id,
                     Endpoint = endpoint,
                     Payload = payload,
                     CreatedAt = DateTime.Now
-                });
-                MarkDirty();
+                };
+                _Entries.Add(entry);
+                WriteEntry(entry);
             }
         }
 
@@ -169,7 +178,7 @@ namespace Vocaluxe.Base
                 if (e == null)
                     return;
                 _Entries.Remove(e);
-                MarkDirty();
+                DeleteEntry(id);
             }
         }
 
@@ -190,43 +199,12 @@ namespace Vocaluxe.Base
                     return;
                 e.Attempts++;
                 e.LastAttempt = DateTime.Now;
-                MarkDirty();
-            }
-        }
-
-        // Forces any latched (not-yet-written) mutation to disk; no-op when clean. CCloud calls
-        // this at the end of every flush pass, which is what makes the throttle above lossless:
-        // the on-disk queue lags the in-memory one by at most the pass still in flight.
-        public static void SaveIfDirty()
-        {
-            EnsureLoaded();
-            lock (_Lock)
-            {
-                if (!_Dirty)
-                    return;
-                _Dirty = false;
-                _LastSaveTicks = Environment.TickCount64;
-                SaveLocked();
+                WriteEntry(e);
             }
         }
         #endregion public stuff
 
         #region private stuff
-
-        // Called under _Lock after a mutation. Latches the pending change and persists it, but
-        // at most once per SaveThrottleMs window: a change still latched at the end of a window
-        // is written by the next mutation in the burst or, if the burst ends, by the forced save
-        // at the end of the next flush pass (CCloud.SaveIfDirty).
-        private static void MarkDirty()
-        {
-            _Dirty = true;
-            long now = Environment.TickCount64;
-            if (now - _LastSaveTicks < SaveThrottleMs)
-                return;
-            _LastSaveTicks = now;
-            _Dirty = false;
-            SaveLocked();
-        }
 
         private static void EnsureLoaded()
         {
@@ -238,12 +216,39 @@ namespace Vocaluxe.Base
                 _Loaded = true;
                 try
                 {
-                    if (File.Exists(FilePath))
+                    if (File.Exists(LegacyFile))
                     {
-                        string json = File.ReadAllText(FilePath);
+                        // One-time migration from the old single-file outbox: move every record into
+                        // its own file, then drop the legacy file so later sessions start straight
+                        // from the per-entry files.
+                        string json = File.ReadAllText(LegacyFile);
                         List<SOutboxEntry> loaded = JsonSerializer.Deserialize<List<SOutboxEntry>>(json, _FileOptions);
                         if (loaded != null)
-                            _Entries.AddRange(loaded);
+                        {
+                            Directory.CreateDirectory(QueueDir);
+                            foreach (SOutboxEntry entry in loaded)
+                            {
+                                _Entries.Add(entry);
+                                WriteEntry(entry);
+                            }
+                            File.Delete(LegacyFile);
+                        }
+                    }
+                    else if (Directory.Exists(QueueDir))
+                    {
+                        foreach (string file in Directory.GetFiles(QueueDir, "*.json"))
+                        {
+                            try
+                            {
+                                SOutboxEntry entry = JsonSerializer.Deserialize<SOutboxEntry>(File.ReadAllText(file), _FileOptions);
+                                if (entry != null && !string.IsNullOrEmpty(entry.Id))
+                                    _Entries.Add(entry);
+                            }
+                            catch (Exception e)
+                            {
+                                CLog.CCloudLog.Error(e, "Could not load queued cloud upload {file}", CLog.Params(file));
+                            }
+                        }
                     }
                 }
                 catch (Exception e)
@@ -253,27 +258,42 @@ namespace Vocaluxe.Base
             }
         }
 
-        // Writes the queue atomically (write to a temp file, then move it into place) so a crash
-        // in the middle of a save does not leave a truncated file behind. Caller must hold _Lock.
-        private static void SaveLocked()
+        // Writes one entry atomically (write to a temp file, then move it into place) so a crash in
+        // the middle of a save cannot leave a truncated file behind. Caller must hold _Lock. A
+        // failed write costs at most that one record on a crash - never the whole queue.
+        private static void WriteEntry(SOutboxEntry entry)
         {
             try
             {
-                string dir = CSettings.DataFolder;
+                string dir = QueueDir;
                 if (!Directory.Exists(dir))
                     Directory.CreateDirectory(dir);
 
-                string json = JsonSerializer.Serialize(_Entries, _FileOptions);
-                string tmp = FilePath + ".tmp";
-
-                File.WriteAllText(tmp, json);
-                if (File.Exists(FilePath))
-                    File.Delete(FilePath);
-                File.Move(tmp, FilePath);
+                string file = FileFor(entry.Id);
+                string tmp = file + ".tmp";
+                File.WriteAllText(tmp, JsonSerializer.Serialize(entry, _FileOptions));
+                if (File.Exists(file))
+                    File.Delete(file);
+                File.Move(tmp, file);
             }
             catch (Exception e)
             {
-                CLog.CCloudLog.Error(e, "Could not save the cloud upload outbox: {msg}", CLog.Params(e.Message));
+                CLog.CCloudLog.Error(e, "Could not save queued cloud upload {id}: {msg}", CLog.Params(entry.Id, e.Message));
+            }
+        }
+
+        // Deletes one entry's file (no-op when absent). Caller must hold _Lock.
+        private static void DeleteEntry(string id)
+        {
+            try
+            {
+                string file = FileFor(id);
+                if (File.Exists(file))
+                    File.Delete(file);
+            }
+            catch (Exception e)
+            {
+                CLog.CCloudLog.Error(e, "Could not delete queued cloud upload {id}: {msg}", CLog.Params(id, e.Message));
             }
         }
         #endregion private stuff

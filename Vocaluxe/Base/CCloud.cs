@@ -79,6 +79,25 @@ namespace Vocaluxe.Base
         private static bool _FlushPassRequested;
         private static Task _FlushPass;
 
+        // How long to wait before retrying when the server is unreachable at all (distinct from a
+        // 429, whose Retry-After the server dictates). Keeps a down server from being hammered in
+        // a tight loop while still resuming the drain without waiting for an unrelated trigger.
+        private const int ConnectionRetrySeconds = 15;
+
+        // Pending timer-based flush retries (429 back-off, connection down). Rooted in a static
+        // list: an unawaited Task.Delay chain that nothing else references can be collected by
+        // the GC, and an unrooted pending task is finalizer-cancelled - which would silently drop
+        // the retry. Completed entries are reaped lazily on the next scheduling.
+        private static readonly object _ScheduledRetryLock = new object();
+        private static readonly List<Task> _ScheduledRetries = new List<Task>();
+
+        // Bounds the direct (fast-path) uploads: putCover / putRound each fire their own request,
+        // and the load screen fires one putCover per new-to-cloud song (hundreds at once). Without
+        // a bound that pins hundreds of pool threads (each for its 20 s timeout + Polly back-offs)
+        // and overloads the server into connection refusals. Two in flight keeps the server calm;
+        // the rest go straight to the outbox, which the flush worker drains.
+        private static readonly SemaphoreSlim _DirectUploadGate = new SemaphoreSlim(2);
+
         // There is no SynchronizationContext installed on the main loop thread (net10), so an async
         // method started there - Init() below - resumes on the thread pool, and so does the websocket
         // read/dispatch loop. Anything that mutates game or UI state (CGame / CGraphics / CBase /
@@ -901,6 +920,7 @@ namespace Vocaluxe.Base
         public static void putCover(int databaseSongId, string data, string format)
         {
             string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey, DataBaseSongID = databaseSongId, Data = data, Format = format });
+            string id = Guid.NewGuid().ToString();
             const string Endpoint = PutCoverEndpoint;
 
             // putCover is an idempotent PUT (the same cover for the same song), so it is always safe
@@ -909,21 +929,42 @@ namespace Vocaluxe.Base
             // miss, queue it in the durable outbox for a later flush instead of dropping it. A
             // permanent/ambiguous error is dropped and logged: re-sending what the server keeps
             // refusing would just fail again.
+            //
+            // The direct POST is gated (two in flight): the load screen fires one putCover per
+            // new-to-cloud song (hundreds at once), and unbounded parallelism would pin a pool
+            // thread per request (20 s timeout + Polly back-offs each) and overload the server into
+            // connection refusals. When the gate is busy the cover goes straight to the outbox and
+            // the flush worker delivers it.
             Task.Run(delegate
             {
-                CloudPost result = DoPost(Endpoint, json, _HTTPRetryPolicy);
-                if (result.Success)
-                    return;
-
-                if (result.Transient)
+                if (!_DirectUploadGate.Wait(0))
                 {
-                    COutbox.Enqueue(Endpoint, json, Guid.NewGuid().ToString());
-                    CLog.CCloudLog.Warning("putCover could not be delivered now - queued for a later upload ({n} pending)", CLog.Params(COutbox.Count));
+                    COutbox.Enqueue(Endpoint, json, id);
+                    CLog.CCloudLog.Information("putCover deferred to the upload queue ({n} pending)", CLog.Params(COutbox.Count));
                     RequestUploadFlush();
+                    return;
                 }
-                else
+
+                try
                 {
-                    CLog.CCloudLog.Warning("putCover was refused by the server (HTTP {code}) and dropped", CLog.Params(result.StatusCode));
+                    CloudPost result = DoPost(Endpoint, json, _HTTPRetryPolicy);
+                    if (result.Success)
+                        return;
+
+                    if (result.Transient)
+                    {
+                        COutbox.Enqueue(Endpoint, json, id);
+                        CLog.CCloudLog.Warning("putCover could not be delivered now - queued for a later upload ({n} pending)", CLog.Params(COutbox.Count));
+                        RequestUploadFlush();
+                    }
+                    else
+                    {
+                        CLog.CCloudLog.Warning("putCover was refused by the server (HTTP {code}) and dropped", CLog.Params(result.StatusCode));
+                    }
+                }
+                finally
+                {
+                    _DirectUploadGate.Release();
                 }
             });
         }
@@ -955,61 +996,95 @@ namespace Vocaluxe.Base
 
             const string Endpoint = PutRoundEndpoint;
             string json = JsonSerializer.Serialize(new { Key = CConfig.CloudServerKey, DataBaseSongID = song.DataBaseSongID, SongFinished = players[0].SongFinished, Scores = players });
+            string id = Guid.NewGuid().ToString();
 
             // Deliberately off the loop thread: DoPost blocks the calling thread until the request (plus
             // the retry policy) completes, and the transient branch below writes the outbox to disk. Both
             // are I/O that must never stall the render pass. Only the application of the resulting
             // new-entry IDs is marshalled back onto the loop thread via Post.
+            // The direct POST is gated (two in flight, shared with putCover): under load the round
+            // goes straight to the outbox and the flush worker delivers it, instead of piling
+            // another blocked pool thread onto the server.
             Task.Run(delegate
             {
-                // Non-idempotent: use the conservative policy (connection failures only) to avoid
-                // submitting the same round twice if the server already accepted it.
-                CloudPost result = DoPost(Endpoint, json, _HTTPRetryPolicyNonIdempotent);
-
-                List<int> ids = new List<int>();
-                if (result.Success)
-                    ids = SafeDeserialize<List<int>>(Encoding.UTF8.GetString(result.Body)) ?? new List<int>();
-                else if (result.Transient)
+                if (!_DirectUploadGate.Wait(0))
                 {
-                    // Safe to retry: either no response at all, or a "wait and retry" throttle (429/503)
-                    // that the server rejected *before* writing the round. We never got an application of
-                    // it, so queueing it cannot produce a duplicate even with no server-side dedup.
-                    COutbox.Enqueue(Endpoint, json, Guid.NewGuid().ToString());
-                    CLog.CCloudLog.Warning("putRound could not be delivered now - queued for a later upload ({n} pending)", CLog.Params(COutbox.Count));
-
-                    // Ask the background flush to retry it promptly. It honors the server's Retry-After
-                    // (when this was a throttle) on the flush worker, so this screen doesn't block.
+                    // Safe to queue: a round that never got a response was never applied, so the
+                    // worker's later delivery cannot duplicate it (no server-side dedup needed).
+                    COutbox.Enqueue(Endpoint, json, id);
+                    CLog.CCloudLog.Information("putRound deferred to the upload queue ({n} pending)", CLog.Params(COutbox.Count));
                     RequestUploadFlush();
-                }
-                else
-                {
-                    // A permanent or ambiguous error (the safe 429/503/408 cases are handled by the
-                    // transient branch above, which queues them). Since a 5xx may already have recorded
-                    // the round and we have no server-side deduplication, drop it and log clearly rather
-                    // than risk a double entry.
-                    CLog.CCloudLog.Warning("putRound was refused by the server (HTTP {code}) and dropped to avoid a double record", CLog.Params(result.StatusCode));
+                    Post(noData);
+                    return;
                 }
 
-                List<int> delivered = ids;
-                Post(delegate
+                try
                 {
-                    if (onReady != null)
-                        onReady(delivered);
-                });
+                    // Non-idempotent: use the conservative policy (connection failures only) to avoid
+                    // submitting the same round twice if the server already accepted it.
+                    CloudPost result = DoPost(Endpoint, json, _HTTPRetryPolicyNonIdempotent);
+
+                    List<int> ids = new List<int>();
+                    if (result.Success)
+                        ids = SafeDeserialize<List<int>>(Encoding.UTF8.GetString(result.Body)) ?? new List<int>();
+                    else if (result.Transient)
+                    {
+                        // Safe to retry: either no response at all, or a "wait and retry" throttle (429/503)
+                        // that the server rejected *before* writing the round. We never got an application of
+                        // it, so queueing it cannot produce a duplicate even with no server-side dedup.
+                        COutbox.Enqueue(Endpoint, json, id);
+                        CLog.CCloudLog.Warning("putRound could not be delivered now - queued for a later upload ({n} pending)", CLog.Params(COutbox.Count));
+
+                        // Ask the background flush to retry it promptly. It honors the server's Retry-After
+                        // (when this was a throttle) on the flush worker, so this screen doesn't block.
+                        RequestUploadFlush();
+                    }
+                    else
+                    {
+                        // A permanent or ambiguous error (the safe 429/503/408 cases are handled by the
+                        // transient branch above, which queues them). Since a 5xx may already have recorded
+                        // the round and we have no server-side deduplication, drop it and log clearly rather
+                        // than risk a double entry.
+                        CLog.CCloudLog.Warning("putRound was refused by the server (HTTP {code}) and dropped to avoid a double record", CLog.Params(result.StatusCode));
+                    }
+
+                    List<int> delivered = ids;
+                    Post(delegate
+                    {
+                        if (onReady != null)
+                            onReady(delivered);
+                    });
+                }
+                finally
+                {
+                    _DirectUploadGate.Release();
+                }
             });
         }
 
-        // Delivers whichever rounds are queued, oldest first, in order, as far as the connection
-        // allows. Each pass is bounded (at most MaxPerPass records) and stops at the first
-        // connection-level failure, so it never hammers a down server.
+        // Outcome of one bounded flush pass, telling the worker how to continue.
+        private enum FlushResult
+        {
+            // Kept delivering (or dropped records) until the per-pass cap or an empty queue.
+            Continue,
+            // The server throttled us; a retry after its back-off is already scheduled.
+            Throttled,
+            // No connection at all; the worker backs off on a timer and retries.
+            ConnectionDown
+        }
+
+        // Delivers whichever records are queued, oldest first, in order, as far as the connection
+        // allows. Bounded to MaxPerPass records per pass; the worker loop runs pass after pass
+        // while records remain, so the queue keeps draining at a server-tolerated rate instead of
+        // moving only on unrelated triggers.
         //
         // Concurrency: only the single-flight flush worker below calls this, so passes never
         // overlap and no lock is needed here. The HTTP (DoPost) blocks this worker thread, which
         // is fine - it is a dedicated pool thread, never the loop thread.
-        private static void FlushUploadQueue()
+        private static FlushResult FlushUploadQueue()
         {
             if (!CConfig.UseCloudServer)
-                return;
+                return FlushResult.Continue;
 
             const int MaxPerPass = 5;
             const int MaxRetryAfterSeconds = 120;
@@ -1019,7 +1094,7 @@ namespace Vocaluxe.Base
             {
                 COutbox.SOutboxEntry entry = COutbox.Oldest();
                 if (entry == null)
-                    break;
+                    return FlushResult.Continue;
 
                 // Enforced caps: give up on records that are too old or have been retried too
                 // many times, so a long outage can't accumulate or replay without limit.
@@ -1046,19 +1121,19 @@ namespace Vocaluxe.Base
                     COutbox.BumpAttempt(entry.Id);
 
                     // If the server throttled us (a 429/503) and told us when to try again, honor
-                    // that wait (capped) by scheduling ONE more pass after the back-off and ending
-                    // this one. The wait is a timer (ContinueWith), so no thread is parked for its
-                    // duration - the old code blocked a pool thread here for up to 120 s.
+                    // that wait (capped) by scheduling ONE more pass after the back-off. The wait
+                    // is a rooted timer, so no thread is parked for its duration - the pre-fix
+                    // code blocked a pool thread here for up to 120 s.
                     if (result.RetryAfterSeconds > 0)
                     {
                         int waitSeconds = Math.Min(result.RetryAfterSeconds, MaxRetryAfterSeconds);
                         CLog.CCloudLog.Warning("Throttled (HTTP {code}); resuming the flush in {s}s ({n} queued)", CLog.Params(result.StatusCode, waitSeconds, COutbox.Count));
-                        Task.Delay(TimeSpan.FromSeconds(waitSeconds)).ContinueWith(_ => RequestUploadFlush(), TaskScheduler.Default);
-                        break;
+                        ScheduleFlushIn(waitSeconds);
+                        return FlushResult.Throttled;
                     }
 
                     CLog.CCloudLog.Warning("Flush paused: no cloud connection ({n} queued)", CLog.Params(COutbox.Count));
-                    break;
+                    return FlushResult.ConnectionDown;
                 }
 
                 // Not a "wait and retry" status (a safe 429/503/408 is kept above for retry), so it
@@ -1068,11 +1143,16 @@ namespace Vocaluxe.Base
                 CLog.CCloudLog.Warning("Dropping queued {ep} (HTTP {code}) - not safe to retry without server dedupe", CLog.Params(entry.Endpoint, result.StatusCode));
                 processed++;
             }
+
+            return FlushResult.Continue;
         }
 
-        // The single-flight flush worker. Consumes the requested flag one lap at a time, so a
-        // burst of N triggers (N failed uploads at once) coalesces into N passes run
-        // sequentially by this one worker - not N concurrent passes, and not N blocked threads.
+        // The single-flight flush worker. Runs pass after pass while the queue has records (or a
+        // trigger is pending), so the queue KEEPS DRAINING while the game runs instead of moving
+        // only on unrelated triggers (reconnect / start-up / shutdown). A burst of N triggers
+        // still coalesces into this one worker, so it never stacks passes or blocked threads.
+        // Retires when the queue is empty and no trigger is pending, or when the server asks for
+        // a back-off (429) or is unreachable (timed retry scheduled).
         private static void FlushWorkerLoop()
         {
             while (true)
@@ -1080,7 +1160,7 @@ namespace Vocaluxe.Base
                 bool runPass;
                 lock (_FlushGate)
                 {
-                    runPass = _FlushPassRequested;
+                    runPass = CConfig.UseCloudServer && (_FlushPassRequested || COutbox.Count > 0);
                     _FlushPassRequested = false;
                     if (!runPass)
                     {
@@ -1092,19 +1172,47 @@ namespace Vocaluxe.Base
                     }
                 }
 
+                FlushResult result;
                 try
                 {
-                    FlushUploadQueue();
+                    result = FlushUploadQueue();
                 }
                 catch (Exception e)
                 {
                     CLog.CCloudLog.Error(e, "Upload flush pass failed: {msg}", CLog.Params(e.Message));
+                    result = FlushResult.ConnectionDown;
                 }
 
-                // Persist this pass's outbox progress (removals / bumps / drops) before the next
-                // lap, so a crash mid-burst loses at most the pass still in flight - COutbox's
-                // per-mutation saves are throttled.
-                COutbox.SaveIfDirty();
+                if (result == FlushResult.Throttled)
+                    return; // the server-directed retry is already scheduled
+
+                if (result == FlushResult.ConnectionDown)
+                {
+                    // No connection: retry on a rooted timer instead of hammering in a tight loop
+                    // or waiting for an unrelated trigger to wake us.
+                    ScheduleFlushIn(ConnectionRetrySeconds);
+                    return;
+                }
+
+                // Continue: the loop head re-checks queue/flag and runs another pass, or retires.
+            }
+        }
+
+        // Schedules one more flush pass after a back-off, without parking a thread for the wait.
+        // The task is rooted in _ScheduledRetries: an unawaited Task.Delay chain with no other
+        // reference can be collected by the GC, and an unrooted pending task is finalizer-
+        // cancelled - which would silently drop the retry and park the queue.
+        private static void ScheduleFlushIn(int waitSeconds)
+        {
+            Task retry = Task.Delay(TimeSpan.FromSeconds(waitSeconds)).ContinueWith(_ => RequestUploadFlush(), TaskScheduler.Default);
+            lock (_ScheduledRetryLock)
+            {
+                for (int i = _ScheduledRetries.Count - 1; i >= 0; i--)
+                {
+                    if (_ScheduledRetries[i].IsCompleted)
+                        _ScheduledRetries.RemoveAt(i);
+                }
+                _ScheduledRetries.Add(retry);
             }
         }
 
