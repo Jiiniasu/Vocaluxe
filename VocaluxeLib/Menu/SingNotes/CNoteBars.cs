@@ -56,6 +56,12 @@ namespace VocaluxeLib.Menu.SingNotes
         ///     Span of the currently applied pitch window, in semi-tones
         /// </summary>
         private float _AppliedSpan;
+        /// <summary>
+        ///     The span requirement a tall phrase leaves behind: it rises instantly when a taller requirement
+        ///     appears and otherwise decays toward the current requirement at <see cref="SpanHoldRate"/>, so a
+        ///     section that alternates low and high phrases keeps the window wide instead of pumping the zoom
+        /// </summary>
+        private float _SpanHold;
 
         /// <summary>
         ///     Breathing room at each window edge, in semi-tones (how far inside the bar the outermost note body sits)
@@ -76,6 +82,13 @@ namespace VocaluxeLib.Menu.SingNotes
         ///     or above ~3/<see cref="SettleRate"/> so the slow settle still has room to finish)
         /// </summary>
         private const float SettleHorizonSec = 2.5f;
+        /// <summary>
+        ///     How fast the remembered span requirement (<see cref="_SpanHold"/>) decays toward the current one,
+        ///     in inverse seconds. A tall phrase therefore keeps the window wide for a few seconds after it has
+        ///     passed instead of vanishing at once - that is what stops a section that alternates low and high
+        ///     phrases (e.g. Killswitch Engage - My Curse) from pumping the zoom in and out on every phrase
+        /// </summary>
+        private const float SpanHoldRate = 1f / 3f;
 
         /// <summary>
         ///     Additional height of a note according to selected difficulty
@@ -404,7 +417,10 @@ namespace VocaluxeLib.Menu.SingNotes
         ///     ahead of the on-lane material so the window is in place by the time it is needed, while the
         ///     per-frame invariant only covers what is visible - that is what keeps the widening a smooth
         ///     glide instead of a snap (demanding the full-horizon span instantly used to zoom the window the
-        ///     moment a tall phrase entered the horizon)
+        ///     moment a tall phrase entered the horizon). The span target also remembers the tallest recent
+        ///     requirement (<see cref="_SpanHold"/>), decaying toward the current one at
+        ///     <see cref="SpanHoldRate"/>, so a section that alternates low and high phrases does not pump the
+        ///     zoom in and out on every phrase
         /// </summary>
         private void _ResolveView(float beat, float dtSec)
         {
@@ -477,7 +493,14 @@ namespace VocaluxeLib.Menu.SingNotes
                 }
 
                 float spanReq = _SmallestFeasibleSpan(fit);
-                float desiredSpan = Math.Max(_BaseSpan, spanReq);
+                //A tall phrase keeps the window wide a little after it has passed (see SpanHoldRate):
+                //without this, a section that alternates low and high phrases flips the target on every
+                //phrase and the glide - faithfully chasing it - pumps the zoom in and out
+                if (spanReq > _SpanHold)
+                    _SpanHold = spanReq;
+                else
+                    _SpanHold += (spanReq - _SpanHold) * (1f - (float)Math.Exp(-dtSec * SpanHoldRate));
+                float desiredSpan = Math.Max(_BaseSpan, _SpanHold);
 
                 fit.ViewBottomRange(desiredSpan, out lo, out hi);
                 float desiredBottom = Math.Min(Math.Max(_AppliedViewBottom, lo), hi);   //stay put, or slide just as far as needed
@@ -503,6 +526,8 @@ namespace VocaluxeLib.Menu.SingNotes
             else
             {
                 //Nothing on the lane: rest at the base span, hold the current centre
+                if (_SpanHold > 0f)
+                    _SpanHold += (0f - _SpanHold) * (1f - (float)Math.Exp(-dtSec * SpanHoldRate));
                 _AppliedSpan += (_BaseSpan - _AppliedSpan) * setf;
             }
 
