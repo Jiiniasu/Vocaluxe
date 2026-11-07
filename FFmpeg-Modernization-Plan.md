@@ -7,6 +7,40 @@ VAAPI, VDPAU) with software fallback", and after deciding to keep the managed-bi
 architecture with a **bundled** FFmpeg for Linux (see Decisions). (v1 of this plan proposed a
 custom C shim — superseded when the upstream implementation became the reference.)
 
+## Status (2026-11-07)
+
+- **P0 + P1 — done, committed, field-verified.** acinerella→FFmpeg 8.1.3 swap on Windows; the cloud
+  GC/thread-storm fix; the sing-screen stutter fix (NPOT texture probe in `COpenGL`). Playtest
+  passed: moving full-res video background, glass, rating bars, no seams, locked 60 fps.
+- **P2 — partial.**
+  - **Done:** gate 5 (redist scan) — `dumpbin /dependents` on all 7 `ffmpeg64` Windows DLLs shows
+    **zero** `VCRUNTIME`/`msvcp`/`UCRT` (static-CRT confirmed). HW-decode logging added to
+    `CFFmpegDecoder` (once per process: FFmpeg source + `avformat` version; per video stream:
+    `hardware via <dev>` / `software`) — the single line gate 3 / support reports read.
+  - **Deferred — Linux bundle:** could not be built *and* verified on the dev WSL box (no sudo → no
+    installable compiler; every from-source path hit a distinct environment wall, listed below).
+    `_StageFFmpegLinux` therefore **stays best-effort** (warn, don't fail) until a real
+    `ffmpeg_linux_x64.zip` is published to VocaluxeDependencies and the target flips to a hard
+    `<Error>` (as `_StageFFmpegWindows` already is).
+  - **Pending — macOS (gate 6):** needs a Mac + Homebrew `ffmpeg@8`.
+- **Build findings (for whoever finishes the Linux bundle):**
+  - **proot** (Debian 11 rootfs, gcc-10/nasm/make) compiles all 7 `.so` but **segfaults /
+    heap-corrupts under `make -jN`** (ptrace emulation with `seccomp_filter=no`); only `configure`
+    (serial) survived. Not a viable packaging path here.
+  - **Native bullseye gcc with `--sysroot`** links all 7 `.so` cleanly (after converting the
+    rootfs's absolute lib symlinks to real files, and supplying the host-missing `libisl`/`libmpc`/
+    `libmpfr`/`libbfd`/`libctf`), **but a glibc-2.31 pthread binary then segfaults when run on a
+    glibc-2.41 host** (TLS / `libpthread` model mismatch between 2.31's separate `libpthread` and
+    2.34+'s stub). This **challenges the item-6 / risk assumption** "build on glibc 2.31 → runs on
+    every current distro": verify the bundle on a real target box — do **not** trust the symbol
+    floor alone. Two safe options: (a) build against the *target's* own glibc with a host-matching
+    compiler, or (b) **re-host a reputable prebuilt** GPL shared 8.1 linux-x64 set (the same
+    re-host pattern as the Windows/System233 zip — already the plan's intent).
+  - **Deliberate: no `--enable-vaapi`** in the bundle — VAAPI hard-links `libav*.so` to `libva`,
+    breaking the self-contained promise on boxes without mesa; `_GetHardwarePixelFormat` returns
+    `AV_PIX_FMT_NONE` when VAAPI is absent → clean software fallback (verified in
+    `CFFmpegDecoder.cs`).
+
 ## Decisions (final)
 
 | Decision | Choice |
@@ -138,7 +172,7 @@ custom C shim — superseded when the upstream implementation became the referen
 | --- | --- | --- |
 | **P0 — spike** (½ day) | AutoGen packages + unsafe; port `CFFmpegDecoder` (adapted); Windows 8.1.3 DLLs staged; headless smoke: one audio frame + one video frame through it | Decode proven on our toolchain; `avcodec-62` load verified |
 | **P1 — swap** (1–2 d) | `CDecoderThread` merge + `CAudioDecoderFFmpeg` + acinerella deletion + staging targets + config options + licenses + docs; gates 1, 2, 4, 5 (partial) | Game runs end-to-end on Windows with the new decoder (HW or SW); 105 tests green |
-| **P2 — Linux + HW proof** (1 d) | Linux FFmpeg 8.1.3 shared build + publish to VocaluxeDependencies + linux staging target; HW proof (gate 3); redist removal + scan (gate 5); macOS pass (gate 6) | No-FFmpeg Linux box decodes audio+video; `HardwareDeviceName` verified on a GPU box |
+| **P2 — Linux + HW proof** (1 d) | **PARTIAL (2026-11-07):** redist scan (gate 5) ✅, HW-decode logging ✅; Linux bundle ⏸ deferred (WSL build env — see Status), macOS (gate 6) ⏸ needs a Mac. Linux FFmpeg 8.1.3 shared build + publish to VocaluxeDependencies + flip `_StageFFmpegLinux` to hard error; HW proof (gate 3) on a GPU box | No-FFmpeg Linux box decodes audio+video; `HardwareDeviceName` verified on a GPU box |
 | **P3 — ship** (½ d) | CI matrix, final `dotnet format`, release tag | Self-contained zip ships with FFmpeg 8.1.3 + HW decode, no redist prompt; Linux tarball self-contained |
 
 ## Risks / mitigations
