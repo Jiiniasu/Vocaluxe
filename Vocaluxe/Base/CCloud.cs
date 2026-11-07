@@ -69,9 +69,15 @@ namespace Vocaluxe.Base
         private static readonly CancellationTokenSource _ShutdownCts = new CancellationTokenSource();
         private static int _ShutdownRequested;
         private static volatile bool _Connected;
-        // Serializes the upload-queue flush so concurrent triggers (start-up + reconnect) never fight
-        // over the same queued records.
-        private static readonly object _FlushLock = new object();
+        // Single-flight upload flush: at most one worker thread runs flush passes; concurrent
+        // triggers (start-up, reconnect, failed putCover/putRound, shutdown) only raise
+        // _FlushPassRequested, which the worker consumes on its next lap. This replaces the old
+        // _FlushLock, which stacked one blocked pool thread per trigger behind a pass that itself
+        // could wait up to 120 s on a 429 - the pile-up behind that lock was the thread blow-up
+        // seen during upload bursts.
+        private static readonly object _FlushGate = new object();
+        private static bool _FlushPassRequested;
+        private static Task _FlushPass;
 
         // There is no SynchronizationContext installed on the main loop thread (net10), so an async
         // method started there - Init() below - resumes on the thread pool, and so does the websocket
@@ -227,10 +233,13 @@ namespace Vocaluxe.Base
 
         // Sends a JSON payload to the cloud API and reports the outcome (see CloudPost above).
         //
-        // The whole request runs on the thread pool (Task.Run). This detaches the completion path
-        // from the UI thread's SynchronizationContext, so a synchronous caller (a WinForms screen,
-        // on the UI thread) can block on the result below WITHOUT deadlocking - Polly + HttpClient
-        // would otherwise marshal their continuations back to the very UI thread we are blocked on.
+        // Blocks the calling thread until the request (plus its retry policy) finishes - on
+        // purpose: every caller already runs on the thread pool (RunAsync / putCover / putRound /
+        // FlushWorkerLoop / getAvatar), so no loop thread is involved and there is no
+        // SynchronizationContext for the async continuations to pile up on. The old
+        // .NET Framework build wrapped the request in a Task.Run to detach the completion path
+        // from the WinForms UI context; on net10 that wrapper would only park one extra pool
+        // thread per request for its whole duration, so it is gone.
         private static CloudPost DoPost(string url, string payload, AsyncRetryPolicy policy)
         {
             string uri = CConfig.CloudServerURL + url;
@@ -239,67 +248,64 @@ namespace Vocaluxe.Base
 
             try
             {
-                return Task.Run(delegate
+                HttpResponseMessage response;
+                try
                 {
-                    HttpResponseMessage response;
+                    response = policy.ExecuteAsync(async () =>
+                    {
+                        using (var content = new StringContent(payload ?? string.Empty, Encoding.UTF8, "application/json"))
+                            return await _Client.PostAsync(uri, content);
+                    }).GetAwaiter().GetResult();
+                }
+                catch (Exception e)
+                {
+                    // No HTTP response at all (connection refused / dropped / timeout). The retry
+                    // policy has already retried the transient network hiccups that are safe to
+                    // blind-retry, so a failure reaching here is a genuine "server was not
+                    // reached" condition - safe to defer for a later upload.
+                    CLog.CCloudLog.Error(e, "HTTP request to {uri} failed: {msg}", CLog.Params(uri, e.Message));
+                    return new CloudPost { Success = false, Transient = true, StatusCode = 0 };
+                }
+
+                using (response)
+                {
+                    int statusCode = (int)response.StatusCode;
+                    CLog.CCloudLog.Information("Status code: {code}", CLog.Params(statusCode));
+                    if (statusCode < 200 || statusCode >= 300)
+                    {
+                        // The server answered but did not succeed.
+                        // 408 / 429 / 503 are the "temporary, not processed, wait and retry" signals:
+                        // our server's throttle throws 429 *before* the controller runs, so the round
+                        // was never written and retrying cannot duplicate. Treat those as transient so
+                        // they are queued and retried later.
+                        // Any other 4xx/5xx (400/401/403/404, 500/502/504) is permanent or ambiguous
+                        // (a 5xx may already have recorded the round), and with no server-side dedup we
+                        // report it as not-retryable so the caller drops it rather than risk a double
+                        // entry.
+                        CLog.CCloudLog.Warning("Non-success status {code} from {uri}", CLog.Params(statusCode, uri));
+                        int retryAfter = ParseRetryAfter(response);
+                        return new CloudPost { Success = false, Transient = IsRetryableStatus(statusCode), StatusCode = statusCode, RetryAfterSeconds = retryAfter };
+                    }
                     try
                     {
-                        response = policy.ExecuteAsync(async () =>
+                        return new CloudPost
                         {
-                            using (var content = new StringContent(payload ?? string.Empty, Encoding.UTF8, "application/json"))
-                                return await _Client.PostAsync(uri, content);
-                        }).GetAwaiter().GetResult();
+                            Success = true,
+                            Transient = false,
+                            StatusCode = statusCode,
+                            Body = response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
+                        };
                     }
                     catch (Exception e)
                     {
-                        // No HTTP response at all (connection refused / dropped / timeout). The retry
-                        // policy has already retried the transient network hiccups that are safe to
-                        // blind-retry, so a failure reaching here is a genuine "server was not
-                        // reached" condition - safe to defer for a later upload.
-                        CLog.CCloudLog.Error(e, "HTTP request to {uri} failed: {msg}", CLog.Params(uri, e.Message));
-                        return new CloudPost { Success = false, Transient = true, StatusCode = 0 };
+                        CLog.CCloudLog.Error(e, "Reading response body from {uri} failed: {msg}", CLog.Params(uri, e.Message));
+                        return new CloudPost { Success = false, Transient = true, StatusCode = statusCode };
                     }
-
-                    using (response)
-                    {
-                        int statusCode = (int)response.StatusCode;
-                        CLog.CCloudLog.Information("Status code: {code}", CLog.Params(statusCode));
-                        if (statusCode < 200 || statusCode >= 300)
-                        {
-                            // The server answered but did not succeed.
-                            // 408 / 429 / 503 are the "temporary, not processed, wait and retry" signals:
-                            // our server's throttle throws 429 *before* the controller runs, so the round
-                            // was never written and retrying cannot duplicate. Treat those as transient so
-                            // they are queued and retried later.
-                            // Any other 4xx/5xx (400/401/403/404, 500/502/504) is permanent or ambiguous
-                            // (a 5xx may already have recorded the round), and with no server-side dedup we
-                            // report it as not-retryable so the caller drops it rather than risk a double
-                            // entry.
-                            CLog.CCloudLog.Warning("Non-success status {code} from {uri}", CLog.Params(statusCode, uri));
-                            int retryAfter = ParseRetryAfter(response);
-                            return new CloudPost { Success = false, Transient = IsRetryableStatus(statusCode), StatusCode = statusCode, RetryAfterSeconds = retryAfter };
-                        }
-                        try
-                        {
-                            return new CloudPost
-                            {
-                                Success = true,
-                                Transient = false,
-                                StatusCode = statusCode,
-                                Body = response.Content.ReadAsByteArrayAsync().GetAwaiter().GetResult()
-                            };
-                        }
-                        catch (Exception e)
-                        {
-                            CLog.CCloudLog.Error(e, "Reading response body from {uri} failed: {msg}", CLog.Params(uri, e.Message));
-                            return new CloudPost { Success = false, Transient = true, StatusCode = statusCode };
-                        }
-                    }
-                }).GetAwaiter().GetResult();
+                }
             }
             catch (Exception e)
             {
-                // Last-resort guard: nothing from the HTTP layer may ever reach the UI thread.
+                // Last-resort guard: nothing from the HTTP layer may ever reach the loop thread.
                 CLog.CCloudLog.Error(e, "Unexpected error contacting {uri}: {msg}", CLog.Params(uri, e.Message));
                 return new CloudPost { Success = false, Transient = true, StatusCode = 0 };
             }
@@ -427,12 +433,13 @@ namespace Vocaluxe.Base
             }
 
             // Best-effort final chance to deliver queued rounds while the connection (and hence the
-            // HTTP endpoint) is likely still reachable. Bounded and non-blocking past the wait so
-            // exit stays responsive; a flush that cannot finish in time is simply abandoned and will
-            // be retried on start-up / reconnect.
+            // HTTP endpoint) is likely still reachable. Runs as one pass on the single-flight flush
+            // worker; the wait is bounded so exit stays responsive. A pass that cannot finish in
+            // time is left to complete (or be abandoned at exit) and will be retried on start-up
+            // / reconnect.
             try
             {
-                Task flush = Task.Run(new Action(FlushUploadQueue));
+                Task flush = RequestUploadFlush();
                 if (!flush.Wait(TimeSpan.FromSeconds(2)))
                     CLog.CCloudLog.Warning("Final upload flush still running; leaving it to complete or be abandoned at exit");
             }
@@ -550,9 +557,10 @@ namespace Vocaluxe.Base
                             break;
 
                         // The connection (and hence the HTTP endpoint behind it) is reachable again -
-                        // a good moment to retry the rounds that are still queued. Run off the UI
-                        // thread so the read loop and the menu stay responsive.
-                        FlushOnNextConnection();
+                        // a good moment to retry the rounds that are still queued. The pass runs on
+                        // the single-flight flush worker, so the read loop and the menu stay
+                        // responsive.
+                        _ = RequestUploadFlush();
 
                         // Read and dispatch until the connection drops; then reconnect below.
                         await ReadLoop();
@@ -911,7 +919,7 @@ namespace Vocaluxe.Base
                 {
                     COutbox.Enqueue(Endpoint, json, Guid.NewGuid().ToString());
                     CLog.CCloudLog.Warning("putCover could not be delivered now - queued for a later upload ({n} pending)", CLog.Params(COutbox.Count));
-                    FlushOnNextConnection();
+                    RequestUploadFlush();
                 }
                 else
                 {
@@ -970,8 +978,8 @@ namespace Vocaluxe.Base
                     CLog.CCloudLog.Warning("putRound could not be delivered now - queued for a later upload ({n} pending)", CLog.Params(COutbox.Count));
 
                     // Ask the background flush to retry it promptly. It honors the server's Retry-After
-                    // (when this was a throttle) off the loop thread, so this screen doesn't block.
-                    FlushOnNextConnection();
+                    // (when this was a throttle) on the flush worker, so this screen doesn't block.
+                    RequestUploadFlush();
                 }
                 else
                 {
@@ -993,86 +1001,127 @@ namespace Vocaluxe.Base
 
         // Delivers whichever rounds are queued, oldest first, in order, as far as the connection
         // allows. Each pass is bounded (at most MaxPerPass records) and stops at the first
-        // connection-level failure, so it never hammers a down server. The HTTP itself runs on the
-        // thread pool (inside DoPost); callers on the UI thread should invoke this from a Task.Run.
-        public static void FlushUploadQueue()
+        // connection-level failure, so it never hammers a down server.
+        //
+        // Concurrency: only the single-flight flush worker below calls this, so passes never
+        // overlap and no lock is needed here. The HTTP (DoPost) blocks this worker thread, which
+        // is fine - it is a dedicated pool thread, never the loop thread.
+        private static void FlushUploadQueue()
         {
             if (!CConfig.UseCloudServer)
                 return;
 
-            lock (_FlushLock)
+            const int MaxPerPass = 5;
+            const int MaxRetryAfterSeconds = 120;
+            int processed = 0;
+
+            while (processed < MaxPerPass)
             {
-                const int MaxPerPass = 5;
-                const int MaxRetryAfterSeconds = 120;
-                int processed = 0;
-                // At most one server-directed wait per pass, so a persistent throttle cannot turn this
-                // pass into an endless wait/retry loop (across passes it still backs off via MaxAttempts).
-                bool honoredRetryAfter = false;
+                COutbox.SOutboxEntry entry = COutbox.Oldest();
+                if (entry == null)
+                    break;
 
-                while (processed < MaxPerPass)
+                // Enforced caps: give up on records that are too old or have been retried too
+                // many times, so a long outage can't accumulate or replay without limit.
+                if (entry.Attempts >= COutbox.MaxAttempts || DateTime.Now - entry.CreatedAt > COutbox.MaxAge)
                 {
-                    COutbox.SOutboxEntry entry = COutbox.Oldest();
-                    if (entry == null)
-                        break;
-
-                    // Enforced caps: give up on records that are too old or have been retried too
-                    // many times, so a long outage can't accumulate or replay without limit.
-                    if (entry.Attempts >= COutbox.MaxAttempts || DateTime.Now - entry.CreatedAt > COutbox.MaxAge)
-                    {
-                        COutbox.Drop(entry.Id);
-                        CLog.CCloudLog.Warning("Dropping queued cloud upload {ep} (gave up after {n} attempts)", CLog.Params(entry.Endpoint, entry.Attempts));
-                        processed++;
-                        continue;
-                    }
-
-                    CloudPost result = DoPost(entry.Endpoint, entry.Payload, _HTTPRetryPolicyNonIdempotent);
-                    if (result.Success)
-                    {
-                        COutbox.Remove(entry.Id);
-                        CLog.CCloudLog.Information("Queued {ep} uploaded successfully ({n} left)", CLog.Params(entry.Endpoint, COutbox.Count));
-                        processed++;
-                        continue;
-                    }
-
-                    if (result.Transient)
-                    {
-                        // Keep the record for a later pass (FIFO order preserved, no hammering).
-                        COutbox.BumpAttempt(entry.Id);
-
-                        // If the server throttled us (a 429/503) and told us when to try again, honor
-                        // that wait (capped) and give one more attempt right away - this is the
-                        // cooperative back-off that spaces us out under load. Otherwise (just no
-                        // connection, or we already honored the server this pass) stop this pass and
-                        // let the record be retried at the next opportunity (reconnect / start-up /
-                        // shutdown).
-                        if (result.RetryAfterSeconds > 0 && !honoredRetryAfter)
-                        {
-                            int waitSeconds = Math.Min(result.RetryAfterSeconds, MaxRetryAfterSeconds);
-                            CLog.CCloudLog.Warning("Throttled (HTTP {code}); waiting {s}s before one more try ({n} queued)", CLog.Params(result.StatusCode, waitSeconds, COutbox.Count));
-                            Task.Delay(TimeSpan.FromSeconds(waitSeconds)).GetAwaiter().GetResult();
-                            honoredRetryAfter = true;
-                            continue;   // the same oldest round is now eligible again - attempt it once more
-                        }
-
-                        CLog.CCloudLog.Warning("Flush paused: no cloud connection ({n} queued)", CLog.Params(COutbox.Count));
-                        break;
-                    }
-
-                    // Not a "wait and retry" status (a safe 429/503/408 is kept above for retry), so it
-                    // is a permanent/ambiguous error; with no server dedup, drop it rather than risk a
-                    // duplicate.
                     COutbox.Drop(entry.Id);
-                    CLog.CCloudLog.Warning("Dropping queued {ep} (HTTP {code}) - not safe to retry without server dedupe", CLog.Params(entry.Endpoint, result.StatusCode));
+                    CLog.CCloudLog.Warning("Dropping queued cloud upload {ep} (gave up after {n} attempts)", CLog.Params(entry.Endpoint, entry.Attempts));
                     processed++;
+                    continue;
                 }
+
+                CloudPost result = DoPost(entry.Endpoint, entry.Payload, _HTTPRetryPolicyNonIdempotent);
+                if (result.Success)
+                {
+                    COutbox.Remove(entry.Id);
+                    CLog.CCloudLog.Information("Queued {ep} uploaded successfully ({n} left)", CLog.Params(entry.Endpoint, COutbox.Count));
+                    processed++;
+                    continue;
+                }
+
+                if (result.Transient)
+                {
+                    // Keep the record for a later pass (FIFO order preserved, no hammering).
+                    COutbox.BumpAttempt(entry.Id);
+
+                    // If the server throttled us (a 429/503) and told us when to try again, honor
+                    // that wait (capped) by scheduling ONE more pass after the back-off and ending
+                    // this one. The wait is a timer (ContinueWith), so no thread is parked for its
+                    // duration - the old code blocked a pool thread here for up to 120 s.
+                    if (result.RetryAfterSeconds > 0)
+                    {
+                        int waitSeconds = Math.Min(result.RetryAfterSeconds, MaxRetryAfterSeconds);
+                        CLog.CCloudLog.Warning("Throttled (HTTP {code}); resuming the flush in {s}s ({n} queued)", CLog.Params(result.StatusCode, waitSeconds, COutbox.Count));
+                        Task.Delay(TimeSpan.FromSeconds(waitSeconds)).ContinueWith(_ => RequestUploadFlush(), TaskScheduler.Default);
+                        break;
+                    }
+
+                    CLog.CCloudLog.Warning("Flush paused: no cloud connection ({n} queued)", CLog.Params(COutbox.Count));
+                    break;
+                }
+
+                // Not a "wait and retry" status (a safe 429/503/408 is kept above for retry), so it
+                // is a permanent/ambiguous error; with no server dedup, drop it rather than risk a
+                // duplicate.
+                COutbox.Drop(entry.Id);
+                CLog.CCloudLog.Warning("Dropping queued {ep} (HTTP {code}) - not safe to retry without server dedupe", CLog.Params(entry.Endpoint, result.StatusCode));
+                processed++;
             }
         }
 
-        // Fire-and-forget the upload flush off the UI thread. A non-async wrapper keeps the
-        // un-awaited task out of the (async) call site, so it does not raise a CS4014 warning.
-        private static void FlushOnNextConnection()
+        // The single-flight flush worker. Consumes the requested flag one lap at a time, so a
+        // burst of N triggers (N failed uploads at once) coalesces into N passes run
+        // sequentially by this one worker - not N concurrent passes, and not N blocked threads.
+        private static void FlushWorkerLoop()
         {
-            Task.Run(new Action(FlushUploadQueue));
+            while (true)
+            {
+                bool runPass;
+                lock (_FlushGate)
+                {
+                    runPass = _FlushPassRequested;
+                    _FlushPassRequested = false;
+                    if (!runPass)
+                    {
+                        // Retire under the gate - before the task is observable as completed - so
+                        // the next trigger (which also takes the gate) always starts a fresh
+                        // worker instead of setting a flag nobody is left to consume.
+                        _FlushPass = null;
+                        return;
+                    }
+                }
+
+                try
+                {
+                    FlushUploadQueue();
+                }
+                catch (Exception e)
+                {
+                    CLog.CCloudLog.Error(e, "Upload flush pass failed: {msg}", CLog.Params(e.Message));
+                }
+
+                // Persist this pass's outbox progress (removals / bumps / drops) before the next
+                // lap, so a crash mid-burst loses at most the pass still in flight - COutbox's
+                // per-mutation saves are throttled.
+                COutbox.SaveIfDirty();
+            }
+        }
+
+        // Requests one bounded upload-flush pass on the single-flight worker, starting the worker
+        // if none is running, and returns the pass's task so shutdown can await it with a bound;
+        // fire-and-forget callers ignore it (or discard it in an async context). Repeated
+        // triggers coalesce: the flag is re-asserted and the running worker picks it up on its
+        // next lap, so a burst of triggers costs one extra pass, not one blocked thread each.
+        public static Task RequestUploadFlush()
+        {
+            lock (_FlushGate)
+            {
+                _FlushPassRequested = true;
+                if (_FlushPass == null || _FlushPass.IsCompleted)
+                    _FlushPass = Task.Run(FlushWorkerLoop);
+                return _FlushPass;
+            }
         }
 
         public static void AssignPlayersFromCloud()

@@ -37,6 +37,15 @@ namespace Vocaluxe.Base
         private static readonly List<SOutboxEntry> _Entries = new List<SOutboxEntry>();
         private static bool _Loaded;
 
+        // Save throttling: a mutation latches _Dirty and persists at most once per SaveThrottleMs
+        // window (see MarkDirty). The old code rewrote the WHOLE queue on every mutation, and a
+        // burst of N enqueues is N full serialize + disk writes of hundreds of base64 payloads -
+        // tens of MB of allocation and disk I/O per write, which is the gen2 GC + disk storm the
+        // upload bursts were throwing at the render thread.
+        private const int SaveThrottleMs = 250;
+        private static long _LastSaveTicks;
+        private static bool _Dirty;
+
         // A record that has been retried this many times (on top of the original attempt) is dropped.
         public static int MaxAttempts { get { return 5; } }
 
@@ -126,7 +135,7 @@ namespace Vocaluxe.Base
                     Payload = payload,
                     CreatedAt = DateTime.Now
                 });
-                SaveLocked();
+                MarkDirty();
             }
         }
 
@@ -160,7 +169,7 @@ namespace Vocaluxe.Base
                 if (e == null)
                     return;
                 _Entries.Remove(e);
-                SaveLocked();
+                MarkDirty();
             }
         }
 
@@ -181,12 +190,43 @@ namespace Vocaluxe.Base
                     return;
                 e.Attempts++;
                 e.LastAttempt = DateTime.Now;
+                MarkDirty();
+            }
+        }
+
+        // Forces any latched (not-yet-written) mutation to disk; no-op when clean. CCloud calls
+        // this at the end of every flush pass, which is what makes the throttle above lossless:
+        // the on-disk queue lags the in-memory one by at most the pass still in flight.
+        public static void SaveIfDirty()
+        {
+            EnsureLoaded();
+            lock (_Lock)
+            {
+                if (!_Dirty)
+                    return;
+                _Dirty = false;
+                _LastSaveTicks = Environment.TickCount64;
                 SaveLocked();
             }
         }
         #endregion public stuff
 
         #region private stuff
+
+        // Called under _Lock after a mutation. Latches the pending change and persists it, but
+        // at most once per SaveThrottleMs window: a change still latched at the end of a window
+        // is written by the next mutation in the burst or, if the burst ends, by the forced save
+        // at the end of the next flush pass (CCloud.SaveIfDirty).
+        private static void MarkDirty()
+        {
+            _Dirty = true;
+            long now = Environment.TickCount64;
+            if (now - _LastSaveTicks < SaveThrottleMs)
+                return;
+            _LastSaveTicks = now;
+            _Dirty = false;
+            SaveLocked();
+        }
 
         private static void EnsureLoaded()
         {
