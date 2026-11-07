@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using VocaluxeLib.Log;
 
 namespace Vocaluxe.Lib.Video.FFmpeg
 {
@@ -97,9 +98,19 @@ namespace Vocaluxe.Lib.Video.FFmpeg
 
         static CFFmpegDecoder()
         {
-            DynamicallyLoadedBindings.LibrariesPath = _GetLibrariesPath();
+            string librariesPath = _GetLibrariesPath();
+            DynamicallyLoadedBindings.LibrariesPath = librariesPath;
             DynamicallyLoadedBindings.Initialize();
             ffmpeg.av_log_set_level(ffmpeg.AV_LOG_QUIET);
+
+            // Once per process: which FFmpeg the game runs against (support reports name the
+            // backend - the staged libs/unmanaged/ffmpeg64 bundle or a system FFmpeg 8.x).
+            CLog.Debug("FFmpeg: avformat " + _FormatVersion(ffmpeg.avformat_version()) + " from " + (librariesPath.Length > 0 ? librariesPath : "the system"));
+        }
+
+        private static string _FormatVersion(uint v)
+        {
+            return (v / 1048576) + "." + (v / 256 % 256) + "." + (v % 256);
         }
 
         private static string _GetLibrariesPath()
@@ -164,6 +175,14 @@ namespace Vocaluxe.Lib.Video.FFmpeg
                 {
                     _Free();
                     return false;
+                }
+
+                // Once per stream: name the active video backend (support reports, P2 gate 3).
+                // HardwareDeviceName is final here - avcodec_open2 (and its get_format callback)
+                // has already committed to the hardware pixel format or cleared it for SW fallback.
+                if (_Type == EFFmpegStreamType.Video)
+                {
+                    CLog.Information("Video decoding: " + (HardwareDeviceName != null ? "hardware via " + HardwareDeviceName : "software"));
                 }
 
                 return true;
