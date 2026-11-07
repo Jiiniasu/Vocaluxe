@@ -164,7 +164,44 @@ namespace Vocaluxe.Lib.Draw
                 }
             }
 
-            _NonPowerOf2TextureSupported = false;
+            // The context is GL 2.1 compatibility (fixed-function pipeline), where NPOT textures with
+            // mipmapping are NOT guaranteed by the spec (a GL 3.0 feature) - but every modern desktop
+            // driver supports them. Probe the driver once instead of assuming: when supported, video
+            // frames and all other textures keep their native size (no 2x-4x POT padding, no per-frame
+            // managed pad-copy) - see _EdgeReplicatedPotData, which pads only when the driver needs it.
+            _NonPowerOf2TextureSupported = _ProbeNpotMipmapSupport();
+        }
+
+        /// <summary>
+        ///     Probes whether the current driver accepts non-power-of-two textures with a mipmap stack:
+        ///     creates a small NPOT texture, selects a mipmap min-filter, generates the mips, and checks
+        ///     for a GL error. Any failure (error, or the entry point missing on a bare 2.1 context)
+        ///     falls back to the legacy power-of-two padding path.
+        /// </summary>
+        private static bool _ProbeNpotMipmapSupport()
+        {
+            int tex = 0;
+            try
+            {
+                tex = GL.GenTexture();
+                GL.BindTexture(TextureTarget.Texture2D, tex);
+                GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgba, 97, 53, 0, PixelFormat.Bgra, PixelType.UnsignedByte, IntPtr.Zero);
+                GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, (int)TextureMinFilter.LinearMipmapLinear);
+                GL.GenerateMipmap(GenerateMipmapTarget.Texture2D);
+                return GL.GetError() == OpenTK.Graphics.OpenGL.ErrorCode.NoError;
+            }
+            catch
+            {
+                return false; // glGenerateMipmap entry point missing on this context
+            }
+            finally
+            {
+                if (tex > 0)
+                {
+                    GL.DeleteTexture(tex);
+                    GL.BindTexture(TextureTarget.Texture2D, 0);
+                }
+            }
         }
 
         /// <summary>
