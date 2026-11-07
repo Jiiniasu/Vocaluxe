@@ -103,9 +103,10 @@ namespace Vocaluxe.Lib.Video.FFmpeg
             DynamicallyLoadedBindings.Initialize();
             ffmpeg.av_log_set_level(ffmpeg.AV_LOG_QUIET);
 
-            // Once per process: which FFmpeg the game runs against (support reports name the
-            // backend - the staged libs/unmanaged/ffmpeg64 bundle or a system FFmpeg 8.x).
-            CLog.Debug("FFmpeg: avformat " + _FormatVersion(ffmpeg.avformat_version()) + " from " + (librariesPath.Length > 0 ? librariesPath : "the system"));
+            // Once per process, at Information so support reports capture it: which FFmpeg the game
+            // runs against (the staged libs/unmanaged/ffmpeg64 bundle or a system FFmpeg 8.x) and its
+            // ABI version.
+            CLog.Information("FFmpeg: avformat " + _FormatVersion(ffmpeg.avformat_version()) + " from " + (librariesPath.Length > 0 ? librariesPath : "the system"));
         }
 
         private static string _FormatVersion(uint v)
