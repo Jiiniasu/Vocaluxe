@@ -107,6 +107,9 @@ namespace Vocaluxe.Screens
 
         private SRectF _TimeLineRect;
         private List<STimeRect> _TimeRects;
+        private float _SmoothedTimePointerX = -1f;   // -1 = not positioned yet: snap the pointer on first update
+        private readonly Stopwatch _TimePointerClock = new Stopwatch();
+        private bool _ShowTimePointer;
         private bool _FadeOut;
 
         private int _CurrentBeat;
@@ -342,6 +345,8 @@ namespace Vocaluxe.Screens
             _CurrentTime = 0f;
             _FinishTime = 0f;
             _Length = -1f;
+            _SmoothedTimePointerX = -1f;
+            _TimePointerClock.Restart();
             _TimeToFirstNote = 0f;
             _TimeToFirstNoteDuet = 0f;
             _SetPause(false);
@@ -785,7 +790,23 @@ namespace Vocaluxe.Screens
                             _TimeRects[i].Rect.Color = _Statics[_StaticTimeLineExpandedNormal].Color;
                         }
                     }
-                    _Statics[_StaticTimePointer].X = stat.X - (_Statics[_StaticTimePointer].W / 2) + stat.W * (currentTime / totalTime);
+                    // The pointer is drawn as a solid sub-pixel bar (see Draw), so it glides between pixels
+                    // instead of ticking. Pin its width to a stable integer for a crisp line, and keep the X
+                    // motion uniform (frame-rate independent) so a slow frame never causes a visible hiccup.
+                    int pointerW = Math.Max(1, (int)Math.Round(_Statics[_StaticTimePointer].W));
+                    _Statics[_StaticTimePointer].W = pointerW;
+                    float targetX = stat.X - pointerW / 2f + stat.W * (currentTime / totalTime);
+                    float dt = (float)_TimePointerClock.Elapsed.TotalSeconds;
+                    _TimePointerClock.Restart();
+                    dt = Math.Min(dt, 0.1f);   // clamp big gaps (e.g. after a long pause) so the pointer never snaps across the bar
+                    if (dt <= 0f)
+                        dt = 1f / 60f;         // guard the first frame / not-yet-running clock
+                    float alpha = 1f - (float)Math.Exp(-dt / 0.05f);   // tau = 50 ms: smooth and frame-rate independent
+                    if (_SmoothedTimePointerX < 0f || Math.Abs(targetX - _SmoothedTimePointerX) > stat.W * 0.05f)
+                        _SmoothedTimePointerX = targetX;   // snap on first frame or on a seek/skip
+                    else
+                        _SmoothedTimePointerX += (targetX - _SmoothedTimePointerX) * alpha;
+                    _Statics[_StaticTimePointer].X = _SmoothedTimePointerX;
                     break;
             }
         }
@@ -840,6 +861,11 @@ namespace Vocaluxe.Screens
                 case ETimerLook.TR_CONFIG_TIMERLOOK_EXPANDED:
                     for (int i = 0; i < _TimeRects.Count; i++)
                         CDraw.DrawTexture(_TimeRects[i].Rect.Texture, _Statics[_StaticTimeLine].Rect, _TimeRects[i].Rect.Color, _TimeRects[i].Rect.Rect);
+                    if (_ShowTimePointer && _SmoothedTimePointerX >= 0f)
+                    {
+                        CStatic pointer = _Statics[_StaticTimePointer];
+                        CDraw.DrawRect(pointer.Color, new SRectF(_SmoothedTimePointerX, pointer.Y, pointer.W, pointer.H, pointer.Z), pointer.AllMonitors);
+                    }
                     break;
             }
 
@@ -1820,12 +1846,18 @@ namespace Vocaluxe.Screens
             {
                 case ETimerLook.TR_CONFIG_TIMERLOOK_NORMAL:
                     _TimeLineRect = stat.Rect;
+                    _ShowTimePointer = false;
                     _Statics[_StaticTimePointer].Visible = false;
                     break;
 
                 case ETimerLook.TR_CONFIG_TIMERLOOK_EXPANDED:
                     _TimeRects.Clear();
-                    _Statics[_StaticTimePointer].Visible = true;
+                    // Draw the pointer ourselves as a sub-pixel solid bar (see Draw) rather than as the
+                    // themed texture: COpenGL pixel-snaps every texture to whole pixels, so a textured
+                    // pointer can only sit on integer pixels and its width flickers between 2 and 3 px.
+                    // A solid bar (COpenGL.DrawRect) moves smoothly between pixels with a constant width.
+                    _ShowTimePointer = true;
+                    _Statics[_StaticTimePointer].Visible = false;
 
                     CSong song = CGame.GetSong();
 
