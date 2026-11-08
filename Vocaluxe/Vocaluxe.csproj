@@ -37,7 +37,7 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.154.0" />
     <!-- macOS publishes need the SkiaSharp dylib from the macOS native-asset package; only pulled in
           when building on/for macOS so the Linux/Windows builds are unaffected. -->
-    <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="3.119.4" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
+    <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="4.154.0" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
     <!-- CCloud's HTTP retry (v7-compatible API surface, v8 package). -->
     <PackageReference Include="Polly" Version="8.9.0" />
     <!-- SQLite on the official Microsoft.Data.Sqlite provider. Its native engine (SQLitePCLRaw
