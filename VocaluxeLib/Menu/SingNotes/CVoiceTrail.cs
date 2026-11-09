@@ -25,7 +25,9 @@ namespace VocaluxeLib.Menu.SingNotes
     ///     Sparkly trail of the sung tone for continuous player feedback.
     ///     Dots store the tone of the sung pitch, their Y position is derived
     ///     from the current pitch window each frame, so the trail glides with
-    ///     the scale even while the pitch window is transitioning
+    ///     the scale even while the pitch window is transitioning. Dots that
+    ///     fall outside the bar (out-of-range singing, or the window having
+    ///     moved on) are faded by their overlap with it
     /// </summary>
     public sealed class CVoiceTrail
     {
@@ -82,34 +84,6 @@ namespace VocaluxeLib.Menu.SingNotes
             _Cull(barLeft, spawnX, noteWidth, beat);
         }
 
-        /// <summary>
-        ///     The pitch band occupied by the live dots, in semi-tones. <paramref name="maxTone"/> is where the highest
-        ///     dot's center sits, <paramref name="minTone"/> the lowest, and <paramref name="maxHalfPx"/> the largest
-        ///     half dot size in pixels, so a caller can turn all three into a single "fits inside" requirement
-        /// </summary>
-        /// <returns>true if there is at least one live dot</returns>
-        public bool GetLiveBounds(out float maxTone, out float minTone, out float maxHalfPx)
-        {
-            maxTone = float.NegativeInfinity;
-            minTone = float.PositiveInfinity;
-            maxHalfPx = 0f;
-            if (_Dots.Count == 0)
-                return false;
-
-            for (int i = 0; i < _Dots.Count; i++)
-            {
-                SDot dot = _Dots[i];
-                if (dot.Tone > maxTone)
-                    maxTone = dot.Tone;
-                if (dot.Tone < minTone)
-                    minTone = dot.Tone;
-                float half = dot.Size * 0.5f;
-                if (half > maxHalfPx)
-                    maxHalfPx = half;
-            }
-            return true;
-        }
-
         public void Draw(CTextureRef texture, SRectF barRect, float spawnX, float noteWidth, float beat, float viewTop, float semiToneHeight)
         {
             int count = _Cull(barRect.X, spawnX, noteWidth, beat);
@@ -131,6 +105,14 @@ namespace VocaluxeLib.Menu.SingNotes
                 float left = x - dot.Size / 2f;
                 float top = barRect.Y + (viewTop - dot.Tone + 1f) * semiToneHeight - dot.Size / 2f + dot.Jitter;
 
+                //The sung pitch does not drive the window, so a dot can sit outside the bar (out-of-range
+                //singing, or the window having moved on since the dot spawned): fade it by its vertical
+                //overlap with the bar instead of letting it hang outside the panel
+                float overlap = Math.Min(top + dot.Size, barRect.Bottom) - Math.Max(top, barRect.Y);
+                if (overlap <= 0f)
+                    continue;
+                float inside = Math.Min(1f, overlap / dot.Size);
+
                 // Fade out while the dot leaves the bar on the left.
                 // Like the tone helper band, the dots are NOT dimmed by the note panel's
                 // alpha (player fading etc.): while the tone-helper option is on the trail
@@ -140,7 +122,7 @@ namespace VocaluxeLib.Menu.SingNotes
                     fade = 0f;
                 if (fade > 1f)
                     fade = 1f;
-                float a = fade * (0.9f + 0.1f * (float)Math.Sin(dot.Phase + beat * TwinkleSpeed));
+                float a = fade * inside * (0.9f + 0.1f * (float)Math.Sin(dot.Phase + beat * TwinkleSpeed));
                 if (a <= 0f)
                     continue;
 

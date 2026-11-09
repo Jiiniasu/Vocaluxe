@@ -354,57 +354,30 @@ namespace VocaluxeLib.Menu.SingNotes
         }
 
         /// <summary>
-        ///     The on-lane material the pitch window must contain on the current frame, expressed as
-        ///     pitch-space edges. Note bodies scale with the window, so their size is a fixed number of
-        ///     semi-tones; the tone helper and the voice trail have a fixed pixel size, expressed per
-        ///     span-unit via their k (pixel half-size over the bar height, so a half of k per semi-tone
-        ///     of span). This keeps "fits inside" solvable without knowing the final span first
+        ///     The song material the pitch window must contain, expressed as pitch-space edges of the note
+        ///     bodies (each element is drawn one semi-tone below its nominal tone and scaled with the window,
+        ///     so its extent is a fixed number of semi-tones - see <see cref="_Accumulate"/>). The sung
+        ///     pitch (tone helper, voice trail) deliberately does not appear here: out-of-range singing must
+        ///     not move the window, it is clamped/faded at draw time instead
         /// </summary>
         private struct SFit
         {
             public bool Any;
             public float NoteMax;     //highest note-body top edge, in semi-tones
             public float NoteMin;     //lowest note-body bottom edge, in semi-tones
-            public bool HasHelper;
-            public float HelperTone;  //the semi-tone the helper is drawn at
-            public float KHelper;     //helper half-size in span units
-            public bool HasTrail;
-            public float TrailMax;    //highest trail-dot centre, in semi-tones
-            public float TrailMin;    //lowest trail-dot centre, in semi-tones
-            public float KTrail;      //trail half-size in span units
-
-            public float MaxEdge(float span)
-            {
-                float m = Any ? NoteMax : float.NegativeInfinity;
-                if (HasHelper)
-                    m = Math.Max(m, HelperTone + KHelper * span);
-                if (HasTrail)
-                    m = Math.Max(m, TrailMax + KTrail * span);
-                return m;
-            }
-
-            public float MinEdge(float span)
-            {
-                float n = Any ? NoteMin : float.PositiveInfinity;
-                if (HasHelper)
-                    n = Math.Min(n, HelperTone - KHelper * span);
-                if (HasTrail)
-                    n = Math.Min(n, TrailMin - KTrail * span);
-                return n;
-            }
 
             public bool Fits(float span)
             {
-                if (!Any && !HasHelper && !HasTrail)
+                if (!Any)
                     return true;
                 //The whole band, plus the breathing room at each edge, must fit inside the span
-                return span - (MaxEdge(span) - MinEdge(span)) >= 2f * WindowPad;
+                return span - (NoteMax - NoteMin) >= 2f * WindowPad;
             }
 
             public void ViewBottomRange(float span, out float lo, out float hi)
             {
-                lo = MaxEdge(span) - span + WindowPad;   //top edge clears the top by WindowPad
-                hi = MinEdge(span) - WindowPad;          //bottom edge clears the bottom by WindowPad
+                lo = NoteMax - span + WindowPad;   //top edge clears the top by WindowPad
+                hi = NoteMin - WindowPad;          //bottom edge clears the bottom by WindowPad
             }
         }
 
@@ -412,15 +385,16 @@ namespace VocaluxeLib.Menu.SingNotes
         ///     Resolves the pitch window for the current frame. The window rests on the song's base span and
         ///     only widens once the on-lane material is taller than it (then eases back down); it slides the
         ///     centre as little as possible as the material changes; and, every frame, it guarantees that all
-        ///     the on-lane notes, the tone helper and the voice trail stay inside the bar with
-        ///     <see cref="WindowPad"/> of breathing room. The glide target looks <see cref="SettleHorizonSec"/>
-        ///     ahead of the on-lane material so the window is in place by the time it is needed, while the
-        ///     per-frame invariant only covers what is visible - that is what keeps the widening a smooth
-        ///     glide instead of a snap (demanding the full-horizon span instantly used to zoom the window the
-        ///     moment a tall phrase entered the horizon). The span target also remembers the tallest recent
-        ///     requirement (<see cref="_SpanHold"/>), decaying toward the current one at
-        ///     <see cref="SpanHoldRate"/>, so a section that alternates low and high phrases does not pump the
-        ///     zoom in and out on every phrase
+        ///     the on-lane notes stay inside the bar with <see cref="WindowPad"/> of breathing room. Only the
+        ///     song's notes drive the window: the sung pitch (tone helper, voice trail) is clamped or faded
+        ///     at draw time, so singing out of range never shifts or zooms the view. The glide target looks
+        ///     <see cref="SettleHorizonSec"/> ahead of the on-lane material so the window is in place by the
+        ///     time it is needed, while the per-frame invariant only covers what is visible - that is what
+        ///     keeps the widening a smooth glide instead of a snap (demanding the full-horizon span instantly
+        ///     used to zoom the window the moment a tall phrase entered the horizon). The span target also
+        ///     remembers the tallest recent requirement (<see cref="_SpanHold"/>), decaying toward the current
+        ///     one at <see cref="SpanHoldRate"/>, so a section that alternates low and high phrases does not
+        ///     pump the zoom in and out on every phrase
         /// </summary>
         private void _ResolveView(float beat, float dtSec)
         {
@@ -430,7 +404,6 @@ namespace VocaluxeLib.Menu.SingNotes
                 dtSec = 0.25f;
             float setf = 1f - (float)Math.Exp(-dtSec * SettleRate);    //how far to settle this frame
 
-            float H = Rect.H;
             float noteHalf = (4f - _Difficulty) / 2f;                  //half a note body, in semi-tones (see _GetNoteRect)
 
             //--- gather what has to fit, on two horizons:
@@ -457,29 +430,9 @@ namespace VocaluxeLib.Menu.SingNotes
                     _Accumulate(ref fitNow, lineLo, lineHi, noteHalf); //on the lane: must fit right now
             }
 
-            //Tone helper and voice trail sit inside the bar, so they constrain both horizons
-            if (CBase.Config.GetDrawToneHelper() == EOffOn.TR_CONFIG_ON
-                && _CurrentLine >= 0 && _CurrentLine < _Lines.Length
-                && CBase.Record.ToneValid(_Player))
-            {
-                float helperTone = _HelperTone(_Lines[_CurrentLine]) - 1f;   //drawn one row (semitone) below its tone
-                fit.HasHelper = fitNow.HasHelper = true;
-                fit.HelperTone = fitNow.HelperTone = helperTone;
-                fit.KHelper = fitNow.KHelper = _ToneHeightFixed / H;
-            }
-
-            //Voice trail: a band of dots with a fixed pixel size
-            if (_VoiceTrail.GetLiveBounds(out float trailMax, out float trailMin, out float trailHalf))
-            {
-                fit.HasTrail = fitNow.HasTrail = true;
-                fit.TrailMax = fitNow.TrailMax = trailMax - 1f;   //dots are drawn one row (semitone) below their stored tone
-                fit.TrailMin = fitNow.TrailMin = trailMin - 1f;
-                fit.KTrail = fitNow.KTrail = trailHalf / H;
-            }
-
             //--- settle the window toward a position that fits the material, and keep it legal ---
             float lo, hi;
-            if (fit.Any || fit.HasHelper || fit.HasTrail)
+            if (fit.Any)
             {
                 if (!fitNow.Fits(MaxFitSpan))
                 {
@@ -513,9 +466,9 @@ namespace VocaluxeLib.Menu.SingNotes
                 //...and the hard invariant for what is visible right now. Every visible note has been part of
                 //the glide target for the whole horizon, so this only trims a sub-percent residual - it can no
                 //longer be the main motion (expanding here to the full-horizon requirement is what snapped)
-                _AppliedSpan = Math.Max(_AppliedSpan, _SmallestFeasibleSpan(fitNow));
-                if (fitNow.Any || fitNow.HasHelper || fitNow.HasTrail)
+                if (fitNow.Any)
                 {
+                    _AppliedSpan = Math.Max(_AppliedSpan, _SmallestFeasibleSpan(fitNow));
                     fitNow.ViewBottomRange(_AppliedSpan, out lo, out hi);
                     if (_AppliedViewBottom < lo)
                         _AppliedViewBottom = lo;
@@ -569,28 +522,18 @@ namespace VocaluxeLib.Menu.SingNotes
         /// <summary>
         ///     The smallest span from which the material fits with the breathing room (the fitter never goes below it)
         /// </summary>
-        private float _SmallestFeasibleSpan(SFit fit)
+        private static float _SmallestFeasibleSpan(SFit fit)
         {
-            if (fit.Fits(MaxFitSpan))
-            {
-                float lo = 2f, hi = MaxFitSpan;
-                for (int i = 0; i < 40 && hi - lo > 0.01f; i++)
-                {
-                    float mid = (lo + hi) * 0.5f;
-                    if (fit.Fits(mid))
-                        hi = mid;
-                    else
-                        lo = mid;
-                }
-                return hi;
-            }
-            return MaxFitSpan;
+            //With the note-body extent a fixed number of semi-tones this is a straight line (the binary search
+            //it used to be around only mattered for the span-dependent helper/trail sizes, which no longer
+            //constrain the window)
+            return fit.NoteMax - fit.NoteMin + 2f * WindowPad;
         }
 
         /// <summary>
         ///     The semi-tone the tone helper is drawn at for the given line: the sung tone brought into the octave
-        ///     of the current target note, the same octave mapping the voice trail uses. The window solver uses
-        ///     this very value, which is what keeps the helper inside the visible window
+        ///     of the current target note, the same octave mapping the voice trail uses. If the result falls
+        ///     outside the current window (out-of-range singing) the helper is clamped to the bar edge when drawn
         /// </summary>
         private float _HelperTone(CSongLine line)
         {
@@ -732,8 +675,8 @@ namespace VocaluxeLib.Menu.SingNotes
         {
             float fadetime = 200;
             // Sub-cent exact tone where available, the last whole tone as fallback for the on-screen note name
-            //(e.g. while fading out, the exact tone is no longer valid). The helper position below is drawn at
-            //the octave-mapped tone, and the window solver protects that same value so it never slips out of range.
+            //(e.g. while fading out, the exact tone is no longer valid). The helper is drawn at the octave-mapped
+            //tone, clamped to the bar: out-of-range singing pins it to the edge instead of moving the window.
             float rawTone = (CBase.Record.GetToneExact(_Player) >= 0f) ? CBase.Record.GetToneExact(_Player) + 24f : CBase.Record.GetToneAbs(_Player) + 24f;
             int tonePlayer = (int)(rawTone % 12);
             int octavePlayer = (int)(rawTone / 12);
@@ -767,17 +710,25 @@ namespace VocaluxeLib.Menu.SingNotes
 
             float toneHelperHeight = toneHeight * 2;
 
-            // The semi-tone to draw at: the sung tone in the target note's octave, the exact value the
-            // window solver protects, so the helper is guaranteed to stay inside the visible window
+            // The semi-tone to draw at: the sung tone in the target note's octave
             float absTonePlayer = _HelperTone(line);
 
             CTextureRef toneHelper = CBase.Themes.GetSkinTexture(_Theme.SkinToneHelper, _PartyModeID);
             toneHelper.Rect.W = toneHelper.Rect.W * ((toneHelperHeight) / toneHelper.Rect.H);
             toneHelper.Rect.H = toneHelperHeight;
 
+            float centerY = Rect.Y + _SemiToneHeight * (_ViewTop - absTonePlayer + 1f);
+            //The sung pitch does not drive the window, so an out-of-range tone would draw the helper outside
+            //the bar: clamp it to the edge so it reads as "pinned at the edge" instead of escaping the panel
+            float halfH = toneHelper.Rect.H / 2f;
+            if (centerY < Rect.Y + halfH)
+                centerY = Rect.Y + halfH;
+            if (centerY > Rect.Bottom - halfH)
+                centerY = Rect.Bottom - halfH;
+
             var drawRect = new SRectF(
                 Rect.X + _JudgementLine - toneHelper.Rect.W,
-                Rect.Y + (_SemiToneHeight * (_ViewTop - absTonePlayer + 1)) - (toneHelper.Rect.H / 2),
+                centerY - halfH,
                 toneHelper.Rect.W,
                 toneHelper.Rect.H,
                 Rect.Z
@@ -834,9 +785,11 @@ namespace VocaluxeLib.Menu.SingNotes
         }
 
         /// <summary>
-        ///     Maps the exact sung tone into the visible pitch window so the trail always
-        ///     stays inside the play area: first into the octave context of the current target
-        ///     note (same as the tone helper), then shifted an octave if still outside the window
+        ///     Maps the exact sung tone into the octave context of the current target note (same as the tone
+        ///     helper) so the trail dot appears at a musically sensible pitch. The dot is then stored by tone
+        ///     and projected onto the current window each draw, so it can drift out of the bar (out-of-range
+        ///     singing, or the window having moved on) and is faded by its overlap with the bar instead of
+        ///     being carried along with it (see CVoiceTrail.Draw)
         /// </summary>
         private float _MapTrailTone(float tone, float? targetTone)
         {
@@ -849,13 +802,9 @@ namespace VocaluxeLib.Menu.SingNotes
                     tone += 12;
             }
 
-            // The window is always at least one octave wide, so this converges in at most one shift
-            while (tone < _ViewBottom)
-                tone += 12;
-
-            while (tone >= _ViewTop)
-                tone -= 12;
-
+            //No clamping into the current window: the dot is drawn where it really is (in the target's
+            //octave) and faded by its overlap with the bar, so out-of-range singing reads as the trail
+            //fading away at the edge instead of a dot jumping an octave
             return tone;
         }
 
