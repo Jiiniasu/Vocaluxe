@@ -131,6 +131,9 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private readonly Stopwatch _Timer = new Stopwatch();
         private readonly Stopwatch _ToneHelperTimer = new Stopwatch();
+        private readonly Stopwatch _GoldenStarTimer = new Stopwatch();
+        private double _GoldenStarAccumulatorMs;
+        private const double _GoldenStarIntervalMs = 1000.0 / 60.0;
         private readonly CVoiceTrail _VoiceTrail;
         private readonly List<CParticleEffect> _GoldenStars = new List<CParticleEffect>();
         private readonly List<CParticleEffect> _Flares = new List<CParticleEffect>();
@@ -339,6 +342,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
             foreach (CParticleEffect stars in _GoldenStars)
             {
+                stars.Move(-beatDiff * _NoteWidth, 0f);
                 stars.Alpha = Alpha;
                 stars.Draw();
             }
@@ -348,7 +352,7 @@ namespace VocaluxeLib.Menu.SingNotes
 
             foreach (CParticleEffect perfnote in _PerfectNoteEffect)
             {
-                perfnote.X -= beatDiff * _NoteWidth;
+                perfnote.Move(-beatDiff * _NoteWidth, 0f);
                 perfnote.Draw();
             }
         }
@@ -929,7 +933,27 @@ namespace VocaluxeLib.Menu.SingNotes
             SColorF whiteColor = new SColorF(1, 1, 1, color.A);
             _DrawNoteBG(rect, whiteColor);
             _DrawNoteBase(rect, new SColorF(goldColor, _NoteBaseColor.A * Alpha), 1f);
-            _AddGoldenNote(rect);
+            _MaybeAddGoldenNote(rect);
+        }
+
+        // The sparkles spawn at a fixed rate (60/s) so the twinkle density does not depend on the display refresh rate
+        private void _MaybeAddGoldenNote(SRectF noteRect)
+        {
+            if (!_GoldenStarTimer.IsRunning)
+                _GoldenStarTimer.Start();
+
+            _GoldenStarAccumulatorMs += _GoldenStarTimer.ElapsedMilliseconds;
+            _GoldenStarTimer.Restart();
+
+            // never let a long gap (e.g. after a pause) turn into a burst of sparkles
+            if (_GoldenStarAccumulatorMs > _GoldenStarIntervalMs * 3)
+                _GoldenStarAccumulatorMs = _GoldenStarIntervalMs * 3;
+
+            while (_GoldenStarAccumulatorMs >= _GoldenStarIntervalMs)
+            {
+                _AddGoldenNote(noteRect);
+                _GoldenStarAccumulatorMs -= _GoldenStarIntervalMs;
+            }
         }
 
         private SRectF _GetNoteBoundary(CSongNote note)

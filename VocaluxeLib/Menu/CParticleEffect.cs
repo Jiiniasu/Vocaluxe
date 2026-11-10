@@ -279,6 +279,21 @@ namespace VocaluxeLib.Menu
             }
         }
 
+        /// <summary>
+        ///     Moves the effect and all of its live particles together, so the particles stay anchored
+        ///     to a moving area (e.g. a note scrolling through the bar)
+        /// </summary>
+        public void Move(float dx, float dy)
+        {
+            X += dx;
+            Y += dy;
+            foreach (CParticle star in _Stars)
+            {
+                star.X += dx;
+                star.Y += dy;
+            }
+        }
+
         public void Pause()
         {
             foreach (CParticle star in _Stars)
