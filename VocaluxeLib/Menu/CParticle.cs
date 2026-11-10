@@ -175,6 +175,10 @@ namespace VocaluxeLib.Menu
                     case EParticleType.PerfNoteStar:
                         _Alpha = 1f - _Age / _MaxAge;
                         break;
+
+                    case EParticleType.GoldenNoteStar:
+                        _Alpha = 1f - _Age / _MaxAge;
+                        break;
                 }
             }
 
@@ -217,6 +221,11 @@ namespace VocaluxeLib.Menu
                     X += _Vx * timediff;
                     Y += _Vy * timediff;
                     break;
+
+                case EParticleType.GoldenNoteStar:
+                    X += _Vx * timediff;
+                    Y += _Vy * timediff;
+                    break;
             }
 
 
@@ -243,6 +252,10 @@ namespace VocaluxeLib.Menu
                         break;
 
                     case EParticleType.PerfNoteStar:
+                        size = _Size * (1f - currentTime / _Vsize);
+                        break;
+
+                    case EParticleType.GoldenNoteStar:
                         size = _Size * (1f - currentTime / _Vsize);
                         break;
                 }
