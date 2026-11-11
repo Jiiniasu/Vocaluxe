@@ -132,7 +132,8 @@ namespace VocaluxeLib.Menu.SingNotes
         private readonly Stopwatch _Timer = new Stopwatch();
         private readonly Stopwatch _ToneHelperTimer = new Stopwatch();
         private readonly Stopwatch _GoldenStarTimer = new Stopwatch();
-        private double _GoldenStarAccumulatorMs;
+        private double _GoldenStarFrameMs;
+        private readonly Dictionary<CSongNote, double> _GoldenStarAccumulator = new Dictionary<CSongNote, double>();
         private const double _GoldenStarIntervalMs = 1000.0 / 60.0;
         private readonly CVoiceTrail _VoiceTrail;
         private readonly List<CParticleEffect> _GoldenStars = new List<CParticleEffect>();
@@ -246,6 +247,12 @@ namespace VocaluxeLib.Menu.SingNotes
             float currentBeatF = CBase.Game.GetCurrentBeatF();
             float beatDiff = currentBeatF - _LastBeatF;
             _LastBeatF = currentBeatF;
+
+            // The sparkle spawn clock is read once per frame and shared by all golden notes of this bar
+            if (!_GoldenStarTimer.IsRunning)
+                _GoldenStarTimer.Start();
+            _GoldenStarFrameMs = _GoldenStarTimer.ElapsedMilliseconds;
+            _GoldenStarTimer.Restart();
 
             // The song can be null here: during the end-of-song transition CGame has already advanced to
             // the next round, but the (fading) sing screen is drawn one last time. _ResolveView clamps
@@ -933,27 +940,26 @@ namespace VocaluxeLib.Menu.SingNotes
             SColorF whiteColor = new SColorF(1, 1, 1, color.A);
             _DrawNoteBG(rect, whiteColor);
             _DrawNoteBase(rect, new SColorF(goldColor, _NoteBaseColor.A * Alpha), 1f);
-            _MaybeAddGoldenNote(rect);
+            _MaybeAddGoldenNote(note, rect);
         }
 
-        // The sparkles spawn at a fixed rate (60/s) so the twinkle density does not depend on the display refresh rate
-        private void _MaybeAddGoldenNote(SRectF noteRect)
+        // Each golden note twinkles at a fixed rate (60/s), independently of the other golden notes and of the display refresh rate
+        private void _MaybeAddGoldenNote(CSongNote note, SRectF noteRect)
         {
-            if (!_GoldenStarTimer.IsRunning)
-                _GoldenStarTimer.Start();
-
-            _GoldenStarAccumulatorMs += _GoldenStarTimer.ElapsedMilliseconds;
-            _GoldenStarTimer.Restart();
+            double acc = _GoldenStarAccumulator.TryGetValue(note, out double last) ? last : 0.0;
+            acc += _GoldenStarFrameMs;
 
             // never let a long gap (e.g. after a pause) turn into a burst of sparkles
-            if (_GoldenStarAccumulatorMs > _GoldenStarIntervalMs * 3)
-                _GoldenStarAccumulatorMs = _GoldenStarIntervalMs * 3;
+            if (acc > _GoldenStarIntervalMs * 3)
+                acc = _GoldenStarIntervalMs * 3;
 
-            while (_GoldenStarAccumulatorMs >= _GoldenStarIntervalMs)
+            while (acc >= _GoldenStarIntervalMs)
             {
                 _AddGoldenNote(noteRect);
-                _GoldenStarAccumulatorMs -= _GoldenStarIntervalMs;
+                acc -= _GoldenStarIntervalMs;
             }
+
+            _GoldenStarAccumulator[note] = acc;
         }
 
         private SRectF _GetNoteBoundary(CSongNote note)
