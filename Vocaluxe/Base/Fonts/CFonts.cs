@@ -174,10 +174,6 @@ namespace Vocaluxe.Base.Fonts
 
             CFontStyle fontStyle = _GetFontStyle(font);
             int bucket = fontStyle.GetRasterBucket(font.Height);
-            // Same box convention as CFontLine uses for the texture/quad: the whole-line advance
-            // (kerning included - the font engine measures the string, not a per-character sum) plus
-            // the outline bleed, scaled to exactly the height the line will be drawn at. Keeping the
-            // two in lock-step means centering and the karaoke clip line up with the drawn pixels.
             using (var skFont = new SKFont(fontStyle.GetTypeface(), bucket))
             {
                 float outlineSize = fontStyle.Outline * bucket;
@@ -185,7 +181,17 @@ namespace Vocaluxe.Base.Fonts
                 float fullH = metrics.Descent - metrics.Ascent;
                 SKRect tightBounds;
                 float advance = skFont.MeasureText(text, out tightBounds);
-                return (advance + outlineSize) * font.Height / (fullH + outlineSize);
+                // Same box convention as CFontLine._Rasterize for the texture/quad: the line's ink
+                // extent (tight bounds, kerning included - the font engine measures the string, not a
+                // per-character sum) plus the outline bleed, scaled to exactly the height the line will
+                // be drawn at. Keeping the two in lock-step means centering, note spacing and the
+                // karaoke clip line up with the drawn pixels. A slanted (italic) face - or a hooking glyph
+                // like 'f' - can overhang its advance (the top-right sticks past the pen); boxing the ink
+                // keeps that visible instead of clipping it at a word end. For glyphs whose ink sits within
+                // the advance (most of them) this is unchanged from the advance + bleed box they used.
+                float left = Math.Min(0f, tightBounds.Left);
+                float right = Math.Max(advance, tightBounds.Right);
+                return ((right - left) + outlineSize) * font.Height / (fullH + outlineSize);
             }
         }
 

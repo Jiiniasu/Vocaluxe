@@ -40,10 +40,13 @@ namespace Vocaluxe.Base.Fonts
     ///     no relative drift between the letters, no wave.
     ///
     ///     Geometry convention (kept consistent with the legacy line boxes so theme layouts are
-    ///     unchanged): at raster size B the line box is [advance + outline] wide and
+    ///     unchanged): at raster size B the line box is [inkExtent + outline] wide and
     ///     [fullHeight + outline] tall (outline bleed of outline/2 per side), and the box is scaled so the
-    ///     drawn height is exactly the requested font height - the same box the legacy per-glyph
-    ///     GetTextWidth/GetTextHeight reported.
+    ///     drawn height is exactly the requested font height. inkExtent is the tight bounds of the whole
+    ///     line (kerning included): where a glyph's ink sits within its advance it equals the advance (so
+    ///     this is the [advance + outline] box the legacy per-glyph GetTextWidth/GetTextHeight reported),
+    ///     but where it overhangs - a slanted (italic) face, or a hooking glyph like 'f' - the box is
+    ///     widened, and boxing the ink keeps that overhang visible instead of clipping it.
     ///
     ///     Textures are cached per (CFontStyle, height bucket, text); CFontStyle.Dispose (theme /
     ///     party-mode font unload) drops the style's entries, and <see cref="Close" /> drops everything.
@@ -272,16 +275,27 @@ namespace Vocaluxe.Base.Fonts
                 SKRect tightBounds;
                 float advance = font.MeasureText(text, out tightBounds);
 
-                // Line box: advance + outline bleed (outline/2 per side) wide,
-                // full line height + outline bleed tall - the same box the legacy per-glyph
-                // GetTextWidth/GetTextHeight reported, so theme layouts stay put.
-                float boxW = advance + outlineSize;
+                // Line box width: the INK extent of the whole line (tight bounds, kerning included)
+                // plus the outline bleed (outline/2 per side) - NOT the raw advance. A slanted
+                // (italic/oblique) face can overhang its own advance: the last glyph's slanted ink
+                // sticks out to the right past the pen, and boxW = advance + bleed left no room for
+                // it, so that ink was clipped at the texture edge - the top-right of tall glyphs like
+                // 'f' and 'r' was cut off, worst at the end of a word where no following glyph's
+                // advance covers it. Boxing the actual ink keeps it fully visible. For glyphs whose ink
+                // sits within the advance (most of them) boxW stays advance + bleed - the box the legacy
+                // per-glyph GetTextWidth/GetTextHeight reported - so their layout is unchanged; only the
+                // overhangers (slanted faces, hooking glyphs like 'f') gain the room they were clipped from.
+                float left = Math.Min(0f, tightBounds.Left);
+                float right = Math.Max(advance, tightBounds.Right);
+                float boxW = (right - left) + outlineSize;
                 float boxH = fullH + outlineSize;
                 int w = Math.Max(1, (int)Math.Ceiling(boxW));
                 int h = Math.Max(1, (int)Math.Ceiling(boxH));
 
                 byte[] bgra;
-                float x0 = outlineSize / 2f;
+                // Pen x-offset: seat the leftmost ink one bleed (outline/2) in from the left edge.
+                // For upright text left == 0 and this is the old outline/2, so that rendering is unchanged.
+                float x0 = -left + outlineSize / 2f;
                 float baselineY = -metrics.Ascent + outlineSize / 2f;
                 using (var bmp = new SKBitmap(w, h, SKColorType.Bgra8888, SKAlphaType.Premul))
                 {

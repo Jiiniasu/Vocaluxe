@@ -66,6 +66,45 @@ namespace Tests.Vocaluxe
             Assert.LessOrEqual(maxY + 1, raster.H);
         }
 
+        // Regression (freestyle/italic clipping): a glyph's ink can overhang its own advance - the
+        // slanted top-right of a tall glyph like 'f' or 'r' sticks out past the pen (an italic/oblique
+        // face does this strongly; even an upright face does it a pixel or two). Sizing the box to the
+        // advance left no room for that overhang, so it was clipped at the texture edge: the top-right
+        // of those glyphs cut off, worst at the end of a word where no following glyph's advance covers
+        // it. The box must be sized to the INK extent instead: the ink below provably extends past the
+        // advance, yet still has to fit inside the box, and the box must have grown past the advance.
+        [Test]
+        public void CFontLineRaster_InkOverhang_FitsInBox()
+        {
+            const float size = 60f;
+            const string text = "f"; // tall glyph whose top hook leans right past its own advance
+            SKTypeface typeface = SKTypeface.Default; // shared instance: no dispose
+
+            float advance;
+            SKRect tightBounds;
+            using (var font = new SKFont(typeface, size))
+            {
+                advance = font.MeasureText(text, out tightBounds);
+            }
+
+            // The ink genuinely extends past the advance - this is the bug's trigger.
+            float overhang = tightBounds.Right - advance;
+            Assert.Greater(overhang, 0f, "the glyph's ink must overhang its advance (else this test does not exercise the clip)");
+
+            CFontLine.SLineRasterData raster = CFontLine._Rasterize(typeface, size, text, 0f, new SColorF(1f, 1f, 1f, 1f));
+
+            // ...and the rasterized box must still contain the full ink. The old advance-based box was
+            // only the advance wide, so this right edge was clipped (maxX + 1 > raster.W).
+            (int minX, int maxX, int minY, int maxY) = _InkBBox(raster.Bgra, raster.W, raster.H, 0, raster.W);
+            Assert.GreaterOrEqual(minX, 0);
+            Assert.LessOrEqual(maxX + 1, raster.W, "the ink overhang must fit inside the box (it was clipped at the texture edge)");
+            Assert.GreaterOrEqual(minY, 0);
+            Assert.LessOrEqual(maxY + 1, raster.H);
+
+            // And the box must be wider than the advance-based box was, to hold the overhang.
+            Assert.Greater(raster.W, Math.Max(1, (int)Math.Ceiling(advance)), "the box must be wider than the advance to contain the ink overhang");
+        }
+
         // The property that kills the wave: identical repeated glyphs of a line must sit on the
         // SAME baseline row. The rasterizer draws the whole line in one pass on one shared
         // baseline, so every copy of a glyph lands on the identical row; the legacy per-glyph
