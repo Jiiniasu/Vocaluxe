@@ -92,17 +92,6 @@ jobs:
           7z a "..\Vocaluxe_Windows_x64_${{ env.GIT_VERSION_TAG }}.zip" *
           Pop-Location
 
-      - name: Create Latest release (branch build)
-        if: ${{ github.event_name == 'push' && github.ref_type == 'branch' }}
-        # Pinned: the action has no floating v1/v2 major tags, only exact semver tags (v1.21.0 as of Oct 2026).
-        uses: ncipollo/release-action@v1.21.0
-        with:
-          name: Latest build
-          tag: Latest
-          prerelease: true
-          allowUpdates: true
-          artifacts: Vocaluxe_Windows_x64_${{ env.GIT_VERSION_TAG }}.zip
-
       - name: Create Release (semver tag)
         if: ${{ github.ref_type == 'tag' }}
         # Pinned: the action has no floating v1/v2 major tags, only exact semver tags (v1.21.0 as of Oct 2026).
