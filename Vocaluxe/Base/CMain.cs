@@ -120,7 +120,9 @@ namespace Vocaluxe.Base
 
         public int GetCoverSize()
         {
-            return CConfig.Config.Graphics.CoverSize;
+            //Resolved through the driver so it tracks the display/VRAM in TR_CONFIG_TEXTURE_AUTO mode; the driver
+            //falls back to the raw CoverSize when it is not initialised yet.
+            return CDraw.GetMaxCoverSide();
         }
 
         public int GetJudgementDistance()

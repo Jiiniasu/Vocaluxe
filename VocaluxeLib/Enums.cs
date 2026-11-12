@@ -119,7 +119,12 @@ namespace VocaluxeLib
         TR_CONFIG_TEXTURE_LOW,
         TR_CONFIG_TEXTURE_MEDIUM,
         TR_CONFIG_TEXTURE_HIGH,
-        TR_CONFIG_TEXTURE_HIGHEST
+        TR_CONFIG_TEXTURE_HIGHEST,
+        /// <summary>
+        ///     Pick the cap automatically from the display resolution the app presents to (so a small
+        ///     window never shrinks textures) and the GPU's video memory. See CTextureProvider.ResolveGeneralMaxArea.
+        /// </summary>
+        TR_CONFIG_TEXTURE_AUTO
         // ReSharper restore InconsistentNaming
     }
 

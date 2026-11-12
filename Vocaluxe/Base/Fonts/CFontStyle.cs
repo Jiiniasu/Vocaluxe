@@ -61,6 +61,10 @@ namespace Vocaluxe.Base.Fonts
                 case ETextureQuality.TR_CONFIG_TEXTURE_HIGHEST:
                     _MaxGlyphHeight = 100f;
                     break;
+                case ETextureQuality.TR_CONFIG_TEXTURE_AUTO:
+                    //Auto text should stay as crisp as the highest fixed tier; the cap is not memory-critical.
+                    _MaxGlyphHeight = 100f;
+                    break;
                 default:
                     _MaxGlyphHeight = 60f;
                     break;

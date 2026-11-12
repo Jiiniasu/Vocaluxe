@@ -155,13 +155,21 @@ namespace Vocaluxe.Lib.Draw
             return (int)Math.Pow(2, Math.Ceiling(Math.Log(n, 2)));
         }
 
+        // --- Automatic texture sizing (TR_CONFIG_TEXTURE_AUTO) ---------------------------------------------
+        // The concrete driver (COpenGL) fills these in at startup, before any texture is loaded: the display it
+        // presents to (the monitor the app goes fullscreen on - NOT the transient window size) and the GPU's
+        // dedicated video memory (0 when unknown, e.g. non-Windows). With pinned quality levels these are unused.
+        protected int _DisplayW;
+        protected int _DisplayH;
+        protected long _VramBytes;
+
         /// <summary>
-        ///     Returns the maximum area allowed for a texture based on the current quality
+        ///     The fixed per-texture area for a pinned quality level. TR_CONFIG_TEXTURE_AUTO falls back to the
+        ///     render canvas size (used when the driver has no display information yet).
         /// </summary>
-        /// <returns></returns>
-        private static int _GetMaxTextureArea()
+        public static int FixedMaxTextureArea(ETextureQuality quality)
         {
-            switch (CConfig.Config.Graphics.TextureQuality)
+            switch (quality)
             {
                 case ETextureQuality.TR_CONFIG_TEXTURE_LOWEST:
                     return 128 * 128;
@@ -173,21 +181,72 @@ namespace Vocaluxe.Lib.Draw
                     return 1024 * 512;
                 case ETextureQuality.TR_CONFIG_TEXTURE_HIGHEST:
                     return CSettings.RenderW * CSettings.RenderH;
+                case ETextureQuality.TR_CONFIG_TEXTURE_AUTO:
+                    return CSettings.RenderW * CSettings.RenderH;
                 default:
-                    throw new ArgumentException();
+                    throw new ArgumentException("Unsupported texture quality.", nameof(quality));
             }
         }
 
         /// <summary>
-        ///     Returns true if a texture with the given size needs to be resized
+        ///     Per-texture area ceiling from the GPU's dedicated video memory (the "safety valve"). Unknown
+        ///     (0, e.g. non-Windows) means no backoff; below the thresholds the cap steps down to the MEDIUM /
+        ///     HIGH tier area.
         /// </summary>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        private static bool _RequiresResize(Size size)
+        public static long VramLadderCap(long vramBytes)
         {
-            int maxArea = _GetMaxTextureArea();
-            int curArea = size.Width * size.Height;
-            return curArea > maxArea;
+            const long GiB = 1024L * 1024L * 1024L;
+            if (vramBytes <= 0)
+                return long.MaxValue;
+            if (vramBytes < GiB)
+                return 512L * 256L;
+            if (vramBytes < 2L * GiB)
+                return 1024L * 512L;
+            return long.MaxValue;
+        }
+
+        private static double _DisplayDensity(int displayW, int displayH)
+        {
+            if (displayW <= 0 || displayH <= 0)
+                return 1.0;
+            return Math.Min((double)displayW / CSettings.RenderW, (double)displayH / CSettings.RenderH);
+        }
+
+        /// <summary>
+        ///     Pure (unit-testable): the effective maximum area for a fullscreen (canvas-sized) texture. Pinned
+        ///     levels return their fixed area; AUTO scales the render canvas by the display density and then
+        ///     applies the VRAM safety valve.
+        /// </summary>
+        public static int ResolveGeneralMaxArea(ETextureQuality quality, int displayW, int displayH, long vramBytes)
+        {
+            if (quality != ETextureQuality.TR_CONFIG_TEXTURE_AUTO)
+                return FixedMaxTextureArea(quality);
+            double d = _DisplayDensity(displayW, displayH);
+            long area = (long)Math.Round(CSettings.RenderW * d) * (long)Math.Round(CSettings.RenderH * d);
+            return (int)Math.Min(area, VramLadderCap(vramBytes));
+        }
+
+        /// <summary>
+        ///     Pure (unit-testable): the effective maximum side size for a cover, whose logical size is the
+        ///     CoverSize knob (a cover is shown in a panel, not fullscreen, so it is scaled by the display
+        ///     density rather than capped at the whole display).
+        /// </summary>
+        public static int ResolveCoverMaxSide(ETextureQuality quality, int coverSize, int displayW, int displayH, long vramBytes)
+        {
+            if (quality != ETextureQuality.TR_CONFIG_TEXTURE_AUTO)
+                return coverSize;
+            double d = _DisplayDensity(displayW, displayH);
+            int side = (int)Math.Round(coverSize * d);
+            int vramSide = (int)Math.Round(Math.Sqrt((double)VramLadderCap(vramBytes)));
+            return Math.Min(side, vramSide);
+        }
+
+        /// <summary>
+        ///     The effective maximum area for a general texture, resolved from the runtime auto inputs.
+        /// </summary>
+        private int _GetMaxTextureArea()
+        {
+            return ResolveGeneralMaxArea(CConfig.Config.Graphics.TextureQuality, _DisplayW, _DisplayH, _VramBytes);
         }
 
         /// <summary>
@@ -201,7 +260,7 @@ namespace Vocaluxe.Lib.Draw
             int curArea = size.Width * size.Height;
             if (curArea <= maxArea)
                 return size;
-            Debug.Assert(_RequiresResize(size));
+            Debug.Assert(curArea > maxArea);
             double factor = Math.Sqrt((double)maxArea / curArea);
             Size newSize = new Size((int)(size.Width * factor), (int)(size.Height * factor));
             if (!_NonPowerOf2TextureSupported)

@@ -170,6 +170,72 @@ namespace Vocaluxe.Lib.Draw
             // frames and all other textures keep their native size (no 2x-4x POT padding, no per-frame
             // managed pad-copy) - see _EdgeReplicatedPotData, which pads only when the driver needs it.
             _NonPowerOf2TextureSupported = _ProbeNpotMipmapSupport();
+
+            // Automatic texture sizing (TR_CONFIG_TEXTURE_AUTO): measure the display we present to (the largest
+            // panel's monitor - the transient window size must NOT shrink textures) and the GPU's video memory,
+            // both before any texture is loaded so the per-texture cap is ready when the first image arrives.
+            _ComputeAutoTextureParams();
+        }
+
+        /// <summary>
+        ///     Fills in the automatic texture-sizing inputs (_DisplayW/_DisplayH/_VramBytes) that the base
+        ///     CTextureProvider consults for TR_CONFIG_TEXTURE_AUTO. The display is the largest panel's monitor
+        ///     client area (what the app fills in fullscreen), which is independent of the current window size.
+        /// </summary>
+        private void _ComputeAutoTextureParams()
+        {
+            int w = 0, h = 0;
+            if (_MultiWindow())
+            {
+                for (int i = 0; i < _Windows.Count; i++)
+                {
+                    MonitorInfo mi = Monitors.GetMonitorFromWindow(_Windows.Slots[i].Window);
+                    if (mi != null)
+                    {
+                        w = Math.Max(w, mi.ClientArea.Size.X);
+                        h = Math.Max(h, mi.ClientArea.Size.Y);
+                    }
+                }
+            }
+
+            MonitorInfo primary = Monitors.GetMonitorFromWindow(_Window);
+            if (primary != null)
+            {
+                w = Math.Max(w, primary.ClientArea.Size.X);
+                h = Math.Max(h, primary.ClientArea.Size.Y);
+            }
+
+            if (w <= 0) // monitor probe failed (headless / exotic display server) -> use the window
+            {
+                w = _Window.ClientSize.X;
+                h = _Window.ClientSize.Y;
+            }
+            if (w <= 0) // last resort: the render canvas (density 1.0)
+            {
+                w = CSettings.RenderW;
+                h = CSettings.RenderH;
+            }
+
+            _DisplayW = w;
+            _DisplayH = h;
+
+#if WIN
+            _VramBytes = CVramProbe.QueryVramBytes();
+#else
+            _VramBytes = 0;
+#endif
+
+            CLog.Debug("Auto texture sizing: display " + _DisplayW + "x" + _DisplayH +
+                       ", VRAM " + (_VramBytes > 0 ? (int)(_VramBytes / 1048576) + " MB" : "unknown") +
+                       ", quality " + CConfig.Config.Graphics.TextureQuality);
+        }
+
+        public int GetMaxCoverSide()
+        {
+            return CTextureProvider<COGLTexture>.ResolveCoverMaxSide(
+                CConfig.Config.Graphics.TextureQuality,
+                CConfig.Config.Graphics.CoverSize,
+                _DisplayW, _DisplayH, _VramBytes);
         }
 
         /// <summary>

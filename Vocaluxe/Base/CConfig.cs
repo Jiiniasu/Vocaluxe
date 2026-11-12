@@ -70,9 +70,9 @@ namespace Vocaluxe.Base
 
         public struct SConfigGraphics
         {
-            [DefaultValue(ETextureQuality.TR_CONFIG_TEXTURE_MEDIUM)]
+            [DefaultValue(ETextureQuality.TR_CONFIG_TEXTURE_AUTO)]
             public ETextureQuality TextureQuality;
-            [XmlRanged(32, 1024), DefaultValue(256)]
+            [XmlRanged(32, 1024), DefaultValue(512)]
             public int CoverSize;
 
             [XmlRanged(1, 6), DefaultValue(1)]
@@ -461,7 +461,7 @@ namespace Vocaluxe.Base
                 case "TextureQuality":
                     return "TextureQuality: " + CHelper.ListStrings(Enum.GetNames(typeof(ETextureQuality)));
                 case "CoverSize":
-                    return "CoverSize (pixels): 32, 64, 128, 256, 512, 1024 (default: 128)";
+                    return "CoverSize (pixels): 32, 64, 128, 256, 512, 1024 (default: 512)";
                 case "NumScreens":
                     return "Number of screens to use. 1 - 6 (default: 1)";
                 case "MultiWindow":

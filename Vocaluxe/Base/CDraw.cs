@@ -111,6 +111,15 @@ namespace Vocaluxe.Base
         }
 
         /// <summary>
+        ///     The maximum side size a cover should be generated/cached at (see IDraw.GetMaxCoverSide). Falls
+        ///     back to the raw CoverSize when the driver is not initialised yet.
+        /// </summary>
+        public static int GetMaxCoverSide()
+        {
+            return _Draw == null ? CConfig.Config.Graphics.CoverSize : _Draw.GetMaxCoverSide();
+        }
+
+        /// <summary>
         ///     Takes a screenshot and saves it to the Screenshot folder
         /// </summary>
         public static void MakeScreenShot()

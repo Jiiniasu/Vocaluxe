@@ -34,6 +34,12 @@ namespace Vocaluxe.Lib.Draw
 
         int GetTextureCount();
 
+        /// <summary>
+        ///     The maximum side size a cover should be generated/cached at, resolved from the display the app
+        ///     presents to and the GPU's video memory (TR_CONFIG_TEXTURE_AUTO) or the CoverSize knob otherwise.
+        /// </summary>
+        int GetMaxCoverSide();
+
         CTextureRef CopyScreen();
         void CopyScreen(ref CTextureRef texture);
         void MakeScreenShot();
