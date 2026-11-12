@@ -79,7 +79,10 @@ namespace Vocaluxe.Lib.Database
                             h = reader.GetInt32(2);
                         }
                     }
-                    if (id >= 0)
+                    // A cached cover is reusable only if it already reaches the requested size. If it was
+                    // cached at a smaller size (e.g. CoverSize was raised since it was cached), drop it so the
+                    // fallback below re-resolves it from the source file at the new size.
+                    if (id >= 0 && Math.Max(w, h) >= maxSize)
                     {
                         //Reader is closed, so this command can be reused for a second query
                         command.CommandText = "SELECT Data FROM CoverData WHERE CoverID = @id";
@@ -97,6 +100,20 @@ namespace Vocaluxe.Lib.Database
                         }
 
                         //Stale entry without data: drop it, the fallback below rebuilds the cover
+                        command.CommandText = "DELETE FROM Cover WHERE id = @id";
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@id", id);
+                        command.ExecuteNonQuery();
+                    }
+                    else if (id >= 0)
+                    {
+                        //Cached below the requested size: drop the cover row and its data so the fallback
+                        //rebuild (which inserts a fresh row) does not leave a stale duplicate behind.
+                        command.CommandText = "DELETE FROM CoverData WHERE CoverID = @id";
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@id", id);
+                        command.ExecuteNonQuery();
+
                         command.CommandText = "DELETE FROM Cover WHERE id = @id";
                         command.Parameters.Clear();
                         command.Parameters.AddWithValue("@id", id);
