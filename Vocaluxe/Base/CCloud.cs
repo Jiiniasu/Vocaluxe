@@ -68,6 +68,10 @@ namespace Vocaluxe.Base
         // in-flight ConnectAsync/ReceiveAsync and to stop the reconnect loop.
         private static readonly CancellationTokenSource _ShutdownCts = new CancellationTokenSource();
         private static int _ShutdownRequested;
+        // RequestReconnect() swaps in a fresh CTS and cancels the old one: any back-off delay the
+        // connection loop is currently serving ends early and the next attempt starts right away.
+        private static readonly object _ReconnectLock = new object();
+        private static CancellationTokenSource _ReconnectCts = new CancellationTokenSource();
         private static volatile bool _Connected;
         // Single-flight upload flush: at most one worker thread runs flush passes; concurrent
         // triggers (start-up, reconnect, failed putCover/putRound, shutdown) only raise
@@ -417,6 +421,52 @@ namespace Vocaluxe.Base
         }
 
         /// <summary>
+        /// Asks the connection loop to drop its current back-off wait and re-attempt immediately. Best
+        /// effort: a connect attempt already in flight runs to its own (bounded) timeout first.
+        /// </summary>
+        public static void RequestReconnect()
+        {
+            CancellationTokenSource current;
+            lock (_ReconnectLock)
+            {
+                current = _ReconnectCts;
+                _ReconnectCts = new CancellationTokenSource();
+            }
+
+            try
+            {
+                current.Cancel();
+            }
+            catch
+            {
+                // Best effort: cancelling a disposed CTS must never reach the game.
+            }
+        }
+
+        // Back-off delay that also honors RequestReconnect(): cancelling it ends the wait early so the
+        // loop re-attempts right away. Shutdown still wins via the linked token.
+        private static async Task _Backoff(TimeSpan delay)
+        {
+            CancellationTokenSource reconnect;
+            lock (_ReconnectLock)
+            {
+                reconnect = _ReconnectCts;
+            }
+
+            using (var linked = CancellationTokenSource.CreateLinkedTokenSource(_ShutdownCts.Token, reconnect.Token))
+            {
+                try
+                {
+                    await Task.Delay(delay, linked.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // An immediate retry was requested (or shutdown began); the loop decides the next step.
+                }
+            }
+        }
+
+        /// <summary>
         /// Cleanly tears down the cloud connection: notifies the peer, aborts any in-flight I/O,
         /// stops the reconnect loop and disposes the socket. Safe to call more than once.
         /// </summary>
@@ -560,8 +610,8 @@ namespace Vocaluxe.Base
                             if (IsShuttingDown())
                                 break;
                             // Server not reachable: back off briefly, then try again. The game keeps
-                            // running locally in the meantime.
-                            await Task.Delay(TimeSpan.FromSeconds(5), _ShutdownCts.Token);
+                            // running locally in the meantime. RequestReconnect() skips the wait.
+                            await _Backoff(TimeSpan.FromSeconds(5));
                             continue;
                         }
 
@@ -598,7 +648,7 @@ namespace Vocaluxe.Base
                         break;
 
                     CLog.CCloudLog.Warning("Connection to websocket closed; reconnecting...");
-                    await Task.Delay(TimeSpan.FromSeconds(1), _ShutdownCts.Token);
+                    await _Backoff(TimeSpan.FromSeconds(1));
                 }
 
                 // The only way out of the loop is being asked to shut down.

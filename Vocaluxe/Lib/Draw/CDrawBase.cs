@@ -42,6 +42,10 @@ namespace Vocaluxe.Lib.Draw
 
         protected bool _Run;
 
+        // Set by the event pump when the user asks to close the window; read by the pre-loop splash so
+        // its wait loops can abort (the main loop also ends, _Run is set false alongside).
+        protected bool _WantClose;
+
         protected readonly CKeys _Keys = new CKeys();
         protected readonly CMouse _Mouse = new CMouse();
 
@@ -609,6 +613,7 @@ namespace Vocaluxe.Lib.Draw
         private CTextureRef _SplashWhite;
         private CTextureRef _SplashBg;
         private string _SplashStatus = "Loading…";
+        private string _SplashHint;
 
         /// <summary>
         ///     Shows the startup splash (program logo on a black background, with an empty progress bar)
@@ -634,15 +639,52 @@ namespace Vocaluxe.Lib.Draw
         }
 
         /// <summary>
-        ///     Redraws the splash with the progress bar filled to <paramref name="progress" /> (0..1) and
-        ///     an optional status caption (only rendered once the font system is ready - drawing text
-        ///     before that is a no-op). Also pumps window events so the splash stays responsive.
+        ///     Redraws the splash with the progress bar filled to <paramref name="progress" /> (0..1),
+        ///     an optional status caption and an optional hint line underneath (key prompts, e.g. during
+        ///     the cloud retry wait). Text is only rendered once the font system is ready - drawing text
+        ///     before that is a no-op. Also pumps window events so the splash stays responsive.
         /// </summary>
-        public void UpdateSplash(float progress, string status = null)
+        public void UpdateSplash(float progress, string status = null, string hint = null)
         {
             if (status != null)
                 _SplashStatus = status;
+            _SplashHint = hint;
             _DrawSplashFrame(progress < 0f ? 0f : (progress > 1f ? 1f : progress));
+        }
+
+        /// <summary>
+        ///     True once the user asked to close the window (set by the event pump; the main loop ends
+        ///     when it sees it). Readable during the pre-loop splash so its wait loops can abort.
+        /// </summary>
+        public bool WantClose
+        {
+            get { return _WantClose; }
+        }
+
+        /// <summary>
+        ///     Pops the oldest pending key event (for the pre-loop splash, where no screen is around to
+        ///     consume input). Returns false when no key is pending.
+        /// </summary>
+        public bool PollKey(out SKeyEvent keyEvent)
+        {
+            _Keys.CopyEvents();
+            keyEvent = default(SKeyEvent);
+            return _Keys.PollEvent(ref keyEvent);
+        }
+
+        /// <summary>
+        ///     Discards all pending key and mouse events, so nothing queued during the splash (e.g. the
+        ///     key that confirmed the cloud prompt) can be consumed by the first in-game screen.
+        /// </summary>
+        public void DrainInput()
+        {
+            SKeyEvent keyEvent = default(SKeyEvent);
+            _Keys.CopyEvents();
+            while (_Keys.PollEvent(ref keyEvent)) { }
+
+            SMouseEvent mouseEvent = default(SMouseEvent);
+            _Mouse.CopyEvents();
+            while (_Mouse.PollEvent(ref mouseEvent)) { }
         }
 
         private void _DrawSplashFrame(float progress)
@@ -702,13 +744,28 @@ namespace Vocaluxe.Lib.Draw
                     DrawTexture(_SplashWhite, new SRectF(barX, barY, barW * progress, barH, 0f), new SColorF(1f, 1f, 1f, 0.9f));
 
                 // Status caption below the bar - only once fonts are loaded (early in init they are not,
-                // and CFonts.DrawText would be a no-op then).
-                if (!string.IsNullOrEmpty(_SplashStatus) && CFonts.IsInitialized)
+                // and CFonts.DrawText would be a no-op then). An optional hint line (key prompts during
+                // the cloud wait) renders underneath in a dimmer shade.
+                if (CFonts.IsInitialized)
                 {
-                    var font = new CFont("Normal", EStyle.Normal, renderH * 0.028f);
-                    float textW = CFonts.GetTextWidth(_SplashStatus, font);
-                    CFonts.DrawText(_SplashStatus, font, (renderW - textW) / 2f, barY + barH + renderH * 0.02f, CSettings.ZNear,
-                                    new SColorF(1f, 1f, 1f, 0.9f));
+                    float textY = barY + barH + renderH * 0.02f;
+
+                    if (!string.IsNullOrEmpty(_SplashStatus))
+                    {
+                        var font = new CFont("Normal", EStyle.Normal, renderH * 0.028f);
+                        float textW = CFonts.GetTextWidth(_SplashStatus, font);
+                        CFonts.DrawText(_SplashStatus, font, (renderW - textW) / 2f, textY, CSettings.ZNear,
+                                        new SColorF(1f, 1f, 1f, 0.9f));
+                        textY += CFonts.GetTextHeight(_SplashStatus, font) + renderH * 0.01f;
+                    }
+
+                    if (!string.IsNullOrEmpty(_SplashHint))
+                    {
+                        var font = new CFont("Normal", EStyle.Normal, renderH * 0.024f);
+                        float textW = CFonts.GetTextWidth(_SplashHint, font);
+                        CFonts.DrawText(_SplashHint, font, (renderW - textW) / 2f, textY, CSettings.ZNear,
+                                        new SColorF(1f, 1f, 1f, 0.6f));
+                    }
                 }
             }
 

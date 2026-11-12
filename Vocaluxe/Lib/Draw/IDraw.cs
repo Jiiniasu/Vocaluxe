@@ -25,7 +25,10 @@ namespace Vocaluxe.Lib.Draw
     {
         bool Init();
         void ShowSplash();
-        void UpdateSplash(float progress, string status = null);
+        void UpdateSplash(float progress, string status = null, string hint = null);
+        bool WantClose { get; }
+        bool PollKey(out SKeyEvent keyEvent);
+        void DrainInput();
         void MainLoop();
         void Close();
 

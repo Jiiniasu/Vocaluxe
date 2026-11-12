@@ -64,9 +64,41 @@ namespace Vocaluxe.Base
         /// </summary>
         /// <param name="progress">Progress from 0 to 1</param>
         /// <param name="status">Optional status text shown below the progress bar</param>
-        public static void UpdateSplash(float progress, string status = null)
+        /// <param name="hint">Optional hint line (key prompt) under the status text</param>
+        public static void UpdateSplash(float progress, string status = null, string hint = null)
         {
-            _Draw.UpdateSplash(progress, status);
+            _Draw.UpdateSplash(progress, status, hint);
+        }
+
+        /// <summary>
+        ///     True once the user asked to close the window. Lets the pre-loop splash abort its waits.
+        /// </summary>
+        public static bool WantClose
+        {
+            get { return _Draw != null && _Draw.WantClose; }
+        }
+
+        /// <summary>
+        ///     Pops the oldest pending key event (splash input). False when none is pending.
+        /// </summary>
+        public static bool PollKey(out SKeyEvent keyEvent)
+        {
+            if (_Draw == null)
+            {
+                keyEvent = default(SKeyEvent);
+                return false;
+            }
+            return _Draw.PollKey(out keyEvent);
+        }
+
+        /// <summary>
+        ///     Discards all pending key and mouse events, so none of the splash's can leak into the first
+        ///     in-game screen. Call right before the main loop starts.
+        /// </summary>
+        public static void DrainInput()
+        {
+            if (_Draw != null)
+                _Draw.DrainInput();
         }
 
         /// <summary>
@@ -77,6 +109,9 @@ namespace Vocaluxe.Base
         public static void MainLoop()
         {
             CGraphics.InitFirstScreen();
+            // Discard anything queued during the splash (e.g. the key that confirmed the cloud prompt)
+            // so the first in-game screens cannot consume it.
+            DrainInput();
             _Draw.MainLoop();
         }
 

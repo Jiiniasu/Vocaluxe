@@ -68,6 +68,14 @@ namespace Vocaluxe.Base
             get { return _Songs.Count; }
         }
 
+        // Number of song files found on disk (the load-progress denominator; NumAllSongs counts the
+        // successfully parsed ones).
+        private static int _TotalSongFiles;
+        public static int TotalSongFiles
+        {
+            get { return _TotalSongFiles; }
+        }
+
         public static int NumSongsVisible
         {
             get { return VisibleSongs.Count; }
@@ -362,12 +370,18 @@ namespace Vocaluxe.Base
             Categorizer.Tabs = tabs;
         }
 
-        public static void LoadSongs()
+        /// <summary>
+        ///     Loads the song list and (per the cover loading setting) the covers entirely from local
+        ///     sources - no network access. The cloud sync is a separate step, see
+        ///     <see cref="SyncWithCloud" />.
+        /// </summary>
+        public static void LoadLocalSongs()
         {
             using (CBenchmark.Time("Load Songs"))
             {
                 SongsLoaded = false;
                 _Songs.Clear();
+                _TotalSongFiles = 0;
 
                 var files = Enumerable.Empty<string>();
 
@@ -382,6 +396,7 @@ namespace Vocaluxe.Base
                             files = files.Union(CHelper.ListFiles(path, "*.txd", true, true));
                         }
                     }
+                    _TotalSongFiles = files.Count();
                 }
 
                 using (CBenchmark.Time("Read TXTs"))
@@ -394,45 +409,6 @@ namespace Vocaluxe.Base
                         song.ID = _Songs.Count;
                         if (song.LoadNotes())
                             _Songs.Add(song);
-                    }
-                    if (CConfig.UseCloudServer)
-                    {
-                        List<CloudSong> songs = new List<CloudSong>();
-                        foreach (CSong song in _Songs)
-                        {
-                            songs.Add(new CloudSong
-                            {
-                                GUID = song.Guid,
-                                Artist = song.Artist,
-                                Title = song.Title,
-                                Editions = song.Editions,
-                                Genres = song.Genres,
-                                Languages = song.Languages,
-                                Album = song.Album,
-                                Year = song.Year,
-                                Voices = song.Notes.VoiceNames.All(),
-                            });
-                        }
-                        CloudSong[] CloudSongs = CCloud.loadSongs(songs);
-                        for (int i = 0; i < CloudSongs.Length; i++)
-                        {
-                            _Songs[i].DataBaseSongID = CloudSongs[i].DataBaseSongID;
-                            _Songs[i].NumPlayed = CloudSongs[i].NumPlayed;
-                            _Songs[i].DateAdded = CloudSongs[i].DateAdded;
-
-                            if (CloudSongs[i].NewToCloud == 1)
-                            {
-                                // Read the raw cover bytes (no GDI+ needed). The MIME type is detected from
-                                // the file format signature instead of the former ImageCodecInfo round-trip.
-                                string coverFile = _Songs[i].Folder + "\\" + _Songs[i].CoverFileName;
-                                if (File.Exists(coverFile))
-                                {
-                                    byte[] coverData = File.ReadAllBytes(coverFile);
-                                    string format = _GetMimeType(coverData);
-                                    CCloud.putCover(_Songs[i].DataBaseSongID, Convert.ToBase64String(coverData), format);
-                                }
-                            }
-                        }
                     }
                 }
 
@@ -457,6 +433,70 @@ namespace Vocaluxe.Base
                         break;
                 }
             }
+        }
+
+        /// <summary>
+        ///     Syncs the locally loaded songs with the cloud server (IDs, play counts, covers for new
+        ///     songs). Must run after <see cref="LoadLocalSongs" />. Returns false when the server could
+        ///     not be reached (or answered incompletely), in which case the songs stay unlinked until a
+        ///     later successful sync.
+        /// </summary>
+        public static bool SyncWithCloud()
+        {
+            if (!CConfig.UseCloudServer)
+                return true;
+
+            using (CBenchmark.Time("Cloud Sync"))
+            {
+                List<CloudSong> songs = new List<CloudSong>();
+                foreach (CSong song in _Songs)
+                {
+                    songs.Add(new CloudSong
+                    {
+                        GUID = song.Guid,
+                        Artist = song.Artist,
+                        Title = song.Title,
+                        Editions = song.Editions,
+                        Genres = song.Genres,
+                        Languages = song.Languages,
+                        Album = song.Album,
+                        Year = song.Year,
+                        Voices = song.Notes.VoiceNames.All(),
+                    });
+                }
+
+                CloudSong[] CloudSongs = CCloud.loadSongs(songs);
+                // A failure (or an incomplete answer) yields a shorter array than sent; the mapping is
+                // index-aligned, so anything but a full echo is a failed sync. (Zero local songs is a
+                // vacuous success - there is nothing to link.)
+                if (CloudSongs == null || CloudSongs.Length != _Songs.Count)
+                {
+                    CLog.CCloudLog.Warning("Cloud sync incomplete: server answered with {n} of {m} songs",
+                        CLog.Params(CloudSongs != null ? CloudSongs.Length : 0, _Songs.Count));
+                    return false;
+                }
+
+                for (int i = 0; i < CloudSongs.Length; i++)
+                {
+                    _Songs[i].DataBaseSongID = CloudSongs[i].DataBaseSongID;
+                    _Songs[i].NumPlayed = CloudSongs[i].NumPlayed;
+                    _Songs[i].DateAdded = CloudSongs[i].DateAdded;
+
+                    if (CloudSongs[i].NewToCloud == 1)
+                    {
+                        // Read the raw cover bytes (no GDI+ needed). The MIME type is detected from
+                        // the file format signature instead of the former ImageCodecInfo round-trip.
+                        string coverFile = _Songs[i].Folder + "\\" + _Songs[i].CoverFileName;
+                        if (File.Exists(coverFile))
+                        {
+                            byte[] coverData = File.ReadAllBytes(coverFile);
+                            string format = _GetMimeType(coverData);
+                            CCloud.putCover(_Songs[i].DataBaseSongID, Convert.ToBase64String(coverData), format);
+                        }
+                    }
+                }
+            }
+            return true;
         }
 
         private static void _LoadCoversAsync()

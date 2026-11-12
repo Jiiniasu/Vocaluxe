@@ -193,12 +193,18 @@ namespace Vocaluxe.Lib.Draw
             {
                 foreach (CWindowManager.Slot s in _Windows.Slots)
                     if (s.Window.IsExiting)
+                    {
                         _Run = false;
+                        _WantClose = true;
+                    }
                 return;
             }
 
             if (_Window.IsExiting)
+            {
                 _Run = false;
+                _WantClose = true;
+            }
         }
         #endregion
 
@@ -206,6 +212,7 @@ namespace Vocaluxe.Lib.Draw
         private void _OnClosing(CancelEventArgs e)
         {
             _Run = false;
+            _WantClose = true;
         }
 
         protected virtual void _OnResize(ResizeEventArgs e)

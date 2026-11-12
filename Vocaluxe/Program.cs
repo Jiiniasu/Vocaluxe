@@ -25,6 +25,7 @@ using System.Threading;
 using Vocaluxe.Base;
 using Vocaluxe.Base.Fonts;
 using Vocaluxe.Base.ThemeSystem;
+using VocaluxeLib;
 using VocaluxeLib.Log;
 
 namespace Vocaluxe
@@ -133,98 +134,121 @@ namespace Vocaluxe
                     // (multi-second) init runs, instead of a blank screen / no window.
                     CDraw.ShowSplash();
 
-                    // Init Playback
+                    // The component init maps onto the 0..0.4 part of the bar: a step advances the bar
+                    // only once it is complete, and the caption names the step that is running. The song
+                    // and cover phases continue on 0.4..0.95 with their real counts (_SongsPhase), and
+                    // 1.0 is only reached once everything is done.
+                    int initStepsDone = 0;
+                    const int initStepsTotal = 13;
+
+                    void StepProgress(string status)
+                    {
+                        CDraw.UpdateSplash(0.4f * initStepsDone / initStepsTotal, status);
+                    }
+
+                    StepProgress("Initializing audio…");
                     using (CBenchmark.Time("Init Playback"))
                     {
                         if (!CSound.Init())
                             throw new CLoadingException("playback");
+                        initStepsDone++;
                     }
 
-                    // Init Record
+                    StepProgress("Initializing recording…");
                     using (CBenchmark.Time("Init Record"))
                     {
                         if (!CRecord.Init())
                             throw new CLoadingException("record");
+                        initStepsDone++;
                     }
 
-                    // Init VideoDecoder
+                    StepProgress("Initializing video playback…");
                     using (CBenchmark.Time("Init VideoDecoder"))
                     {
                         if (!CVideo.Init())
                             throw new CLoadingException("video");
+                        initStepsDone++;
                     }
 
-                    // Init Database
+                    StepProgress("Loading database…");
                     using (CBenchmark.Time("Init Database"))
                     {
                         if (!CDataBase.Init())
                             throw new CLoadingException("database");
+                        initStepsDone++;
                     }
-                    CDraw.UpdateSplash(0.15f);
 
-                    // Init Background Music
+                    StepProgress("Preparing background music…");
                     using (CBenchmark.Time("Init Background Music"))
                     {
                         CBackgroundMusic.Init();
+                        initStepsDone++;
                     }
 
-                    // Init Profiles
+                    StepProgress("Loading profiles…");
                     using (CBenchmark.Time("Init Profiles"))
                     {
                         CProfiles.Init();
+                        initStepsDone++;
                     }
 
-                    // Init Fonts
+                    StepProgress("Loading fonts…");
                     using (CBenchmark.Time("Init Fonts"))
                     {
                         if (!CFonts.Init())
                             throw new CLoadingException("fonts");
+                        initStepsDone++;
                     }
 
-                    // Theme System
+                    StepProgress("Loading theme…");
                     using (CBenchmark.Time("Init Theme"))
                     {
                         if (!CThemes.Init())
                             throw new CLoadingException("theme");
+                        initStepsDone++;
                     }
 
+                    StepProgress("Applying theme…");
                     using (CBenchmark.Time("Load Theme"))
                     {
                         CThemes.Load();
+                        initStepsDone++;
                     }
-                    CDraw.UpdateSplash(0.4f);
 
-                    // Load Cover
+                    StepProgress("Preparing cover generator…");
                     using (CBenchmark.Time("Init Cover"))
                     {
                         if (!CCover.Init())
                             throw new CLoadingException("covertheme");
+                        initStepsDone++;
                     }
 
-                    // Init Screens
+                    StepProgress("Building interface…");
                     using (CBenchmark.Time("Init Screens"))
                     {
                         CGraphics.Init();
+                        initStepsDone++;
                     }
 
-                    // Init Game
+                    StepProgress("Preparing game…");
                     using (CBenchmark.Time("Init Game"))
                     {
                         CGame.Init();
                         CProfiles.Update();
                         CConfig.UsePlayers();
+                        initStepsDone++;
                     }
-                    CDraw.UpdateSplash(0.55f);
 
-                    // Init Game Mode (normal singing game)
+                    StepProgress("Loading game modes…");
                     using (CBenchmark.Time("Init Game Mode"))
                     {
                         if (!CParty.Init())
                             throw new CLoadingException("Game Mode");
+                        initStepsDone++;
                     }
-                    CDraw.UpdateSplash(0.8f);
 
-                    // Init Cloud Communication (SSIS-Remote cloud sync)
+                    // Cloud communication (SSIS-Remote) starts before the song load so its websocket
+                    // attempts overlap with the local work.
                     if (CConfig.UseCloudServer)
                     {
                         using (CBenchmark.Time("Init Cloud Communication"))
@@ -237,6 +261,15 @@ namespace Vocaluxe
                         // flush worker, off the loop thread - the reconnect path in CCloud also
                         // triggers a flush, so this only speeds up the first chance to deliver them.
                         CCloud.RequestUploadFlush();
+                    }
+
+                    // Songs + cloud sync: the last loading work, with live progress and (for the cloud)
+                    // a user-driven retry. When the user closed the window during it, run the normal
+                    // shutdown instead of entering the main loop.
+                    if (!_LoadSongsAndSync())
+                    {
+                        _CloseProgram();
+                        return;
                     }
 
                     CDraw.UpdateSplash(1f, "Starting.");
@@ -255,6 +288,200 @@ namespace Vocaluxe
 
             // Start Main Loop
             CDraw.MainLoop();
+        }
+
+        /// <summary>
+        ///     The final loading phase: the local song load (with live progress), then the cloud sync if
+        ///     the cloud is enabled. The bar uses the real counts: 0.4..0.8 for the parsed song files,
+        ///     0.8..0.95 for the covers (ATSTART mode), and holds at 0.95 while the cloud is waited on.
+        ///     Returns false when the user closed the window.
+        /// </summary>
+        private static bool _LoadSongsAndSync()
+        {
+            if (!_SongsPhase())
+                return false;
+
+            if (CConfig.UseCloudServer && !_CloudPhase())
+                return false;
+
+            return true;
+        }
+
+        private static bool _SongsPhase()
+        {
+            Exception error = null;
+
+            using (var done = new ManualResetEventSlim(false))
+            {
+                void RunLoader()
+                {
+                    try
+                    {
+                        CSongs.LoadLocalSongs();
+                    }
+                    catch (Exception e)
+                    {
+                        error = e;
+                    }
+                    finally
+                    {
+                        done.Set();
+                    }
+                }
+
+                var loader = new Thread(RunLoader)
+                {
+                    Name = "SongLoader",
+                    IsBackground = true
+                };
+                loader.Start();
+
+                while (!done.Wait(50))
+                {
+                    if (CDraw.WantClose)
+                        return false;
+                    CDraw.UpdateSplash(_SongsProgress(), _SongsStatus());
+                }
+            }
+
+            if (error != null)
+                throw error;
+
+            return true;
+        }
+
+        private static float _SongsProgress()
+        {
+            if (!CSongs.SongsLoaded)
+            {
+                int totalFiles = CSongs.TotalSongFiles;
+                if (totalFiles <= 0)
+                    return 0.4f;
+                return 0.4f + 0.4f * Math.Min(1f, (float)CSongs.NumAllSongs / totalFiles);
+            }
+
+            // DYNAMIC covers keep loading in the background; the bar does not claim them.
+            if (CConfig.Config.Theme.CoverLoading != ECoverLoading.TR_CONFIG_COVERLOADING_ATSTART)
+                return 0.95f;
+
+            int totalSongs = CSongs.NumAllSongs;
+            if (totalSongs <= 0)
+                return 0.95f;
+            return 0.8f + 0.15f * Math.Min(1f, (float)CSongs.NumSongsWithCoverLoaded / totalSongs);
+        }
+
+        private static string _SongsStatus()
+        {
+            if (!CSongs.SongsLoaded)
+                return "Loading songs (" + CSongs.NumAllSongs + " of " + CSongs.TotalSongFiles + ")…";
+
+            if (CConfig.Config.Theme.CoverLoading == ECoverLoading.TR_CONFIG_COVERLOADING_ATSTART)
+                return "Loading covers (" + CSongs.NumSongsWithCoverLoaded + " of " + CSongs.NumAllSongs + ")…";
+
+            return "Songs loaded (" + CSongs.NumAllSongs + ")";
+        }
+
+        // Cloud sync phase: a few automatic attempts first, then a prompt that only advances on user
+        // request. When the cloud is enabled it is considered required: startup never proceeds past
+        // this phase while the server is unreachable. Returns false when the user closed the window.
+        private static bool _CloudPhase()
+        {
+            const int autoRetries = 3;
+
+            while (true)
+            {
+                bool ok = false;
+                for (int attempt = 1; attempt <= autoRetries && !ok; attempt++)
+                {
+                    if (!_CloudSyncAttempt(attempt, autoRetries, out ok))
+                        return false;
+                }
+
+                if (ok)
+                {
+                    CDraw.UpdateSplash(0.95f, "Cloud sync complete");
+                    return true;
+                }
+
+                if (!_WaitForCloudRetry())
+                    return false;
+
+                CCloud.RequestReconnect();
+            }
+        }
+
+        // Runs one sync attempt with live status. Returns false (and leaves ok undefined) when the user
+        // closed the window; otherwise ok carries the attempt result.
+        private static bool _CloudSyncAttempt(int attempt, int autoRetries, out bool ok)
+        {
+            ok = false;
+            bool success = false;
+            Exception error = null;
+
+            using (var done = new ManualResetEventSlim(false))
+            {
+                void RunSync()
+                {
+                    try
+                    {
+                        success = CSongs.SyncWithCloud();
+                    }
+                    catch (Exception e)
+                    {
+                        error = e;
+                    }
+                    finally
+                    {
+                        done.Set();
+                    }
+                }
+
+                var sync = new Thread(RunSync)
+                {
+                    Name = "CloudSync",
+                    IsBackground = true
+                };
+                sync.Start();
+
+                while (!done.Wait(100))
+                {
+                    if (CDraw.WantClose)
+                        return false;
+                    CDraw.UpdateSplash(0.95f, "Syncing with cloud… (attempt " + attempt + "/" + autoRetries +
+                                            ", WebSocket: " + (CCloud.IsConnected ? "online" : "offline") + ")");
+                }
+            }
+
+            if (error != null)
+                CLog.CCloudLog.Error(error, "Cloud sync attempt {n} failed: {msg}", CLog.Params(attempt, error.Message));
+
+            ok = success && error == null;
+            if (!ok)
+                CDraw.UpdateSplash(0.95f, "Cloud sync failed (attempt " + attempt + "/" + autoRetries + ")");
+
+            return true;
+        }
+
+        // Parks at the retry prompt until the user presses R (or closes the window, false). Any other
+        // key is consumed here so it cannot leak into the first menu screen.
+        private static bool _WaitForCloudRetry()
+        {
+            while (true)
+            {
+                if (CDraw.WantClose)
+                    return false;
+
+                CDraw.UpdateSplash(0.95f, "Cloud unavailable - press R to retry", "R - retry cloud connection");
+
+                SKeyEvent key;
+                while (CDraw.PollKey(out key))
+                {
+                    if (key.Key == Keys.R || key.Unicode == 'r' || key.Unicode == 'R')
+                        return true;
+                }
+
+                Thread.Sleep(16);
+            }
         }
 
         private static void _CloseProgram()
