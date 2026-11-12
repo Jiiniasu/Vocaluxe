@@ -663,23 +663,31 @@ namespace VocaluxeLib.Menu.SingNotes
 
         private void _DrawScaleLines(SColorF accidentalsColor)
         {
+            // One uniform pixel height for all rows, snapped to the pixel grid: the old texture path
+            // rounded each band's edges independently, so a row's pixel height depended on its sub-pixel
+            // phase and the rows came out with different thicknesses that drifted as the window zoomed
+            int h = Math.Max(1, (int)Math.Round(_SemiToneHeight));
+
+            int barTop = (int)Math.Round(Rect.Y);
+            int barBottom = (int)Math.Round(Rect.Bottom);
+
             int note = (int)Math.Floor(_ViewBottom);
-
-            SRectF accidentalsRect = Rect;
-            accidentalsRect.H = _SemiToneHeight;
-            accidentalsRect.Y = Rect.Y + (_SemiToneHeight * (_ViewTop - note + 1)) - (_SemiToneHeight / 2);
-
-            do
+            while (note < _ViewTop + 1.5f)
             {
                 if (_AccidentalNotes.IndexOf((note % 12 + 12) % 12) != -1)
                 {
-                    CTextureRef noteTexture = CBase.Themes.GetSkinTexture(_Theme.SkinFreeStyle, _PartyModeID);
-                    CBase.Drawing.DrawTexture(noteTexture, accidentalsRect, accidentalsColor, Rect, false, false);
+                    float center = Rect.Y + _SemiToneHeight * (_ViewTop - note + 1);
+                    int top = Math.Max((int)Math.Round(center - h / 2f), barTop);
+                    int bottom = Math.Min((int)Math.Round(center - h / 2f) + h, barBottom);
+                    if (bottom > top)
+                    {
+                        //77/255 is the alpha of the old NoteFreeStyle texture, baked in now that the rows
+                        //are plain rects instead of a stretched texture
+                        CBase.Drawing.DrawRect(new SColorF(0, 0, 0, accidentalsColor.A * 77f / 255f), new SRectF(Rect.X, top, Rect.W, bottom - top, Rect.Z), false);
+                    }
                 }
-                accidentalsRect.Y -= accidentalsRect.H;
                 note++;
             }
-            while (accidentalsRect.Y + accidentalsRect.H > Rect.Y);
         }
 
         private void _DrawToneHelper(CSongLine line)
