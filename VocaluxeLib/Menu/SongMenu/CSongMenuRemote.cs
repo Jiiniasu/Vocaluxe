@@ -156,7 +156,9 @@ namespace VocaluxeLib.Menu.SongMenu
                     _Artist.Text = category.Name;
                     return;
                 }
-                _VideoBG.Texture = song.CoverTextureBig;
+                // The blown-up preview surface shows the song's background when available and
+                // falls back to the cover; the separate _BigCover element keeps the real cover.
+                _VideoBG.Texture = song.BackgroundTextureBig ?? song.CoverTextureBig;
                 _BigCover.Texture = song.CoverTextureBig;
                 _Artist.Text = song.Artist;
                 _Title.Text = song.Title;

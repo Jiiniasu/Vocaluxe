@@ -81,6 +81,7 @@ namespace VocaluxeLib.Songs
     {
         private CTextureRef _CoverTextureSmall;
         private CTextureRef _CoverTextureBig;
+        private CTextureRef _BackgroundTextureBig;
 
         public SMedley Medley;
 
@@ -122,6 +123,24 @@ namespace VocaluxeLib.Songs
         {
             get { return _CoverTextureBig ?? _CoverTextureSmall; }
             set { _CoverTextureBig = value; }
+        }
+
+        /// <summary>
+        ///     The song's first background image (see BackgroundFileNames), loaded on demand.
+        ///     Null when no background is available, so callers can fall back to the cover.
+        /// </summary>
+        public CTextureRef BackgroundTextureBig
+        {
+            get
+            {
+                if (_BackgroundTextureBig == null && BackgroundFileNames.Count > 0 && !String.IsNullOrEmpty(BackgroundFileNames[0]))
+                {
+                    string path = Path.Combine(Folder, BackgroundFileNames[0]);
+                    if (File.Exists(path))
+                        _BackgroundTextureBig = CBase.Drawing.AddTexture(path);
+                }
+                return _BackgroundTextureBig;
+            }
         }
 
         public string Title = String.Empty;
@@ -221,6 +240,7 @@ namespace VocaluxeLib.Songs
         {
             _CoverTextureSmall = song._CoverTextureSmall;
             _CoverTextureBig = song._CoverTextureBig;
+            _BackgroundTextureBig = song._BackgroundTextureBig;
 
             Medley = song.Medley;
 
