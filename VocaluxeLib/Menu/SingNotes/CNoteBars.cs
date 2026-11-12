@@ -260,7 +260,7 @@ namespace VocaluxeLib.Menu.SingNotes
             float dtSec = beatDiff * 60f / Math.Max(1f, CBase.Game.GetSong()?.BPM ?? 1f);
             _ResolveView(currentBeatF, dtSec);
 
-            _DrawJudgeLine(new SColorF(_NoteLinesColor, _NoteLinesColor.A));
+            _DrawJudgeLine(new SColorF(_NoteLinesColor, _NoteLinesColor.A * Alpha));
 
             bool toneHelper = CBase.Config.GetDrawToneHelper() == EOffOn.TR_CONFIG_ON;
             float trailSpawnX = Rect.X + _JudgementLine;
@@ -285,7 +285,7 @@ namespace VocaluxeLib.Menu.SingNotes
                 _DrawScaleLines(new SColorF(0, 0, 0, 0.6f * Alpha));
             }
 
-            _DrawLineSeparators(new SColorF(_NoteLinesColor, _NoteLinesColor.A));
+            _DrawLineSeparators(new SColorF(_NoteLinesColor, _NoteLinesColor.A * Alpha));
 
             _DrawNotes(color);
 
@@ -345,7 +345,10 @@ namespace VocaluxeLib.Menu.SingNotes
             _GoldenStars.RemoveAll(el => !el.IsAlive);
 
             foreach (CParticleEffect perfline in _PerfectLineTwinkle)
+            {
+                perfline.Alpha = Alpha;
                 perfline.Draw();
+            }
 
             foreach (CParticleEffect stars in _GoldenStars)
             {
@@ -355,11 +358,15 @@ namespace VocaluxeLib.Menu.SingNotes
             }
 
             foreach (CParticleEffect flare in _Flares)
+            {
+                flare.Alpha = Alpha;
                 flare.Draw();
+            }
 
             foreach (CParticleEffect perfnote in _PerfectNoteEffect)
             {
                 perfnote.Move(-beatDiff * _NoteWidth, 0f);
+                perfnote.Alpha = Alpha;
                 perfnote.Draw();
             }
         }
@@ -753,7 +760,7 @@ namespace VocaluxeLib.Menu.SingNotes
                 Rect.Z
                 );
 
-            var color = new SColorF(1, 1, 1, ToneHelperAlpha);
+            var color = new SColorF(1, 1, 1, ToneHelperAlpha * Alpha);
 
             CBase.Drawing.DrawTexture(toneHelper, drawRect, color, false);
 
@@ -800,7 +807,7 @@ namespace VocaluxeLib.Menu.SingNotes
                 }
             }
 
-            _VoiceTrail.Draw(CBase.Themes.GetSkinTexture(_Theme.SkinGoldenStar, _PartyModeID), Rect, trailSpawnX, _NoteWidth, beat, _ViewTop, _SemiToneHeight);
+            _VoiceTrail.Draw(CBase.Themes.GetSkinTexture(_Theme.SkinGoldenStar, _PartyModeID), Rect, trailSpawnX, _NoteWidth, beat, _ViewTop, _SemiToneHeight, Alpha);
         }
 
         /// <summary>

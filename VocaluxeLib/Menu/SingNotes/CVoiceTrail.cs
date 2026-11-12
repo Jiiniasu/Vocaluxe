@@ -84,7 +84,7 @@ namespace VocaluxeLib.Menu.SingNotes
             _Cull(barLeft, spawnX, noteWidth, beat);
         }
 
-        public void Draw(CTextureRef texture, SRectF barRect, float spawnX, float noteWidth, float beat, float viewTop, float semiToneHeight)
+        public void Draw(CTextureRef texture, SRectF barRect, float spawnX, float noteWidth, float beat, float viewTop, float semiToneHeight, float alpha)
         {
             int count = _Cull(barRect.X, spawnX, noteWidth, beat);
             if (count == 0)
@@ -113,16 +113,14 @@ namespace VocaluxeLib.Menu.SingNotes
                     continue;
                 float inside = Math.Min(1f, overlap / dot.Size);
 
-                // Fade out while the dot leaves the bar on the left.
-                // Like the tone helper band, the dots are NOT dimmed by the note panel's
-                // alpha (player fading etc.): while the tone-helper option is on the trail
-                // is fully visible and goes away only by scrolling off the left edge
+                // Fade out while the dot leaves the bar on the left, and dim with the
+                // note panel's alpha (player fading etc.) like the rest of the bar
                 float fade = (x - barRect.X) / fadeWidth;
                 if (fade < 0f)
                     fade = 0f;
                 if (fade > 1f)
                     fade = 1f;
-                float a = fade * inside * (0.9f + 0.1f * (float)Math.Sin(dot.Phase + beat * TwinkleSpeed));
+                float a = fade * inside * (0.9f + 0.1f * (float)Math.Sin(dot.Phase + beat * TwinkleSpeed)) * alpha;
                 if (a <= 0f)
                     continue;
 
