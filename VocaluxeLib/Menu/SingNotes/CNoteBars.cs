@@ -291,8 +291,6 @@ namespace VocaluxeLib.Menu.SingNotes
 
             List<CSungLine> sungLines = CBase.Game.GetPlayers()[_Player].SungLines;
 
-            float beats = line.LastNoteBeat - line.FirstNoteBeat + 1;
-
             for (int i = _CurrentLine > 0 ? _CurrentLine - 1 : 0; i < sungLines.Count; i++)
             {
                 foreach (CSungNote note in sungLines[i].Notes)
@@ -309,8 +307,7 @@ namespace VocaluxeLib.Menu.SingNotes
                     SRectF rect = _GetNoteRect(note);
                     if ((rect.Right > Rect.X && rect.Right < Rect.Right))
                     {
-                        if (note.EndBeat == CBase.Game.GetRecordedBeat())
-                            rect.W -= (1 - (CBase.Game.GetMidRecordedBeat() - CBase.Game.GetRecordedBeat())) * Rect.W / beats;
+                        rect.W = GetSungNoteFillWidth(note.StartBeat, note.EndBeat, CBase.Game.GetMidRecordedBeat(), _NoteWidth);
 
                         float factor = (note.Hit) ? 1f : 0.6f;
 
@@ -614,6 +611,18 @@ namespace VocaluxeLib.Menu.SingNotes
                 Rect.Z
                 );
             return noteRect;
+        }
+
+        /// <summary>
+        ///     Width of the sung fill for a note at a given playhead position: the fill
+        ///     grows with the playhead up to the note's full width. The result is
+        ///     non-decreasing as the playhead advances, so the fill tip never flickers
+        ///     backwards.
+        /// </summary>
+        internal static float GetSungNoteFillWidth(int startBeat, int endBeat, float midRecordedBeat, float noteWidth)
+        {
+            float lead = Math.Min(endBeat + 1f, midRecordedBeat);
+            return Math.Max(0f, (lead - startBeat) * noteWidth);
         }
 
         private void _DrawJudgeLine(SColorF color)
